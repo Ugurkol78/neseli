@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trendyol Ürün Listesi</title>
+    <style>
+        /* Menü CSS */
+        nav {
+            background-color: #333;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: white;
+            margin-right: 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Orijinal index sayfası CSS'si */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #eee;
+        }
+        img.product-img {
+            height: 100px;
+            width: auto;
+            border-radius: 4px;
+        }
+        /* Ürün adı sola hizalı */
+        td:nth-child(6) {
+            text-align: left;
+            padding-left: 10px;
+        }
+        input[type=number] {
+            padding: 4px;
+            font-size: 14px;
+            width: 80px;
+        }
+        button.update-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        button.update-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="{{ url_for('index') }}">Stok Güncelleme</a>
+        <a href="{{ url_for('match') }}">Eşleştirme</a>
+    </nav>
+
+    <h1>Trendyol Ürün Listesi</h1>
+
+    <table id="productsTable">
+        <thead>
+            <tr>
+                <th>Resim</th>
+                <th>Barkod</th>
+                <th>Stok</th>
+                <th>Yeni Stok</th>
+                <th>Güncelle</th>
+                <th>Ürün Adı</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>
+                    {% if product.images and product.images|length > 0 %}
+                        <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-img" />
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ product.barcode }}</td>
+                <td class="current-stock">{{ product.quantity }}</td>
+                <td>
+                    <input type="number" min="0" value="" class="new-stock-input" />
+                </td>
+                <td>
+                    <button type="button" class="update-btn" disabled>Güncelle</button>
+                </td>
+                <td>{{ product.title }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<script>
+    // Yeni stok inputu değişince buton aktif/pasif kontrolü
+    document.querySelectorAll('.new-stock-input').forEach(function(input) {
+        const button = input.closest('tr').querySelector('.update-btn');
+        
+        input.addEventListener('input', function() {
+            if (this.value !== '' && Number(this.value) >= 0) {
+                button.disabled = false;
+            } else {
+                button.disabled = true;
+            }
+        });
+    });
+
+    // Güncelle butonuna tıklanınca API çağrısı yap
+    document.querySelectorAll('.update-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const row = button.closest('tr');
+            const barcode = row.querySelectorAll('td')[1].innerText.trim();
+            const newStockInput = row.querySelector('.new-stock-input');
+            const newQuantity = Number(newStockInput.value);
+
+            if (isNaN(newQuantity) || newQuantity < 0) {
+                alert('Lütfen geçerli bir stok miktarı giriniz.');
+                return;
+            }
+
+            const payload = {
+                items: [
+                    {
+                        barcode: barcode,
+                        quantity: newQuantity
+                    }
+                ]
+            };
+
+            button.disabled = true;
+            button.innerText = 'Güncelleniyor...';
+
+            fetch('/update_stock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    // Yeni stok değerini stok sütununa yaz
+                    row.querySelector('.current-stock').innerText = newQuantity;
+                    newStockInput.value = '';
+                    button.disabled = true;
+                    button.innerText = 'Güncelle';
+                } else if (data.error) {
+                    alert('Hata: ' + data.error);
+                    button.disabled = false;
+                    button.innerText = 'Güncelle';
+                }
+            })
+            .catch(error => {
+                alert('İstek gönderilirken hata oluştu.');
+                console.error(error);
+                button.disabled = false;
+                button.innerText = 'Güncelle';
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

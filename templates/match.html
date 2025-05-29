@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ürün Eşleştirme</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    nav { background: #333; padding: 10px; margin-bottom: 20px; }
+    nav a { color: white; margin-right: 15px; text-decoration: none; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background: #f5f5f5; }
+    img { height: 60px; border-radius: 4px; }
+
+    input[type="text"] { width: 150px; padding: 5px; }
+    button { padding: 6px 12px; font-size: 14px; }
+
+    .dropdown-list {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 150px;
+      z-index: 1000;
+      display: none;
+    }
+
+    .dropdown-item {
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+      background: #eee;
+    }
+
+    .dropdown-item img {
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    .relative { position: relative; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="{{ url_for('index') }}">Stok Güncelleme</a>
+    <a href="{{ url_for('match') }}">Eşleştirme</a>
+  </nav>
+
+  <h2>Ürün Eşleştirme</h2>
+
+  <form id="matchForm">
+    <table>
+      <thead>
+        <tr>
+          <th>Sıra No</th>
+          <th>Trendyol Barkod</th>
+          <th>Trendyol Foto</th>
+          <th>Hepsiburada Barkod</th>
+          <th>Hepsiburada Foto</th>
+          <th>Kaydet/Güncelle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in trendyol_products %}
+        <tr data-trendyol="{{ product.barcode }}">
+          <td>{{ loop.index }}</td>
+          <td>{{ product.barcode }}</td>
+          <td>
+            {% if product.images %}
+              <img src="{{ product.images[0].url }}" alt="Trendyol Resim">
+            {% else %}-{% endif %}
+          </td>
+          <td>
+            <div class="relative">
+              <input type="text" class="hb-input" value="{{ product.matched_hb_barcode }}">
+              <div class="dropdown-list"></div>
+            </div>
+          </td>
+          <td class="hb-image-cell">
+            {% for p in trendyol_products %}
+              {% if p.barcode == product.matched_hb_barcode %}
+                {% if p.images %}
+                  <img src="{{ p.images[0].url }}" alt="Hepsiburada Resim">
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td><button type="button" class="save-btn">Kaydet</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <br>
+    <button type="submit">Tümünü Kaydet</button>
+  </form>
+
+  <script>
+    const allProducts = {{ trendyol_products | tojson }};
+    const inputs = document.querySelectorAll(".hb-input");
+    const saveButtons = document.querySelectorAll(".save-btn");
+
+    // Sayfa açılır açılmaz tüm Kaydet butonlarını pasif yap
+    saveButtons.forEach(btn => btn.disabled = true);
+
+    inputs.forEach(input => {
+      const dropdown = input.nextElementSibling;
+      const tr = input.closest("tr");
+      const saveBtn = tr.querySelector(".save-btn");
+
+      input.addEventListener("input", () => {
+        // Input değeri değiştiği anda o satırdaki Kaydet butonunu aktif yap
+        saveBtn.disabled = false;
+
+        if (input.value.trim() === "") {
+        const tr = input.closest("tr");
+        const cell = tr.querySelector(".hb-image-cell");
+        cell.innerHTML = "";
+        dropdown.style.display = "none";
+        return;
+        }
+        
+        const value = input.value.toLowerCase();
+        dropdown.innerHTML = "";
+
+        if (!value) {
+          dropdown.style.display = "none";
+          return;
+        }
+
+        const matches = allProducts.filter(p => p.barcode.toLowerCase().includes(value));
+        if (matches.length === 0) {
+          dropdown.style.display = "none";
+          return;
+        }
+
+        matches.forEach(p => {
+          const item = document.createElement("div");
+          item.className = "dropdown-item";
+          const img = document.createElement("img");
+          img.src = p.images && p.images[0] ? p.images[0].url : '';
+          const span = document.createElement("span");
+          span.textContent = p.barcode;
+          item.appendChild(img);
+          item.appendChild(span);
+
+          item.onclick = () => {
+            input.value = p.barcode;
+            const tr = input.closest("tr");
+            const cell = tr.querySelector(".hb-image-cell");
+            cell.innerHTML = p.images && p.images[0] ? `<img src="${p.images[0].url}" alt="HB Resim">` : "-";
+            dropdown.style.display = "none";
+          };
+
+          dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = "block";
+      });
+
+      document.addEventListener("click", e => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = "none";
+        }
+      });
+    });
+
+    // Tek tek satır kaydet (isteğe bağlı kullanılabilir)
+document.querySelectorAll(".save-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tr = btn.closest("tr");
+    const ty = tr.getAttribute("data-trendyol");
+    const hb = tr.querySelector(".hb-input").value.trim();
+
+    fetch("/save_match", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ matches: { [ty]: hb } })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+       alert("Hata: " + data.error);
+      }
+      // Başarı mesajını popup ile gösterme, sessiz geç
+      btn.disabled = true;
+    })
+
+    //.then(data => {
+    //  alert(data.message || "Kaydedildi");
+    //  btn.disabled = true;  // sadece o satırın butonunu pasif yap
+    //})
+
+
+    .catch(err => {
+      alert("Hata oluştu: " + err);
+    });
+  });
+});
+  </script>
+</body>
+</html>
