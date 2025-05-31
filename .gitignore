@@ -5,6 +5,7 @@ match.json
 *.xlsx
 debug.log
 products_cache.json
+app_backup.py
 
 # Python cache
 __pycache__/
