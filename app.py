@@ -66,6 +66,11 @@ def save_users(users_data):
     with open(USERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(users_data, f, ensure_ascii=False, indent=2)
 
+def get_current_turkey_time():
+    turkey_tz = pytz.timezone('Europe/Istanbul')
+    now = datetime.now(turkey_tz)
+    return now.strftime("%d.%m.%Y %H:%M:%S")
+
 def check_hb_batch_status(batch_id):
     """Hepsiburada batch durumunu sorgula"""
     try:
@@ -136,23 +141,24 @@ def verify_user(username, password):
     return False
 
 def load_products_cache():
-    """Cache'den ürün verilerini yükle"""
     if os.path.exists(PRODUCTS_CACHE_FILE):
         try:
             with open(PRODUCTS_CACHE_FILE, 'r', encoding='utf-8') as f:
                 cache_data = json.load(f)
-                return cache_data.get('products', []), cache_data.get('last_updated', None)
+                products = cache_data.get('products', [])
+                turkey_time = cache_data.get('last_updated_turkey', None)
+                return products, turkey_time
         except Exception as e:
             logging.error(f"Cache okuma hatası: {e}")
             return [], None
     return [], None
 
 def save_products_cache(products):
-    """Cache'e ürün verilerini kaydet"""
     try:
         cache_data = {
             'products': products,
-            'last_updated': datetime.now().isoformat()
+            'last_updated': datetime.now().isoformat(),
+            'last_updated_turkey': get_current_turkey_time()
         }
         with open(PRODUCTS_CACHE_FILE, 'w', encoding='utf-8') as f:
             json.dump(cache_data, f, ensure_ascii=False, indent=2)
@@ -344,14 +350,8 @@ def get_excel_stats_weekly():
             updates_this_week = 0
     
     _, cache_last_updated = load_products_cache()
-    turkey_last_updated = None
+    turkey_last_updated = cache_last_updated 
     
-    if cache_last_updated:
-        utc_time = datetime.fromisoformat(cache_last_updated.replace('Z', '+00:00'))
-        if utc_time.tzinfo is None:
-            utc_time = pytz.UTC.localize(utc_time)
-        turkey_time = utc_time.astimezone(turkey_tz)
-        turkey_last_updated = turkey_time.strftime("%d.%m.%Y %H:%M:%S")
     
     return {
         "exists": True,
@@ -709,7 +709,7 @@ def refresh_data():
             return jsonify({
                 'message': f'✅ Veriler başarıyla yenilendi! {len(products)} ürün işlendi.',
                 'product_count': len(products),
-                'last_updated': datetime.now().strftime('%d.%m.%Y %H:%M:%S'),
+                'last_updated': get_current_turkey_time(),
                 'excel_info': excel_stats
             })
         else:
