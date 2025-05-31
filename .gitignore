@@ -4,6 +4,7 @@ users.json
 match.json
 *.xlsx
 debug.log
+products_cache.json
 
 # Python cache
 __pycache__/
