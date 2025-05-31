@@ -18,18 +18,18 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-here")
-
 @app.route('/favicon.ico')
 def favicon():
-    # SVG favicon döndür
     svg_content = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
         <text y=".9em" font-size="90">🌸</text>
     </svg>'''
     
     from flask import Response
-    return Response(svg_content, mimetype='image/svg+xml')
+    response = Response(svg_content, mimetype='image/svg+xml')
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 MATCHES_FILE = 'match.json'
 USERS_FILE = 'users.json'
