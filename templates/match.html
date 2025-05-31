@@ -257,8 +257,14 @@
       padding-right: 24px;
       transition: all 0.2s ease;
     }
+   
     .sortable:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: #5a67d8 !important; /* Daha koyu mavi */
+      color: #ffffff !important; /* Net beyaz */
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7) !important; /* Güçlü gölge */
+      font-weight: 600 !important; /* Kalın yazı */
+      transform: translateY(-1px) !important; /* Hafif yukarı kaydır */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important; /* Gölge efekti */
     }
     .sortable::after {
       content: "";
@@ -335,12 +341,24 @@
   </nav>
 
   <div class="header">
-    <h2>Ürün Eşleştirme</h2>
-    <div class="stats">
+  <h2>Ürün Eşleştirme</h2>
+  <div class="stats">
+    {% if cache_empty %}
+      <div style="color: #e53e3e; font-weight: 600; margin-bottom: 10px;">
+        ⚠️ Veri bulunamadı! Önce ana sayfadan "Verileri Yenile" butonuna tıklayın.
+      </div>
+    {% else %}
+      <div style="color: #48bb78; font-size: 12px; margin-bottom: 8px;">
+        📊 Cache'den yükleniyor
+        {% if last_updated %}
+          | Son güncelleme: {{ last_updated[:19].replace('T', ' ') }}
+        {% endif %}
+      </div>
       <strong>Toplam Trendyol Ürünü:</strong> <span class="stat-number">{{ trendyol_products|length }}</span> | 
       <strong>Toplam Hepsiburada Ürünü:</strong> <span class="stat-number">{{ hepsiburada_products|length }}</span> | 
       <strong>Trendyol Eşleşme Bulunmayan:</strong> <span class="stat-number" id="unmatchedTyCount">{{ trendyol_products|selectattr('matched_hb_sku', 'equalto', '')|list|length }}</span> |
       <strong>Hepsiburada Eşleştirme Yapılmamış:</strong> <span class="stat-number" id="unmatchedHbCount">{{ hepsiburada_products|length }}</span>
+    {% endif %}
     </div>
   </div>
 
@@ -400,13 +418,25 @@
   </div>
 </div>
 
+// match.html'deki JavaScript kısmını bu ile değiştirin:
+
 <script>
   const hepsiburadaProducts = {{ hepsiburada_products | tojson }};
   const inputs = document.querySelectorAll(".hb-input");
 
+  // Performans için HB ürünlerini önceden indexle
+  const hbProductsIndex = new Map();
+  hepsiburadaProducts.forEach(p => {
+    const key = (p.merchantSku || '').toLowerCase();
+    if (key) {
+      hbProductsIndex.set(key, p);
+    }
+  });
+
+  console.log(`✅ ${hepsiburadaProducts.length} HB ürünü indexlendi`);
+
   // Eşleştirme sayılarını güncelle
   function updateMatchCounts() {
-    // Trendyol eşleşmeyenleri say - data-matched attribute'una göre
     let unmatchedTyCount = 0;
     const matchedSkus = new Set();
     
@@ -419,163 +449,154 @@
       }
     });
     
-    // HB eşleşmeyenleri say - sadece kaydedilmiş eşleştirmelere göre
     const unmatchedHbCount = hepsiburadaProducts.length - matchedSkus.size;
     
     document.getElementById('unmatchedTyCount').textContent = unmatchedTyCount;
     document.getElementById('unmatchedHbCount').textContent = unmatchedHbCount;
   }
 
-  // Sayfa yüklendiğinde hesapla
   updateMatchCounts();
 
-  // Sorting için orijinal sırayı sakla
+  // Sorting - orijinal sırayı sakla
   const originalOrder = Array.from(document.querySelectorAll("tbody tr"));
-  let currentSort = 'original'; // 'original', 'asc', 'desc'
+  let currentSort = 'original';
 
-  // Trendyol Barkod sütunu sorting
-  document.getElementById('barcodeSort').addEventListener('click', () => {
-    const tbody = document.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const sortHeader = document.getElementById('barcodeSort');
-    
-    // Sorting durumunu güncelle
-    if (currentSort === 'original') {
-      currentSort = 'asc';
-      sortHeader.className = 'sortable asc';
-      // A'dan Z'ye sırala
-      rows.sort((a, b) => {
-        const barcodeA = a.getAttribute('data-trendyol');
-        const barcodeB = b.getAttribute('data-trendyol');
-        return barcodeA.localeCompare(barcodeB);
+  // Sorting event listener
+  const sortHeader = document.getElementById('barcodeSort');
+  if (sortHeader) {
+    sortHeader.addEventListener('click', () => {
+      const tbody = document.querySelector('tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      if (currentSort === 'original') {
+        currentSort = 'asc';
+        sortHeader.className = 'sortable asc';
+        rows.sort((a, b) => {
+          const barcodeA = a.getAttribute('data-trendyol');
+          const barcodeB = b.getAttribute('data-trendyol');
+          return barcodeA.localeCompare(barcodeB);
+        });
+      } else if (currentSort === 'asc') {
+        currentSort = 'desc';
+        sortHeader.className = 'sortable desc';
+        rows.sort((a, b) => {
+          const barcodeA = a.getAttribute('data-trendyol');
+          const barcodeB = b.getAttribute('data-trendyol');
+          return barcodeB.localeCompare(barcodeA);
+        });
+      } else {
+        currentSort = 'original';
+        sortHeader.className = 'sortable';
+        rows.length = 0;
+        rows.push(...originalOrder);
+      }
+      
+      rows.forEach(row => tbody.appendChild(row));
+      rows.forEach((row, index) => {
+        row.querySelector('td:first-child').textContent = index + 1;
       });
-    } else if (currentSort === 'asc') {
-      currentSort = 'desc';
-      sortHeader.className = 'sortable desc';
-      // Z'den A'ya sırala
-      rows.sort((a, b) => {
-        const barcodeA = a.getAttribute('data-trendyol');
-        const barcodeB = b.getAttribute('data-trendyol');
-        return barcodeB.localeCompare(barcodeA);
-      });
-    } else {
-      currentSort = 'original';
-      sortHeader.className = 'sortable';
-      // Orijinal sıraya dön
-      rows.length = 0;
-      rows.push(...originalOrder);
-    }
-    
-    // Satırları yeniden sırala
-    rows.forEach(row => tbody.appendChild(row));
-    
-    // Sıra numaralarını güncelle
-    rows.forEach((row, index) => {
-      row.querySelector('td:first-child').textContent = index + 1;
     });
-  });
+  }
 
+  // Input event handlers - optimize edilmiş
   inputs.forEach(input => {
     const dropdown = input.nextElementSibling;
     const tr = input.closest("tr");
     const saveBtn = tr.querySelector(".save-btn");
+    
+    let searchTimeout;
 
     function updateSaveBtnState() {
       const currentVal = input.value.trim();
       const matchedVal = tr.getAttribute("data-matched").trim();
-      if(currentVal !== matchedVal && currentVal !== ""){
-        saveBtn.disabled = false;
-      } else if(currentVal === "" && matchedVal !== ""){
-        saveBtn.disabled = false;
-      } else {
-        saveBtn.disabled = true;
-      }
+      saveBtn.disabled = !(
+        (currentVal !== matchedVal && currentVal !== "") ||
+        (currentVal === "" && matchedVal !== "")
+      );
     }
+    
     updateSaveBtnState();
 
     input.addEventListener("input", () => {
-      const value = input.value.toLowerCase();
-      dropdown.innerHTML = "";
-
-      updateSaveBtnState();
-
-      // Kaydedilmiş (data-matched) merchantSku'ları topla (mevcut satır hariç)
-      const usedSkus = new Set();
-      document.querySelectorAll("tbody tr").forEach(row => {
-        if (row !== tr) { // Mevcut satır hariç
-          const savedSku = row.getAttribute("data-matched").trim();
-          if (savedSku) {
-            usedSkus.add(savedSku);
-          }
-        }
-      });
-
-      // Hepsiburada ürünlerinde ara (merchantSku ve başlıkta) - kaydedilmiş olanları filtrele
-      let matches;
-      if (!value) {
-        // Input boşsa tüm kullanılmamış ürünleri göster
-        matches = hepsiburadaProducts.filter(p => !usedSkus.has(p.merchantSku));
-      } else {
-        // Input doluysa filtrelenmiş sonuçları göster
-        matches = hepsiburadaProducts.filter(p => 
-          ((p.merchantSku && p.merchantSku.toLowerCase().includes(value)) ||
-          (p.productName && p.productName.toLowerCase().includes(value))) &&
-          !usedSkus.has(p.merchantSku) // Daha önce kaydedilmemiş olanlar
-        );
-      }
+      clearTimeout(searchTimeout);
+      const value = input.value.toLowerCase().trim();
       
-      if (matches.length === 0) {
-        dropdown.style.display = "none";
-        if (!value) {
-          // Input boş ise link de sil
-          const hbLinkCell = tr.querySelector(".hb-link-cell");
-          hbLinkCell.innerHTML = "-";
-        }
-        return;
-      }
+      updateSaveBtnState();
+      
+      // Debounce search - 300ms bekle
+      searchTimeout = setTimeout(() => {
+        dropdown.innerHTML = "";
 
-      matches.slice(0, 10).forEach(p => { // İlk 10 sonucu göster
-        const item = document.createElement("div");
-        item.className = "dropdown-item";
-
-        const skuElement = document.createElement("strong");
-        skuElement.textContent = p.merchantSku || 'Barkod yok';
-
-        item.appendChild(skuElement);
-
-        item.onclick = () => {
-          input.value = p.merchantSku || '';
-          const linkCell = tr.querySelector(".hb-link-cell");
-          if (p.hepsiburadaSku) {
-            linkCell.innerHTML = `<a href="https://www.hepsiburada.com/ara?q=${p.hepsiburadaSku}" target="_blank" class="hb-link">Hepsiburada'da Görüntüle</a>`;
-          } else {
-            linkCell.innerHTML = "-";
+        // Kullanılmış SKU'ları topla
+        const usedSkus = new Set();
+        document.querySelectorAll("tbody tr").forEach(row => {
+          if (row !== tr) {
+            const savedSku = row.getAttribute("data-matched").trim();
+            if (savedSku) usedSkus.add(savedSku);
           }
+        });
+
+        // Hızlı arama - Map kullan
+        let matches = [];
+        if (!value) {
+          matches = hepsiburadaProducts.filter(p => !usedSkus.has(p.merchantSku));
+        } else {
+          matches = hepsiburadaProducts.filter(p => 
+            ((p.merchantSku && p.merchantSku.toLowerCase().includes(value)) ||
+            (p.productName && p.productName.toLowerCase().includes(value))) &&
+            !usedSkus.has(p.merchantSku)
+          );
+        }
+        
+        if (matches.length === 0) {
           dropdown.style.display = "none";
-          updateSaveBtnState();
-        };
+          return;
+        }
 
-        dropdown.appendChild(item);
-      });
+        // İlk 10 sonuç
+        matches.slice(0, 10).forEach(p => {
+          const item = document.createElement("div");
+          item.className = "dropdown-item";
+          
+          const skuElement = document.createElement("strong");
+          skuElement.textContent = p.merchantSku || 'Barkod yok';
+          item.appendChild(skuElement);
 
-      dropdown.style.display = "block";
+          item.onclick = () => {
+            input.value = p.merchantSku || '';
+            const linkCell = tr.querySelector(".hb-link-cell");
+            if (p.hepsiburadaSku) {
+              linkCell.innerHTML = `<a href="https://www.hepsiburada.com/ara?q=${p.hepsiburadaSku}" target="_blank" class="hb-link">Hepsiburada'da Görüntüle</a>`;
+            } else {
+              linkCell.innerHTML = "-";
+            }
+            dropdown.style.display = "none";
+            updateSaveBtnState();
+          };
+
+          dropdown.appendChild(item);
+        });
+
+        dropdown.style.display = "block";
+      }, 300);
     });
 
-    // Input'a tıklandığında dropdown'u aç
+    // Focus event
     input.addEventListener("focus", () => {
-      // Input event trigger et ki dropdown açılsın
-      const event = new Event('input', { bubbles: true });
-      input.dispatchEvent(event);
+      if (!input.value.trim()) {
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+      }
     });
 
-    // Dropdown dışına tıklanınca gizle
+    // Click outside
     document.addEventListener("click", e => {
       if (!input.contains(e.target) && !dropdown.contains(e.target)) {
         dropdown.style.display = "none";
       }
     });
 
-    // Save butonuna tıklanınca kaydet
+    // Save button
     saveBtn.addEventListener("click", () => {
       saveBtn.disabled = true;
       const trendyolBarcode = tr.getAttribute("data-trendyol");
@@ -595,10 +616,9 @@
           alert("Hata: " + data.error);
           saveBtn.disabled = false;
         } else {
-          // Başarılı ise eşleşmeyi data-matched güncelle, butonu pasif yap
           tr.setAttribute("data-matched", hepsiburadaSku);
           updateSaveBtnState();
-          updateMatchCounts(); // Kaydetme sonrası sayıları güncelle
+          updateMatchCounts();
         }
       })
       .catch(() => {
@@ -608,6 +628,7 @@
     });
   });
 
+  console.log("✅ Match sayfası JavaScript yüklendi");
 </script>
 
 </body>
