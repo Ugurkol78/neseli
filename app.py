@@ -18,6 +18,9 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-here")
+
 MATCHES_FILE = 'match.json'
 USERS_FILE = 'users.json'
 PRODUCTS_CACHE_FILE = 'products_cache.json'
