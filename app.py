@@ -1072,7 +1072,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--reset-admin":
         emergency_reset_admin_password()
     else:
-        port = int(os.getenv("PORT", 5001))  # 5001 olarak değiştirildi
+        port = int(os.getenv("PORT", 5002))  # 5001 → 5002
         debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
         
         logging.info(f"Trendyol-HB Stok Yönetimi başlatılıyor...")
