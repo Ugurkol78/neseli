@@ -651,7 +651,7 @@
       "createDateTime": 1747393717000,
       "description": "\n <div>\n  <p> </p>\n  <div> \n   <b> <span> <span> <span>Ürün Açıklaması</span> </span> </span> </b> \n   <br> \n  </div> \n  <span> <span> </span> </span> \n  <p> <span> <span> <span> </span></span></span></p>\n  <div> \n   <br> \n  </div> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> Özel günlerinize zarafet ve şıklık katacak <b>pasteltonlarda hazırladığımız yapay çiçek masa aranjmanı</b>, düğün, nişan, söz gibiunutulmaz anlarınızda masalarınıza estetik bir dokunuş sağlar. <br> </li> \n   <li> Yüksek kaliteli güller ve ortanca çiçeklerinkombinasyonuyla oluşturulan bu aranjman, doğal görünümlü yapay çiçeklerdenüretilmiştir ve uzun yıllar boyunca ilk günkü canlılığını korur. <br> </li> \n   <li> Özellikle gelin masası süslemesi, nikah masasıdekorasyonu ve özel davetlerde tercih edilen bu ürün, şık tasarımıyla dikkatçeker. Gerçekçi yapısı sayesinde hem iç hem dış mekanlarda rahatlıklakullanılabilir. <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <div> \n   <br> \n  </div> \n  <p> </p>\n  <div> \n   <b> <span> <span> <span>Ürün Özellikleri:</span> </span> </span> </b> \n   <br> \n  </div> \n  <span> <span> </span> </span> \n  <p> <span> <span> <span> </span></span></span></p>\n  <div> \n   <br> \n  </div> \n  <p> <span> <span> <span> </span></span></span></p>\n  <div> \n   <br> \n  </div> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Ürün Tipi: </b>Yapay çiçek masaaranjmanı <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Renk: </b>Pastel tonlarda gül ve ortanca,çiçeklerinden oluşur. Somon, krem, bej <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Kullanım Alanı: </b>Düğün, nişan, söz,kına, nikah, özel davet ve toplantı masaları ve fotoğraf çekim alanları <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Malzeme: </b>Kaliteli ve gerçekçigörünümlü yapay çiçekler <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Boyut: </b>Ortalama 60 cm x 20 cm <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Bakım: </b>Toz alımı dışında bakımgerektirmez <br> </li> \n  </ul> \n  <p> <span> <span> <span> </span></span></span></p>\n  <ul> \n   <li> <b>Dayanıklılık: </b>Solmaz, dökülmez veuzun ömürlüdür <br> </li> \n  </ul> \n  <div> \n   <br>\n  </div>\n </div>\n",
       "dimensionalWeight": 0,
-      "hasActiveCampaign": false,
+      "hasActiveCampaign": true,
       "id": "da4f27dfe987bb5f1b6f669ddb243909",
       "images": [
         {
@@ -673,13 +673,13 @@
       "lastUpdateDate": 1747393718000,
       "listPrice": 1429,
       "locked": false,
-      "onSale": false,
+      "onSale": true,
       "pimCategoryId": 2995,
       "platformListingId": "315cbd931f44404f5ab18aed1f5b639a",
       "productCode": 1325759980,
       "productContentId": 936973111,
       "productMainId": "MSA0000000002",
-      "quantity": 0,
+      "quantity": 2,
       "salePrice": 1429,
       "stockCode": "",
       "stockUnitType": "Adet",
@@ -4459,7 +4459,7 @@
       "productCode": 1314286037,
       "productContentId": 929367523,
       "productMainId": "ASK0000000004",
-      "quantity": 2,
+      "quantity": 1,
       "salePrice": 709,
       "stockCode": "",
       "stockUnitType": "Adet",
@@ -5356,5 +5356,6 @@
       "hb_stock": 1
     }
   ],
-  "last_updated": "2025-05-31T17:30:06.192631"
+  "last_updated": "2025-05-31T20:59:24.276377",
+  "last_updated_turkey": "31.05.2025 20:59:24"
 }
