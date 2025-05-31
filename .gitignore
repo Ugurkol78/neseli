@@ -1,1 +1,17 @@
+# Sensitive files
 .env
+users.json
+match.json
+*.xlsx
+debug.log
+
+# Python cache
+__pycache__/
+*.pyc
+
+# System files
+.DS_Store
+Yedek/
+
+# Static files
+static/robots.txt

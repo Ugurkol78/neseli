@@ -2,112 +2,554 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8" />
-    <title>Trendyol Ürün Listesi</title>
+    <title>Trendyol ve Hepsiburada Stok Yönetimi</title>
     <style>
-        /* Menü CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
         nav {
-            background-color: #333;
-            padding: 10px;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
         }
         nav a {
-            color: white;
-            margin-right: 15px;
+            color: #4a5568;
+            margin-right: 20px;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
         nav a:hover {
-            text-decoration: underline;
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
         }
 
-        /* Orijinal index sayfası CSS'si */
-        table {
-            border-collapse: collapse;
-            width: 100%;
+        .header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
+
+        h1 {
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+
+        .table-wrapper {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            overflow: visible;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
         th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
+            padding: 12px 16px;
             text-align: center;
             vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
         }
+        
         th {
-            background-color: #eee;
+            background: #f8fafc;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: visible;
+            z-index: 15000;
         }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.04);
+        }
+        
+        tbody tr:nth-child(even) {
+            background: rgba(248, 250, 252, 0.6);
+        }
+        
+        tbody tr:nth-child(even):hover {
+            background: rgba(102, 126, 234, 0.06);
+        }
+        
+        /* Trendyol ve Hepsiburada bölümleri için renk kodlaması */
+        .ty-section {
+            background-color: #ffffff;
+        }
+        .hb-section {
+            background-color: #f8f9fa;
+        }
+        
+        /* Sadece thead içindeki th'ler için mavi arka plan */
+        thead th {
+            background: #667eea !important;
+            color: white !important;
+        }
+        
+        /* Dropdown butonları için özel stil - daha güçlü kurallar */
+        thead th .dropdown-button,
+        .dropdown-button {
+            background: white !important;
+            color: #2d3748 !important;
+            border: 1.5px solid #e2e8f0 !important;
+            font-size: 14px !important;
+            text-align: center !important;
+        }
+        
+        thead th .dropdown-button:hover,
+        .dropdown-button:hover {
+            border-color: #667eea !important;
+            color: #2d3748 !important;
+        }
+        
+        /* Input alanları için özel stil */
+        thead th input[type="text"],
+        thead input[type="text"] {
+            background: white !important;
+            color: #2d3748 !important;
+            border: 1.5px solid #e2e8f0 !important;
+            text-transform: uppercase !important;
+        }
+        
+        thead th input[type="text"]:focus,
+        thead input[type="text"]:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            color: #2d3748 !important;
+        }
+        
+        thead th input[type="text"]::placeholder,
+        thead input[type="text"]::placeholder {
+            color: #a0aec0 !important;
+        }
+        
+        /* Button için özel stil */
+        thead th button,
+        thead button {
+            background: #e53e3e !important;
+            color: white !important;
+        }
+        
+        thead th button:hover,
+        thead button:hover {
+            background: #c53030 !important;
+            color: white !important;
+        }
+        
         img.product-img {
-            height: 100px;
+            height: 80px;
             width: auto;
-            border-radius: 4px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
         }
-        /* Ürün adı sola hizalı */
-        td:nth-child(6) {
-            text-align: left;
-            padding-left: 10px;
+        
+        img.product-img:hover {
+            transform: scale(1.05);
         }
+        
         input[type=number] {
-            padding: 4px;
-            font-size: 14px;
             width: 80px;
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #2d3748;
         }
+        
+        input[type=text] {
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            background: white;
+            color: #2d3748;
+        }
+        
+        input[type=number]:focus,
+        input[type=text]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type=number]::placeholder,
+        input[type=text]::placeholder {
+            color: #a0aec0;
+        }
+        
         button.update-btn {
-            padding: 5px 10px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            background: #48bb78;
+            color: white;
+        }
+        
+        button.update-btn:hover:not(:disabled) {
+            background: #38a169;
+            transform: translateY(-1px);
+        }
+        
+        button.update-btn:disabled {
+            background: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #clearFiltersBtn {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            background: #e53e3e;
+            color: white;
+        }
+        
+        #clearFiltersBtn:hover {
+            background: #c53030;
+            transform: translateY(-1px);
+        }
+        
+        /* Filtre satırı için stil */
+        thead tr.filter-row th {
+            font-weight: normal;
+            font-size: 13px;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        /* Dropdown için stil */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100px;
+            text-align: left;
+            user-select: none;
+            z-index: 20000;
+        }
+        .dropdown-button {
+            width: 100%;
+            padding: 8px 12px;
             font-size: 14px;
             cursor: pointer;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+            color: #2d3748;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
         }
-        button.update-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
+        .dropdown-button:hover {
+            border-color: #667eea;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white !important;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+            z-index: 20001;
+            max-height: 150px;
+            overflow-y: auto;
+            width: 100%;
+            min-width: 120px;
+        }
+        .dropdown-content label {
+            display: block;
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 1px solid #f7fafc;
+            transition: all 0.2s ease;
+            color: #2d3748 !important;
+            background: white !important;
+        }
+        .dropdown-content label:hover {
+            background: #f7fafc !important;
+            color: #2d3748 !important;
+        }
+        .dropdown-content label:last-child {
+            border-bottom: none;
+        }
+        
+        /* Checkbox'lar için de renk düzeltmesi */
+        .dropdown-content input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        /* Stok göstergesi CSS */
+        .stock-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .stock-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .stock-red {
+            background-color: #e74c3c;
+        }
+        .stock-yellow {
+            background-color: #f39c12;
+        }
+        .stock-green {
+            background-color: #27ae60;
+        }
+        .stock-gray {
+            background-color: #95a5a6;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
         }
     </style>
 </head>
 <body>
 
+<div class="container">
     <nav>
         <a href="{{ url_for('index') }}">Stok Güncelleme</a>
         <a href="{{ url_for('match') }}">Eşleştirme</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
+        {% endif %}
+        <a href="{{ url_for('profile') }}">Profil</a>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <span style="color: #4a5568; font-size: 14px;">Hoş geldin, {{ session.username }}! 
+                {% if session.role == 'admin' %}<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
+            </span>
+            <a href="{{ url_for('logout') }}" style="background: #e53e3e; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">Çıkış</a>
+        </div>
     </nav>
 
-    <h1>Trendyol Ürün Listesi</h1>
+    <div class="header">
+        <h1>Trendyol ve Hepsiburada Stok Yönetimi</h1>
+    </div>
 
-    <table id="productsTable">
-        <thead>
-            <tr>
-                <th>Resim</th>
-                <th>Barkod</th>
-                <th>Stok</th>
-                <th>Yeni Stok</th>
-                <th>Güncelle</th>
-                <th>Ürün Adı</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in products %}
-            <tr>
-                <td>
-                    {% if product.images and product.images|length > 0 %}
-                        <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-img" />
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ product.barcode }}</td>
-                <td class="current-stock">{{ product.quantity }}</td>
-                <td>
-                    <input type="number" min="0" value="" class="new-stock-input" />
-                </td>
-                <td>
-                    <button type="button" class="update-btn" disabled>Güncelle</button>
-                </td>
-                <td>{{ product.title }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table id="productsTable">
+            <thead>
+                <tr>
+                    <th>Resim</th>
+                    <th class="ty-section">TY Barkod</th>
+                    <th class="ty-section">TY Stok</th>
+                    <th class="ty-section">TY Yeni Stok</th>
+                    <th class="ty-section">TY Güncelle</th>
+                    <th class="hb-section">HB Barkod</th>
+                    <th class="hb-section">HB Stok</th>
+                    <th class="hb-section">HB Yeni Stok</th>
+                    <th class="hb-section">HB Güncelle</th>
+                </tr>
+                <tr class="filter-row">
+                    <th>
+                        <button id="clearFiltersBtn">Filtreleri Temizle</button>
+                    </th>
+                    <th class="ty-section">
+                        <input type="text" id="barcodeFilter" placeholder="TY Barkod filtrele" />
+                    </th>
+                    <th class="ty-section">
+                        <div class="dropdown" id="stockDropdown">
+                            <div class="dropdown-button" id="stockDropdownBtn">Filtre</div>
+                            <div class="dropdown-content" id="stockDropdownContent">
+                                <label><input type="checkbox" class="stock-filter" value="0" /> 0</label>
+                                <label><input type="checkbox" class="stock-filter" value="1" /> 1</label>
+                                <label><input type="checkbox" class="stock-filter" value="2" /> 2</label>
+                                <label><input type="checkbox" class="stock-filter" value="3" /> 3</label>
+                                <label><input type="checkbox" class="stock-filter" value="4" /> 4</label>
+                                <label><input type="checkbox" class="stock-filter" value="5" /> ≥5</label>
+                            </div>
+                        </div>
+                    </th>
+                    <th class="ty-section"></th>
+                    <th class="ty-section"></th>
+                    <th class="hb-section">
+                        <input type="text" id="hbBarcodeFilter" placeholder="HB Barkod filtrele" />
+                    </th>
+                    <th class="hb-section">
+                        <div class="dropdown" id="hbStockDropdown">
+                            <div class="dropdown-button" id="hbStockDropdownBtn">Filtre</div>
+                            <div class="dropdown-content" id="hbStockDropdownContent">
+                                <label><input type="checkbox" class="hb-stock-filter" value="0" /> 0</label>
+                                <label><input type="checkbox" class="hb-stock-filter" value="1" /> 1</label>
+                                <label><input type="checkbox" class="hb-stock-filter" value="2" /> 2</label>
+                                <label><input type="checkbox" class="hb-stock-filter" value="3" /> 3</label>
+                                <label><input type="checkbox" class="hb-stock-filter" value="4" /> 4</label>
+                                <label><input type="checkbox" class="hb-stock-filter" value="5" /> ≥5</label>
+                                <label><input type="checkbox" class="hb-stock-filter" value="null" /> Yok</label>
+                            </div>
+                        </div>
+                    </th>
+                    <th class="hb-section"></th>
+                    <th class="hb-section"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        {% if product.images and product.images|length > 0 %}
+                            <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-img" />
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="ty-section">{{ product.barcode }}</td>
+                    <td class="ty-section">
+                        <div class="stock-container">
+                            <span class="stock-indicator ty-stock-indicator" data-stock="{{ product.quantity }}"></span>
+                            <span class="stock-number ty-stock-number">{{ product.quantity }}</span>
+                        </div>
+                    </td>
+                    <td class="ty-section">
+                        <input type="number" min="0" value="" class="ty-new-stock-input" />
+                    </td>
+                    <td class="ty-section">
+                        <button type="button" class="update-btn ty-update-btn" disabled>TY Güncelle</button>
+                    </td>
+                    <td class="hb-section hb-barcode-cell">{{ product.hb_sku or '-' }}</td>
+                    <td class="hb-section">
+                        <div class="stock-container">
+                            <span class="stock-indicator hb-stock-indicator" data-stock="{{ product.hb_stock }}"></span>
+                            <span class="stock-number hb-stock-number">
+                                {% if product.hb_stock is not none %}
+                                    {{ product.hb_stock }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="hb-section">
+                        <input type="number" min="0" value="" class="hb-new-stock-input" />
+                    </td>
+                    <td class="hb-section">
+                        <button type="button" class="update-btn hb-update-btn" disabled>HB Güncelle</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <script>
-    // Yeni stok inputu değişince buton aktif/pasif kontrolü
-    document.querySelectorAll('.new-stock-input').forEach(function(input) {
-        const button = input.closest('tr').querySelector('.update-btn');
+    // Stok göstergesinin rengini güncelle
+    function updateStockIndicator(indicatorElement, stockValue) {
+        // Önce tüm renk sınıflarını kaldır
+        indicatorElement.classList.remove('stock-red', 'stock-yellow', 'stock-green', 'stock-gray');
+        
+        if (stockValue === null || stockValue === undefined || stockValue === '' || stockValue === 'None' || stockValue === 'null') {
+            indicatorElement.classList.add('stock-gray');
+        } else {
+            const stock = parseInt(stockValue);
+            if (!isNaN(stock)) {
+                // Stok değerine göre renk belirle
+                if (stock === 0) {
+                    indicatorElement.classList.add('stock-red');
+                } else if (stock >= 1 && stock <= 4) {
+                    indicatorElement.classList.add('stock-yellow');
+                } else if (stock >= 5) {
+                    indicatorElement.classList.add('stock-green');
+                }
+            } else {
+                indicatorElement.classList.add('stock-gray');
+            }
+        }
+        
+        // Data attribute'u güncelle
+        indicatorElement.setAttribute('data-stock', stockValue);
+    }
+
+    // Sayfa yüklendiğinde tüm stok göstergelerini ayarla
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.stock-indicator').forEach(function(indicator) {
+            const stockValue = indicator.getAttribute('data-stock');
+            updateStockIndicator(indicator, stockValue);
+        });
+    });
+
+    // Trendyol yeni stok inputu değişince buton aktif/pasif kontrolü
+    document.querySelectorAll('.ty-new-stock-input').forEach(function(input) {
+        const button = input.closest('tr').querySelector('.ty-update-btn');
         
         input.addEventListener('input', function() {
             if (this.value !== '' && Number(this.value) >= 0) {
@@ -118,12 +560,35 @@
         });
     });
 
-    // Güncelle butonuna tıklanınca API çağrısı yap
-    document.querySelectorAll('.update-btn').forEach(function(button) {
+    // Hepsiburada yeni stok inputu değişince buton aktif/pasif kontrolü
+    document.querySelectorAll('.hb-new-stock-input').forEach(function(input) {
+        const row = input.closest('tr');
+        const button = row.querySelector('.hb-update-btn');
+        const hbBarcodeCell = row.querySelector('.hb-barcode-cell');
+        const hbSku = hbBarcodeCell.innerText.trim();
+        
+        // Eğer HB SKU yoksa butonu tamamen devre dışı bırak
+        if (hbSku === '-' || hbSku === '') {
+            button.disabled = true;
+            input.disabled = true;
+            return;
+        }
+        
+        input.addEventListener('input', function() {
+            if (this.value !== '' && Number(this.value) >= 0) {
+                button.disabled = false;
+            } else {
+                button.disabled = true;
+            }
+        });
+    });
+
+    // Trendyol güncelle butonuna tıklanınca API çağrısı yap
+    document.querySelectorAll('.ty-update-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             const row = button.closest('tr');
             const barcode = row.querySelectorAll('td')[1].innerText.trim();
-            const newStockInput = row.querySelector('.new-stock-input');
+            const newStockInput = row.querySelector('.ty-new-stock-input');
             const newQuantity = Number(newStockInput.value);
 
             if (isNaN(newQuantity) || newQuantity < 0) {
@@ -155,24 +620,235 @@
                 if (data.message) {
                     alert(data.message);
                     // Yeni stok değerini stok sütununa yaz
-                    row.querySelector('.current-stock').innerText = newQuantity;
+                    const stockNumberElement = row.querySelector('.ty-stock-number');
+                    const stockIndicatorElement = row.querySelector('.ty-stock-indicator');
+                    
+                    stockNumberElement.innerText = newQuantity;
+                    updateStockIndicator(stockIndicatorElement, newQuantity);
+                    
                     newStockInput.value = '';
                     button.disabled = true;
-                    button.innerText = 'Güncelle';
+                    button.innerText = 'TY Güncelle';
                 } else if (data.error) {
                     alert('Hata: ' + data.error);
                     button.disabled = false;
-                    button.innerText = 'Güncelle';
+                    button.innerText = 'TY Güncelle';
                 }
             })
             .catch(error => {
                 alert('İstek gönderilirken hata oluştu.');
                 console.error(error);
                 button.disabled = false;
-                button.innerText = 'Güncelle';
+                button.innerText = 'TY Güncelle';
             });
         });
     });
+
+    // Hepsiburada güncelle butonuna tıklanınca API çağrısı yap
+    document.querySelectorAll('.hb-update-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const row = button.closest('tr');
+            const hbBarcodeCell = row.querySelector('.hb-barcode-cell');
+            const merchantSku = hbBarcodeCell.innerText.trim();
+            const newStockInput = row.querySelector('.hb-new-stock-input');
+            const newQuantity = Number(newStockInput.value);
+
+            if (merchantSku === '-' || merchantSku === '') {
+                alert('Bu ürün için Hepsiburada eşleştirmesi bulunmuyor.');
+                return;
+            }
+
+            if (isNaN(newQuantity) || newQuantity < 0) {
+                alert('Lütfen geçerli bir stok miktarı giriniz.');
+                return;
+            }
+
+            const payload = {
+                merchant_sku: merchantSku,
+                quantity: newQuantity
+            };
+
+            button.disabled = true;
+            button.innerText = 'Güncelleniyor...';
+
+            fetch('/update_hb_stock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    // Yeni stok değerini stok sütununa yaz
+                    const stockNumberElement = row.querySelector('.hb-stock-number');
+                    const stockIndicatorElement = row.querySelector('.hb-stock-indicator');
+                    
+                    stockNumberElement.innerText = newQuantity;
+                    updateStockIndicator(stockIndicatorElement, newQuantity);
+                    
+                    newStockInput.value = '';
+                    button.disabled = true;
+                    button.innerText = 'HB Güncelle';
+                } else if (data.error) {
+                    alert('Hata: ' + data.error);
+                    button.disabled = false;
+                    button.innerText = 'HB Güncelle';
+                }
+            })
+            .catch(error => {
+                alert('İstek gönderilirken hata oluştu.');
+                console.error(error);
+                button.disabled = false;
+                button.innerText = 'HB Güncelle';
+            });
+        });
+    });
+
+    // Filtreleme işlemleri
+    const barcodeFilter = document.getElementById('barcodeFilter');
+    const hbBarcodeFilter = document.getElementById('hbBarcodeFilter');
+    const stockDropdownBtn = document.getElementById('stockDropdownBtn');
+    const stockDropdownContent = document.getElementById('stockDropdownContent');
+    const stockFilters = stockDropdownContent.querySelectorAll('.stock-filter');
+    const hbStockDropdownBtn = document.getElementById('hbStockDropdownBtn');
+    const hbStockDropdownContent = document.getElementById('hbStockDropdownContent');
+    const hbStockFilters = hbStockDropdownContent.querySelectorAll('.hb-stock-filter');
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    const tableBody = document.querySelector('#productsTable tbody');
+
+    function filterTable() {
+        const barcodeVal = barcodeFilter.value.trim().toUpperCase();
+        const hbBarcodeVal = hbBarcodeFilter.value.trim().toUpperCase();
+        const selectedStocks = Array.from(stockFilters)
+                                .filter(cb => cb.checked)
+                                .map(cb => cb.value);
+        const selectedHbStocks = Array.from(hbStockFilters)
+                                .filter(cb => cb.checked)
+                                .map(cb => cb.value);
+
+        // Eğer stok filtresi boşsa, tüm stok değerleri kabul edilsin
+        const filterStocks = selectedStocks.length > 0 ? selectedStocks : null;
+        const filterHbStocks = selectedHbStocks.length > 0 ? selectedHbStocks : null;
+
+        for (const row of tableBody.rows) {
+            const tyBarcode = row.cells[1].innerText.toUpperCase();
+            const hbBarcode = row.cells[5].innerText.toUpperCase();
+            const tyStockText = row.querySelector('.ty-stock-number').innerText.trim();
+            const hbStockText = row.querySelector('.hb-stock-number').innerText.trim();
+            
+            let tyStock = parseInt(tyStockText);
+            let hbStock = parseInt(hbStockText);
+            if (isNaN(tyStock)) tyStock = -1;
+            if (isNaN(hbStock)) hbStock = -1;
+
+            // Barkod filtreleme: Başlangıçta arama (prefix)
+            const tyBarcodeMatch = tyBarcode.startsWith(barcodeVal);
+            const hbBarcodeMatch = hbBarcode.startsWith(hbBarcodeVal);
+
+            // TY Stok filtreleme:
+            let tyStockMatch = false;
+            if (!filterStocks) {
+                tyStockMatch = true; // filtre yoksa tüm stoklar kabul
+            } else {
+                for (const val of filterStocks) {
+                    if (val === '5') {
+                        if (tyStock >= 5) {
+                            tyStockMatch = true;
+                            break;
+                        }
+                    } else {
+                        if (tyStock === parseInt(val)) {
+                            tyStockMatch = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // HB Stok filtreleme:
+            let hbStockMatch = false;
+            if (!filterHbStocks) {
+                hbStockMatch = true; // filtre yoksa tüm stoklar kabul
+            } else {
+                for (const val of filterHbStocks) {
+                    if (val === '5') {
+                        if (hbStock >= 5) {
+                            hbStockMatch = true;
+                            break;
+                        }
+                    } else if (val === 'null') {
+                        if (hbStockText === '-' || hbStock === -1) {
+                            hbStockMatch = true;
+                            break;
+                        }
+                    } else {
+                        if (hbStock === parseInt(val)) {
+                            hbStockMatch = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (tyBarcodeMatch && hbBarcodeMatch && tyStockMatch && hbStockMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+
+    barcodeFilter.addEventListener('input', filterTable);
+    hbBarcodeFilter.addEventListener('input', filterTable);
+
+    // TY Dropdown toggle
+    stockDropdownBtn.addEventListener('click', () => {
+        if (stockDropdownContent.style.display === 'block') {
+            stockDropdownContent.style.display = 'none';
+        } else {
+            stockDropdownContent.style.display = 'block';
+        }
+    });
+
+    // HB Dropdown toggle
+    hbStockDropdownBtn.addEventListener('click', () => {
+        if (hbStockDropdownContent.style.display === 'block') {
+            hbStockDropdownContent.style.display = 'none';
+        } else {
+            hbStockDropdownContent.style.display = 'block';
+        }
+    });
+
+    // Dropdown dışında tıklanırsa kapat
+    document.addEventListener('click', (event) => {
+        if (!stockDropdownBtn.contains(event.target) && !stockDropdownContent.contains(event.target)) {
+            stockDropdownContent.style.display = 'none';
+        }
+        if (!hbStockDropdownBtn.contains(event.target) && !hbStockDropdownContent.contains(event.target)) {
+            hbStockDropdownContent.style.display = 'none';
+        }
+    });
+
+    // Checkbox değişince filtrele
+    stockFilters.forEach(cb => {
+        cb.addEventListener('change', filterTable);
+    });
+    hbStockFilters.forEach(cb => {
+        cb.addEventListener('change', filterTable);
+    });
+
+    // Filtreleri temizle butonu
+    clearFiltersBtn.addEventListener('click', () => {
+        barcodeFilter.value = '';
+        hbBarcodeFilter.value = '';
+        stockFilters.forEach(cb => cb.checked = false);
+        hbStockFilters.forEach(cb => cb.checked = false);
+        filterTable();
+    });
+
 </script>
 
 </body>

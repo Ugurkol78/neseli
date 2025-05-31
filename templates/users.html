@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Kullanıcı Yönetimi - Stok Yönetimi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+        }
+        nav a {
+            color: #4a5568;
+            margin-right: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        nav a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+
+        .add-user-form {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .add-user-form h2 {
+            color: #2d3748;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #2d3748;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #2d3748;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+            transform: translateY(-1px);
+        }
+
+        .table-wrapper {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.04);
+        }
+        
+        tbody tr:nth-child(even) {
+            background: rgba(248, 250, 252, 0.6);
+        }
+        
+        tbody tr:nth-child(even):hover {
+            background: rgba(102, 126, 234, 0.06);
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .role-user {
+            background: #48bb78;
+            color: white;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .alert.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav>
+        <a href="{{ url_for('index') }}">Stok Güncelleme</a>
+        <a href="{{ url_for('match') }}">Eşleştirme</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
+        {% endif %}
+        <a href="{{ url_for('profile') }}">Profil</a>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <span style="color: #4a5568; font-size: 14px;">Hoş geldin, {{ session.username }}! 
+                {% if session.role == 'admin' %}<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
+            </span>
+            <a href="{{ url_for('logout') }}" style="background: #e53e3e; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">Çıkış</a>
+        </div>
+    </nav>
+
+    <div class="header">
+        <h1>Kullanıcı Yönetimi</h1>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="add-user-form">
+        <h2>Yeni Kullanıcı Ekle</h2>
+        <form method="POST" action="{{ url_for('add_user_route') }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Kullanıcı Adı</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Şifre</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Rol</label>
+                    <select id="role" name="role" required>
+                        <option value="user">Kullanıcı</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Kullanıcı Ekle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Kullanıcı Adı</th>
+                    <th>Rol</th>
+                    <th>Oluşturulma Tarihi</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for username, user_data in users.items() %}
+                <tr>
+                    <td>{{ username }}</td>
+                    <td>
+                        <span class="role-badge role-{{ user_data.role }}">{{ user_data.role }}</span>
+                    </td>
+                    <td>
+                        {% if user_data.created_at %}
+                            {{ user_data.created_at[:19].replace('T', ' ') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if username != session.username %}
+                            <button type="button" onclick="resetPassword('{{ username }}')" class="btn btn-warning" style="background: #f39c12; margin-right: 5px;">Şifre Sıfırla</button>
+                            <a href="{{ url_for('delete_user', username=username) }}" 
+                               class="btn btn-danger"
+                               onclick="return confirm('{{ username }} kullanıcısını silmek istediğinizden emin misiniz?')">Sil</a>
+                        {% else %}
+                            <span style="color: #718096; font-size: 12px;">Mevcut kullanıcı</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function resetPassword(username) {
+    const newPassword = prompt(`${username} kullanıcısı için yeni şifre girin:`);
+    
+    if (newPassword === null) {
+        return; // Kullanıcı iptal etti
+    }
+    
+    if (newPassword.length < 4) {
+        alert('Şifre en az 4 karakter olmalıdır!');
+        return;
+    }
+    
+    if (confirm(`${username} kullanıcısının şifresini değiştirmek istediğinizden emin misiniz?`)) {
+        // Form oluştur ve gönder
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/reset_password/${username}`;
+        
+        const passwordInput = document.createElement('input');
+        passwordInput.type = 'hidden';
+        passwordInput.name = 'new_password';
+        passwordInput.value = newPassword;
+        
+        form.appendChild(passwordInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+</body>
+</html>

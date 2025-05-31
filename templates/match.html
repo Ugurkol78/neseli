@@ -1,208 +1,614 @@
+<!-- 
+  Match HTML v27
+  - Modern minimalist tasarım uygulandı
+  - Soft renkler ve temiz tipografi
+  - Tüm fonksiyonlar korundu
+  - Header yüksekliği azaltıldı
+  - Tablo başlığı mavi yapıldı
+-->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Ürün Eşleştirme</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    nav { background: #333; padding: 10px; margin-bottom: 20px; }
-    nav a { color: white; margin-right: 15px; text-decoration: none; font-weight: bold; }
-    nav a:hover { text-decoration: underline; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #2c3e50;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    nav {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 12px 20px;
+      margin-bottom: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      display: flex;
+      align-items: center;
+    }
+    nav a {
+      color: #4a5568;
+      margin-right: 20px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 15px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    nav a:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-1px);
+    }
 
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-    th { background: #f5f5f5; }
-    img { height: 60px; border-radius: 4px; }
+    .header {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 16px 24px;
+      margin-bottom: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
 
-    input[type="text"] { width: 150px; padding: 5px; }
-    button { padding: 6px 12px; font-size: 14px; }
+    h2 {
+      color: #2d3748;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .stats {
+      color: #4a5568;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    
+    .stats strong {
+      color: #2d3748;
+      font-weight: 600;
+    }
+    
+    .stat-number {
+      color: #667eea;
+      font-weight: 700;
+    }
+
+    .table-wrapper {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px 16px;
+      text-align: center;
+      vertical-align: middle;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    th {
+      background: #667eea;
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+    
+    tbody tr:hover {
+      background: rgba(102, 126, 234, 0.04);
+    }
+    
+    tbody tr:nth-child(even) {
+      background: rgba(248, 250, 252, 0.6);
+    }
+    
+    tbody tr:nth-child(even):hover {
+      background: rgba(102, 126, 234, 0.06);
+    }
+    
+    img {
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+    
+    img:hover {
+      transform: scale(1.05);
+    }
+
+    input[type="text"] {
+      width: 160px;
+      padding: 8px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      background: white;
+      color: #2d3748;
+    }
+    
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    input[type="text"]::placeholder {
+      color: #a0aec0;
+    }
+    
+    button {
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      background: #48bb78;
+      color: white;
+    }
+    
+    button:hover:not(:disabled) {
+      background: #38a169;
+      transform: translateY(-1px);
+    }
+    
+    button:disabled {
+      background: #cbd5e0;
+      color: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     .dropdown-list {
       position: absolute;
       background: white;
-      border: 1px solid #ccc;
-      max-height: 200px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      max-height: 220px;
       overflow-y: auto;
-      width: 150px;
+      width: 260px;
       z-index: 1000;
       display: none;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
     }
 
     .dropdown-item {
-      padding: 5px;
-      display: flex;
-      align-items: center;
+      padding: 10px 12px;
       cursor: pointer;
+      border-bottom: 1px solid #f7fafc;
+      text-align: left;
+      transition: all 0.2s ease;
     }
-
     .dropdown-item:hover {
-      background: #eee;
+      background: #f7fafc;
+    }
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+    .dropdown-item strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .dropdown-item small {
+      color: #718096;
+      font-size: 12px;
+      line-height: 1.4;
     }
 
-    .dropdown-item img {
-      height: 30px;
-      margin-right: 10px;
+    .relative { 
+      position: relative; 
+    }
+    
+    .hb-link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    .hb-link:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      padding-right: 24px;
+      transition: all 0.2s ease;
+    }
+    .sortable:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .sortable::after {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 4px solid #ffffff;
+      margin-bottom: 5px;
+    }
+    .sortable::before {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 4px solid #ffffff;
+      margin-top: 5px;
+    }
+    .sortable.asc::after {
+      border-bottom-color: rgba(255, 255, 255, 0.3);
+    }
+    .sortable.asc::before {
+      border-top-color: #ffffff;
+    }
+    .sortable.desc::after {
+      border-bottom-color: #ffffff;
+    }
+    .sortable.desc::before {
+      border-top-color: rgba(255, 255, 255, 0.3);
     }
 
-    .relative { position: relative; }
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e0;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a0aec0;
+    }
   </style>
 </head>
 <body>
+
+<div class="container">
   <nav>
     <a href="{{ url_for('index') }}">Stok Güncelleme</a>
     <a href="{{ url_for('match') }}">Eşleştirme</a>
+    {% if session.role == 'admin' %}
+    <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
+    {% endif %}
+    <a href="{{ url_for('profile') }}">Profil</a>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+      <span style="color: #4a5568; font-size: 14px;">Hoş geldin, {{ session.username }}! 
+        {% if session.role == 'admin' %}<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
+      </span>
+      <a href="{{ url_for('logout') }}" style="background: #e53e3e; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">Çıkış</a>
+    </div>
   </nav>
 
-  <h2>Ürün Eşleştirme</h2>
+  <div class="header">
+    <h2>Ürün Eşleştirme</h2>
+    <div class="stats">
+      <strong>Toplam Trendyol Ürünü:</strong> <span class="stat-number">{{ trendyol_products|length }}</span> | 
+      <strong>Toplam Hepsiburada Ürünü:</strong> <span class="stat-number">{{ hepsiburada_products|length }}</span> | 
+      <strong>Trendyol Eşleşme Bulunmayan:</strong> <span class="stat-number" id="unmatchedTyCount">{{ trendyol_products|selectattr('matched_hb_sku', 'equalto', '')|list|length }}</span> |
+      <strong>Hepsiburada Eşleştirme Yapılmamış:</strong> <span class="stat-number" id="unmatchedHbCount">{{ hepsiburada_products|length }}</span>
+    </div>
+  </div>
 
-  <form id="matchForm">
-    <table>
-      <thead>
-        <tr>
-          <th>Sıra No</th>
-          <th>Trendyol Barkod</th>
-          <th>Trendyol Foto</th>
-          <th>Hepsiburada Barkod</th>
-          <th>Hepsiburada Foto</th>
-          <th>Kaydet/Güncelle</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for product in trendyol_products %}
-        <tr data-trendyol="{{ product.barcode }}">
-          <td>{{ loop.index }}</td>
-          <td>{{ product.barcode }}</td>
-          <td>
-            {% if product.images %}
-              <img src="{{ product.images[0].url }}" alt="Trendyol Resim">
-            {% else %}-{% endif %}
-          </td>
-          <td>
-            <div class="relative">
-              <input type="text" class="hb-input" value="{{ product.matched_hb_barcode }}">
-              <div class="dropdown-list"></div>
-            </div>
-          </td>
-          <td class="hb-image-cell">
-            {% for p in trendyol_products %}
-              {% if p.barcode == product.matched_hb_barcode %}
-                {% if p.images %}
-                  <img src="{{ p.images[0].url }}" alt="Hepsiburada Resim">
-                {% endif %}
-              {% endif %}
-            {% endfor %}
-          </td>
-          <td><button type="button" class="save-btn">Kaydet</button></td>
-        </tr>
-        {% endfor %}
+  <div class="table-wrapper">
+    <form id="matchForm">
+      <table>
+    <thead>
+      <tr>
+        <th>Sıra No</th>
+        <th class="sortable" id="barcodeSort">Trendyol Barkod</th>
+        <th>Trendyol Foto</th>
+        <th>HepsiBurada Barkod</th>
+        <th>HepsiBurada Link</th>
+        <th>Kaydet/Güncelle</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in trendyol_products %}
+      <tr data-trendyol="{{ product.barcode }}" data-matched="{{ product.matched_hb_sku or '' }}">
+        <td>{{ loop.index }}</td>
+        <td>{{ product.barcode }}</td>
+        <td>
+          {% if product.images and product.images|length > 0 %}
+            <img src="{{ product.images[0].url }}" alt="Trendyol Resim" style="height:60px;">
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>
+          <div class="relative">
+            <input type="text" class="hb-input" value="{{ product.matched_hb_sku or '' }}" autocomplete="off" placeholder="HB Barkod ara..." />
+            <div class="dropdown-list"></div>
+          </div>
+        </td>
+        <td class="hb-link-cell">
+          {% if product.matched_hb_sku %}
+            {% set matched_hb_product = hepsiburada_products | selectattr('merchantSku', 'equalto', product.matched_hb_sku) | list | first %}
+            {% if matched_hb_product and matched_hb_product.hepsiburadaSku %}
+              <a href="https://www.hepsiburada.com/ara?q={{ matched_hb_product.hepsiburadaSku }}" target="_blank" class="hb-link">
+                Hepsiburada'da Görüntüle
+              </a>
+            {% else %}
+              -
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>
+          <button type="button" class="save-btn" disabled>Kaydet</button>
+        </td>
+      </tr>
+      {% endfor %}
       </tbody>
     </table>
-    <br>
-    <button type="submit">Tümünü Kaydet</button>
-  </form>
+    </form>
+  </div>
+</div>
 
-  <script>
-    const allProducts = {{ trendyol_products | tojson }};
-    const inputs = document.querySelectorAll(".hb-input");
-    const saveButtons = document.querySelectorAll(".save-btn");
+<script>
+  const hepsiburadaProducts = {{ hepsiburada_products | tojson }};
+  const inputs = document.querySelectorAll(".hb-input");
 
-    // Sayfa açılır açılmaz tüm Kaydet butonlarını pasif yap
-    saveButtons.forEach(btn => btn.disabled = true);
-
-    inputs.forEach(input => {
-      const dropdown = input.nextElementSibling;
-      const tr = input.closest("tr");
-      const saveBtn = tr.querySelector(".save-btn");
-
-      input.addEventListener("input", () => {
-        // Input değeri değiştiği anda o satırdaki Kaydet butonunu aktif yap
-        saveBtn.disabled = false;
-
-        if (input.value.trim() === "") {
-        const tr = input.closest("tr");
-        const cell = tr.querySelector(".hb-image-cell");
-        cell.innerHTML = "";
-        dropdown.style.display = "none";
-        return;
-        }
-        
-        const value = input.value.toLowerCase();
-        dropdown.innerHTML = "";
-
-        if (!value) {
-          dropdown.style.display = "none";
-          return;
-        }
-
-        const matches = allProducts.filter(p => p.barcode.toLowerCase().includes(value));
-        if (matches.length === 0) {
-          dropdown.style.display = "none";
-          return;
-        }
-
-        matches.forEach(p => {
-          const item = document.createElement("div");
-          item.className = "dropdown-item";
-          const img = document.createElement("img");
-          img.src = p.images && p.images[0] ? p.images[0].url : '';
-          const span = document.createElement("span");
-          span.textContent = p.barcode;
-          item.appendChild(img);
-          item.appendChild(span);
-
-          item.onclick = () => {
-            input.value = p.barcode;
-            const tr = input.closest("tr");
-            const cell = tr.querySelector(".hb-image-cell");
-            cell.innerHTML = p.images && p.images[0] ? `<img src="${p.images[0].url}" alt="HB Resim">` : "-";
-            dropdown.style.display = "none";
-          };
-
-          dropdown.appendChild(item);
-        });
-
-        dropdown.style.display = "block";
-      });
-
-      document.addEventListener("click", e => {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.style.display = "none";
-        }
-      });
-    });
-
-    // Tek tek satır kaydet (isteğe bağlı kullanılabilir)
-document.querySelectorAll(".save-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const tr = btn.closest("tr");
-    const ty = tr.getAttribute("data-trendyol");
-    const hb = tr.querySelector(".hb-input").value.trim();
-
-    fetch("/save_match", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ matches: { [ty]: hb } })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.error) {
-       alert("Hata: " + data.error);
+  // Eşleştirme sayılarını güncelle
+  function updateMatchCounts() {
+    // Trendyol eşleşmeyenleri say - data-matched attribute'una göre
+    let unmatchedTyCount = 0;
+    const matchedSkus = new Set();
+    
+    document.querySelectorAll("tbody tr").forEach(row => {
+      const savedSku = row.getAttribute("data-matched").trim();
+      if (savedSku === "") {
+        unmatchedTyCount++;
+      } else {
+        matchedSkus.add(savedSku);
       }
-      // Başarı mesajını popup ile gösterme, sessiz geç
-      btn.disabled = true;
-    })
+    });
+    
+    // HB eşleşmeyenleri say - sadece kaydedilmiş eşleştirmelere göre
+    const unmatchedHbCount = hepsiburadaProducts.length - matchedSkus.size;
+    
+    document.getElementById('unmatchedTyCount').textContent = unmatchedTyCount;
+    document.getElementById('unmatchedHbCount').textContent = unmatchedHbCount;
+  }
 
-    //.then(data => {
-    //  alert(data.message || "Kaydedildi");
-    //  btn.disabled = true;  // sadece o satırın butonunu pasif yap
-    //})
+  // Sayfa yüklendiğinde hesapla
+  updateMatchCounts();
 
+  // Sorting için orijinal sırayı sakla
+  const originalOrder = Array.from(document.querySelectorAll("tbody tr"));
+  let currentSort = 'original'; // 'original', 'asc', 'desc'
 
-    .catch(err => {
-      alert("Hata oluştu: " + err);
+  // Trendyol Barkod sütunu sorting
+  document.getElementById('barcodeSort').addEventListener('click', () => {
+    const tbody = document.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const sortHeader = document.getElementById('barcodeSort');
+    
+    // Sorting durumunu güncelle
+    if (currentSort === 'original') {
+      currentSort = 'asc';
+      sortHeader.className = 'sortable asc';
+      // A'dan Z'ye sırala
+      rows.sort((a, b) => {
+        const barcodeA = a.getAttribute('data-trendyol');
+        const barcodeB = b.getAttribute('data-trendyol');
+        return barcodeA.localeCompare(barcodeB);
+      });
+    } else if (currentSort === 'asc') {
+      currentSort = 'desc';
+      sortHeader.className = 'sortable desc';
+      // Z'den A'ya sırala
+      rows.sort((a, b) => {
+        const barcodeA = a.getAttribute('data-trendyol');
+        const barcodeB = b.getAttribute('data-trendyol');
+        return barcodeB.localeCompare(barcodeA);
+      });
+    } else {
+      currentSort = 'original';
+      sortHeader.className = 'sortable';
+      // Orijinal sıraya dön
+      rows.length = 0;
+      rows.push(...originalOrder);
+    }
+    
+    // Satırları yeniden sırala
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Sıra numaralarını güncelle
+    rows.forEach((row, index) => {
+      row.querySelector('td:first-child').textContent = index + 1;
     });
   });
-});
-  </script>
+
+  inputs.forEach(input => {
+    const dropdown = input.nextElementSibling;
+    const tr = input.closest("tr");
+    const saveBtn = tr.querySelector(".save-btn");
+
+    function updateSaveBtnState() {
+      const currentVal = input.value.trim();
+      const matchedVal = tr.getAttribute("data-matched").trim();
+      if(currentVal !== matchedVal && currentVal !== ""){
+        saveBtn.disabled = false;
+      } else if(currentVal === "" && matchedVal !== ""){
+        saveBtn.disabled = false;
+      } else {
+        saveBtn.disabled = true;
+      }
+    }
+    updateSaveBtnState();
+
+    input.addEventListener("input", () => {
+      const value = input.value.toLowerCase();
+      dropdown.innerHTML = "";
+
+      updateSaveBtnState();
+
+      // Kaydedilmiş (data-matched) merchantSku'ları topla (mevcut satır hariç)
+      const usedSkus = new Set();
+      document.querySelectorAll("tbody tr").forEach(row => {
+        if (row !== tr) { // Mevcut satır hariç
+          const savedSku = row.getAttribute("data-matched").trim();
+          if (savedSku) {
+            usedSkus.add(savedSku);
+          }
+        }
+      });
+
+      // Hepsiburada ürünlerinde ara (merchantSku ve başlıkta) - kaydedilmiş olanları filtrele
+      let matches;
+      if (!value) {
+        // Input boşsa tüm kullanılmamış ürünleri göster
+        matches = hepsiburadaProducts.filter(p => !usedSkus.has(p.merchantSku));
+      } else {
+        // Input doluysa filtrelenmiş sonuçları göster
+        matches = hepsiburadaProducts.filter(p => 
+          ((p.merchantSku && p.merchantSku.toLowerCase().includes(value)) ||
+          (p.productName && p.productName.toLowerCase().includes(value))) &&
+          !usedSkus.has(p.merchantSku) // Daha önce kaydedilmemiş olanlar
+        );
+      }
+      
+      if (matches.length === 0) {
+        dropdown.style.display = "none";
+        if (!value) {
+          // Input boş ise link de sil
+          const hbLinkCell = tr.querySelector(".hb-link-cell");
+          hbLinkCell.innerHTML = "-";
+        }
+        return;
+      }
+
+      matches.slice(0, 10).forEach(p => { // İlk 10 sonucu göster
+        const item = document.createElement("div");
+        item.className = "dropdown-item";
+
+        const skuElement = document.createElement("strong");
+        skuElement.textContent = p.merchantSku || 'Barkod yok';
+
+        item.appendChild(skuElement);
+
+        item.onclick = () => {
+          input.value = p.merchantSku || '';
+          const linkCell = tr.querySelector(".hb-link-cell");
+          if (p.hepsiburadaSku) {
+            linkCell.innerHTML = `<a href="https://www.hepsiburada.com/ara?q=${p.hepsiburadaSku}" target="_blank" class="hb-link">Hepsiburada'da Görüntüle</a>`;
+          } else {
+            linkCell.innerHTML = "-";
+          }
+          dropdown.style.display = "none";
+          updateSaveBtnState();
+        };
+
+        dropdown.appendChild(item);
+      });
+
+      dropdown.style.display = "block";
+    });
+
+    // Input'a tıklandığında dropdown'u aç
+    input.addEventListener("focus", () => {
+      // Input event trigger et ki dropdown açılsın
+      const event = new Event('input', { bubbles: true });
+      input.dispatchEvent(event);
+    });
+
+    // Dropdown dışına tıklanınca gizle
+    document.addEventListener("click", e => {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+
+    // Save butonuna tıklanınca kaydet
+    saveBtn.addEventListener("click", () => {
+      saveBtn.disabled = true;
+      const trendyolBarcode = tr.getAttribute("data-trendyol");
+      const hepsiburadaSku = input.value.trim();
+
+      const payload = {};
+      payload[trendyolBarcode] = hepsiburadaSku;
+
+      fetch("/save_match", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ matches: payload })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.error){
+          alert("Hata: " + data.error);
+          saveBtn.disabled = false;
+        } else {
+          // Başarılı ise eşleşmeyi data-matched güncelle, butonu pasif yap
+          tr.setAttribute("data-matched", hepsiburadaSku);
+          updateSaveBtnState();
+          updateMatchCounts(); // Kaydetme sonrası sayıları güncelle
+        }
+      })
+      .catch(() => {
+        alert("İşlem sırasında hata oluştu.");
+        saveBtn.disabled = false;
+      });
+    });
+  });
+
+</script>
+
 </body>
 </html>
