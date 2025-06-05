@@ -62,39 +62,49 @@ def calculate_vat_exclusive(amount_including_vat, vat_rate=20):
 def calculate_profit_analysis(barcode, sale_price, cost_data):
     """Kar analizi hesaplama"""
     try:
+
+        # Güvenli float dönüştürme fonksiyonu
+        def safe_float(value, default=0):
+            if value == '' or value is None:
+                return default
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return default
+
         # Üretim giderleri toplamı (KDV dahil)
         production_total = 0.0
         production_vat_total = 0.0
         
         for cost_item in cost_data.get('production_costs', []):
             if cost_item.get('amount', 0) > 0:
-                amount = float(cost_item['amount'])
+                amount = safe_float(cost_item['amount'])
                 vat = calculate_vat(amount)
                 production_total += amount + vat
                 production_vat_total += vat
         
         # Kargo gideri hesaplama (düzeltildi - işlem önceliği)
-        cargo_amount = float(cost_data.get('cargo_cost', 0))  # Kargo bedeli (KDV dahil)
+        cargo_amount = safe_float(cost_data.get('cargo_cost', 0))  # Kargo bedeli (KDV dahil)
         cargo_vat = cargo_amount - (cargo_amount / 1.2)  # Kargo KDV'si
         cargo_exclusive = cargo_amount - cargo_vat  # KDV'siz kargo (sadece bilgi amaçlı)
         cargo_total = cargo_amount  # Toplam gidere KDV dahil tutar dahil edilir
         
         # Komisyon hesaplama (düzeltildi)
-        commission_rate = float(cost_data.get('commission_rate', 0)) / 100
+        commission_rate = safe_float(cost_data.get('commission_rate', 0)) / 100
         commission_amount = sale_price * commission_rate  # Komisyon tutarı (toplam gidere dahil)
         commission_vat = commission_amount - (commission_amount / 1.2)  # Komisyon KDV'si
         commission_total = commission_amount + commission_vat  # Toplam komisyon
         
         # Stopaj hesaplama
-        withholding_rate = float(cost_data.get('withholding_rate', 0)) / 100
+        withholding_rate = safe_float(cost_data.get('withholding_rate', 0)) / 100
         withholding_amount = sale_price * withholding_rate
         
         # Diğer giderler hesaplama
-        other_rate = float(cost_data.get('other_expenses_rate', 0)) / 100
+        other_rate = safe_float(cost_data.get('other_expenses_rate', 0)) / 100
         other_expenses = sale_price * other_rate
         
         # Platform bedeli
-        platform_fee = float(cost_data.get('platform_fee', 6.6))
+        platform_fee = safe_float(cost_data.get('platform_fee', 6.6))
         
         # Hesaplanan KDV (satış fiyatının %20'si)
         calculated_vat = calculate_vat(sale_price)
