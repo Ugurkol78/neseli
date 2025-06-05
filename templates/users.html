@@ -254,6 +254,7 @@
     <nav>
         <a href="{{ url_for('index') }}">Stok Güncelleme</a>
         <a href="{{ url_for('match') }}">Eşleştirme</a>
+        <a href="{{ url_for('costs') }}">Kar Takip</a>
         {% if session.role == 'admin' %}
         <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
         {% endif %}

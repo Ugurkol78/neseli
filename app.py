@@ -13,6 +13,36 @@ from openpyxl import load_workbook, Workbook
 import shutil
 import logging
 import pytz
+import traceback
+
+from cost_tracking import log_cost_data_change
+
+# cost_management import'unu try-catch ile yap
+try:
+    from cost_management import (
+        get_all_products_with_costs, 
+        get_product_cost_data, 
+        save_product_cost_data, 
+        calculate_profit_analysis,
+        get_default_cost_structure
+    )
+    COST_MANAGEMENT_AVAILABLE = True
+    logging.info("✅ cost_management modülü başarıyla import edildi")
+except ImportError as e:
+    logging.error(f"❌ cost_management import hatası: {e}")
+    COST_MANAGEMENT_AVAILABLE = False
+    
+    # Dummy fonksiyonlar tanımla
+    def get_all_products_with_costs(products):
+        return products
+    def get_product_cost_data(barcode):
+        return {}
+    def save_product_cost_data(barcode, data):
+        return True
+    def calculate_profit_analysis(barcode, price, data):
+        return None
+    def get_default_cost_structure():
+        return {}
 
 load_dotenv()
 
@@ -235,6 +265,8 @@ def cleanup_old_files():
     if cleaned_count > 0:
         logging.info(f"Toplam {cleaned_count} eski dosya temizlendi")
 
+
+
 def save_products_to_excel_weekly(products):
     """Haftalık Excel kayıt sistemi"""
     now = datetime.now()
@@ -247,25 +279,52 @@ def save_products_to_excel_weekly(products):
     for product in products:
         ty_barcode = product.get("barcode", "Barkod yok")
         ty_quantity = product.get("quantity", 0)
+        ty_price = product.get("ty_price", 0.0)  # Trendyol fiyat bilgisi
         hb_sku = product.get("hb_sku", "-")
         hb_stock = product.get("hb_stock") if product.get("hb_stock") is not None else "-"
+        hb_price = product.get("hb_price", 0.0)  # Hepsiburada fiyat bilgisi
         
         data_rows.append({
             'Hafta': f"{year}-W{week:02d}",
             'Tarih_Saat': formatted_date,
             'TY_Barkod': ty_barcode,
             'TY_Stok': ty_quantity,
+            'TY_Fiyat': ty_price,  # Yeni kolon
             'HB_SKU': hb_sku,
-            'HB_Stok': hb_stock
+            'HB_Stok': hb_stock,
+            'HB_Fiyat': hb_price if hb_price > 0 else "-"  # Yeni kolon
         })
     
     new_df = pd.DataFrame(data_rows)
     
     try:
         if os.path.exists(filename):
+            # Mevcut dosyayı oku
             existing_df = pd.read_excel(filename)
+            
+            # ESKİ DOSYA UYUMLULUĞU: Fiyat kolonları yoksa ekle
+            if 'TY_Fiyat' not in existing_df.columns:
+                existing_df['TY_Fiyat'] = 0.0
+                logging.info("Eski Excel dosyasına TY_Fiyat kolonu eklendi")
+            
+            if 'HB_Fiyat' not in existing_df.columns:
+                existing_df['HB_Fiyat'] = "-"
+                logging.info("Eski Excel dosyasına HB_Fiyat kolonu eklendi")
+            
+            # Kolon sırasını yeni formata göre düzenle
+            expected_columns = ['Hafta', 'Tarih_Saat', 'TY_Barkod', 'TY_Stok', 'TY_Fiyat', 'HB_SKU', 'HB_Stok', 'HB_Fiyat']
+            existing_columns = list(existing_df.columns)
+            
+            # Eksik kolonları ekle
+            for col in expected_columns:
+                if col not in existing_columns:
+                    existing_df[col] = "-" if "HB_" in col else 0.0
+            
+            # Kolon sırasını düzenle
+            existing_df = existing_df.reindex(columns=expected_columns, fill_value="-")
+            
             combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-            action = "genişletildi"
+            action = "genişletildi ve güncellendi"
         else:
             combined_df = new_df
             action = "oluşturuldu"
@@ -290,6 +349,7 @@ def save_products_to_excel_weekly(products):
         logging.error(f"Haftalık Excel hatası: {str(e)}")
         save_products_to_txt_backup_weekly(products)
 
+
 def save_products_to_txt_backup_weekly(products):
     """Haftalık TXT backup sistemi"""
     now = datetime.now()
@@ -299,25 +359,29 @@ def save_products_to_txt_backup_weekly(products):
     filename = f"backup_stok_{year}_W{week:02d}_{timestamp}.txt"
 
     with open(filename, "w", encoding="utf-8") as f:
-        f.write("=" * 80 + "\n")
+        f.write("=" * 100 + "\n")
         f.write(f"🔄 HAFTALIK BACKUP STOK RAPORU\n")
         f.write(f"📅 {year} yılı {week}. hafta\n")
         f.write(f"🕐 Oluşturulma: {formatted_date}\n")
         f.write(f"📊 Ürün Sayısı: {len(products)}\n")
-        f.write("=" * 80 + "\n\n")
+        f.write("=" * 100 + "\n\n")
         
-        f.write(f"{'#':<5} {'TY_Barkod':<15} {'TY_Stok':<10} {'HB_SKU':<15} {'HB_Stok':<10}\n")
-        f.write("-" * 70 + "\n")
+        # Başlık satırı (fiyat bilgileri dahil)
+        f.write(f"{'#':<5} {'TY_Barkod':<15} {'TY_Stok':<8} {'TY_Fiyat':<10} {'HB_SKU':<15} {'HB_Stok':<8} {'HB_Fiyat':<10}\n")
+        f.write("-" * 100 + "\n")
         
         for i, product in enumerate(products, start=1):
             ty_barcode = product.get("barcode", "Barkod yok")[:14]
             ty_quantity = str(product.get("quantity", "0"))
+            ty_price = f"{product.get('ty_price', 0.0):.2f}₺"  # Trendyol fiyat
             hb_sku = str(product.get("hb_sku", "-"))[:14]
             hb_stock = str(product.get("hb_stock", "-")) if product.get("hb_stock") is not None else "-"
+            hb_price = f"{product.get('hb_price', 0.0):.2f}₺" if product.get('hb_price', 0.0) > 0 else "-"  # HB fiyat
             
-            f.write(f"{i:<5} {ty_barcode:<15} {ty_quantity:<10} {hb_sku:<15} {hb_stock:<10}\n")
+            f.write(f"{i:<5} {ty_barcode:<15} {ty_quantity:<8} {ty_price:<10} {hb_sku:<15} {hb_stock:<8} {hb_price:<10}\n")
     
-    logging.info(f"Haftalık backup TXT: {filename}")
+    logging.info(f"Haftalık backup TXT (fiyat bilgisiyle): {filename}")
+
 
 def get_excel_stats_weekly():
     """Haftalık Excel durumu hakkında bilgi ver"""
@@ -366,6 +430,7 @@ def get_excel_stats_weekly():
         "last_updated_turkey": turkey_last_updated
     }
 
+
 def get_all_products():
     all_products = []
     page = 0
@@ -385,10 +450,27 @@ def get_all_products():
         if not products:
             break
 
+
+        # Her ürün için fiyat bilgisini de dahil et
+        for product in products:
+            # Fiyat bilgisini ekle (API'den gelen price alanını kullan)
+            # Yeni kod (doğru)
+            product['ty_price'] = product.get('salePrice', 0)
+            if not product['ty_price']:
+                product['ty_price'] = product.get('listPrice', 0)
+            
+            # Fiyat bilgisini float'a çevir
+            try:
+                product['ty_price'] = float(product['ty_price']) if product['ty_price'] else 0.0
+            except (ValueError, TypeError):
+                product['ty_price'] = 0.0
+                
         all_products.extend(products)
         page += 1
 
+    logging.info(f"Toplam {len(all_products)} Trendyol ürünü fiyat bilgisiyle birlikte alındı")
     return all_products
+
 
 def get_hepsiburada_products():
     """Hepsiburada'dan tüm ürünleri çek"""
@@ -417,6 +499,17 @@ def get_hepsiburada_products():
         
         if not listings:
             break
+        
+        # Her ürün için fiyat bilgisini de dahil et
+        for product in listings:
+            # Fiyat bilgisini ekle (API'den gelen price alanını kullan)
+            product['hb_price'] = product.get('price', 0)
+            
+            # Fiyat bilgisini float'a çevir
+            try:
+                product['hb_price'] = float(product['hb_price']) if product['hb_price'] else 0.0
+            except (ValueError, TypeError):
+                product['hb_price'] = 0.0
             
         all_hb_products.extend(listings)
         
@@ -425,6 +518,7 @@ def get_hepsiburada_products():
             
         offset += limit
     
+    logging.info(f"Toplam {len(all_hb_products)} Hepsiburada ürünü fiyat bilgisiyle birlikte alındı")
     return all_hb_products
 
 def get_hepsiburada_stock_by_sku(merchant_sku):
@@ -661,6 +755,8 @@ def index():
                          products=products, 
                          last_updated=last_updated)
 
+
+
 @app.route('/refresh_data', methods=['POST'])
 @login_required
 def refresh_data():
@@ -678,12 +774,15 @@ def refresh_data():
         
         hb_products = get_hepsiburada_products()
         hb_stock_dict = {}
+        hb_price_dict = {}  # Fiyat bilgisi için yeni dict
         
         for hb_product in hb_products:
             merchant_sku = hb_product.get('merchantSku', '')
             if merchant_sku:
                 stock = hb_product.get('availableStock')
+                price = hb_product.get('hb_price', 0.0)  # Yeni eklenen fiyat bilgisi
                 hb_stock_dict[merchant_sku] = stock
+                hb_price_dict[merchant_sku] = price  # Fiyat bilgisini kaydet
         
         logging.info(f"{len(hb_products)} Hepsiburada ürünü alındı")
         
@@ -693,14 +792,18 @@ def refresh_data():
             
             product['hb_sku'] = hb_sku
             product['hb_stock'] = None
+            product['hb_price'] = 0.0  # Hepsiburada fiyat bilgisi için yeni alan
             
             if hb_sku:
                 if hb_sku in hb_stock_dict:
                     hb_stock = hb_stock_dict[hb_sku]
+                    hb_price = hb_price_dict.get(hb_sku, 0.0)  # Fiyat bilgisini al
                 else:
                     hb_stock = get_hepsiburada_stock_by_sku(hb_sku)
+                    hb_price = 0.0  # Tek tek çekerken fiyat bilgisi şimdilik 0
                     
                 product['hb_stock'] = hb_stock
+                product['hb_price'] = hb_price  # Fiyat bilgisini ürüne ekle
         
         if save_products_cache(products):
             save_products_to_excel_weekly(products)
@@ -964,6 +1067,180 @@ def update_stock():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/update_ty_data', methods=['POST'])
+@login_required
+def update_ty_data():
+    try:
+        data = request.get_json()
+        
+        if not data or 'items' not in data:
+            return jsonify({'error': 'Geçersiz istek verisi'}), 400
+            
+        # Gelen veriyi logla (debug için)
+        logging.info(f"TY Data Update Request: {data}")
+        
+        url = f"https://apigw.trendyol.com/integration/inventory/sellers/{seller_id}/products/price-and-inventory"
+        headers = {'Content-Type': 'application/json'}
+        
+        response = requests.post(
+            url,
+            auth=HTTPBasicAuth(api_key, api_secret),
+            json=data,
+            headers=headers,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            batch_id = response_data.get('batchRequestId')
+            
+            if batch_id:
+                import time
+                time.sleep(5)
+                
+                batch_status = check_batch_status(batch_id)
+                
+                item_count = batch_status.get('itemCount', 0)
+                failed_count = batch_status.get('failedItemCount', 0)
+                items = batch_status.get('items', [])
+                
+                if len(items) > 0:
+                    success_items = []
+                    failed_items = []
+                    
+                    for item in items:
+                        item_status = item.get('status', 'UNKNOWN')
+                        barcode = item.get('requestItem', {}).get('barcode', 'N/A')
+                        quantity = item.get('requestItem', {}).get('quantity', 'N/A')
+                        list_price = item.get('requestItem', {}).get('listPrice', None)
+                        sale_price = item.get('requestItem', {}).get('salePrice', None)
+                        reasons = item.get('failureReasons', [])
+                        
+                        if item_status == 'SUCCESS':
+                            update_parts = []
+                            if quantity != 'N/A':
+                                update_parts.append(f"Stok: {quantity}")
+                            if list_price is not None:
+                                update_parts.append(f"Fiyat: {list_price}₺")
+                            success_items.append(f"{barcode} → {', '.join(update_parts)}")
+                        else:
+                            failed_items.append(f"{barcode}: {', '.join(reasons)}")
+                    
+                    if failed_count == 0:
+                        update_type = "stok/fiyat" if any('Fiyat:' in item for item in success_items) else "stok"
+                        message = f"✅ TY {update_type} güncelleme başarılı! {', '.join(success_items)}"
+                    else:
+                        message = f"⚠️ TY güncelleme kısmi başarı: {len(success_items)} başarılı, {failed_count} hatalı"
+                    
+                    return jsonify({
+                        'message': message,
+                        'batch_id': batch_id,
+                        'completed': True,
+                        'success_items': success_items,
+                        'failed_items': failed_items,
+                        'item_count': item_count,
+                        'failed_count': failed_count
+                    })
+                else:
+                    return jsonify({
+                        'message': f"⏳ TY güncelleme işleniyor... ({item_count} ürün)",
+                        'batch_id': batch_id,
+                        'completed': False,
+                        'item_count': item_count,
+                        'failed_count': failed_count,
+                        'note': '5-15 dakika içinde tamamlanacak'
+                    })
+            else:
+                return jsonify({
+                    'message': 'TY verisi güncellendi',
+                    'api_response': response.text
+                })
+        else:
+            return jsonify({
+                'error': f'TY API hatası: {response.status_code}',
+                'details': response.text
+            }), 500
+    except Exception as e:
+        logging.error(f"TY Data Update Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/update_hb_price', methods=['POST'])
+@login_required
+def update_hb_price():
+    try:
+        data = request.get_json()
+        
+        if not data or 'merchant_sku' not in data or 'price' not in data:
+            return jsonify({'error': 'merchant_sku ve price alanları gerekli'}), 400
+        
+        merchant_sku = data['merchant_sku']
+        price = float(data['price'])
+        
+        if price <= 0:
+            return jsonify({'error': 'Fiyat 0\'dan büyük olmalı'}), 400
+        
+        # Gelen veriyi logla (debug için)
+        logging.info(f"HB Price Update Request: SKU={merchant_sku}, Price={price}")
+        
+        # HB için Basic Auth kullan
+        token = base64.b64encode(f"{hb_username}:{hb_password}".encode()).decode()
+        
+        # HB Fiyat güncelleme API endpoint'i
+        url = f"https://listing-external.hepsiburada.com/listings/merchantid/{hb_merchant_id}/price-uploads"
+        
+        headers = {
+            'accept': 'application/json',
+            'content-type': 'application/*+json',
+            'Authorization': f'Basic {token}',
+            'User-Agent': hb_user_agent
+        }
+        
+        # HB API payload formatı (Dokümana göre array)
+        payload = [
+            {
+                "hepsiburadaSku": None,
+                "merchantSku": merchant_sku,
+                "price": price
+            }
+        ]
+        
+        logging.info(f"HB Price Payload: {payload}")
+        
+        response = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        
+        logging.info(f"HB API Response Status: {response.status_code}")
+        logging.info(f"HB API Response Body: {response.text}")
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            
+            return jsonify({
+                'message': f'✅ HB fiyat güncellendi: {merchant_sku} → {price}₺',
+                'merchant_sku': merchant_sku,
+                'new_price': price,
+                'api_response': response_data
+            })
+        else:
+            return jsonify({
+                'error': f'HB API hatası: {response.status_code}',
+                'details': response.text
+            }), 500
+            
+    except ValueError as e:
+        return jsonify({'error': 'Geçersiz fiyat değeri'}), 400
+    except Exception as e:
+        logging.error(f"HB Price Update Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/check_batch/<batch_id>')
 @login_required
 def check_batch_route(batch_id):
@@ -1066,6 +1343,304 @@ def emergency_reset_admin_password():
         print(f"Admin şifresi başarıyla '{new_password}' olarak değiştirildi!")
     else:
         print("Admin kullanıcısı bulunamadı!")
+
+
+# Maliter routeları
+
+@app.route('/costs')
+@login_required
+def costs():
+    """Kar Takip Ana Sayfası - Güvenli Float Conversion"""
+    try:
+        # Cache'den ürünleri al
+        cached_products, last_updated = load_products_cache()
+        
+        if cached_products and len(cached_products) > 0:
+            # Ürünleri cost_data ile birleştir ve hesapla
+            products_with_costs = []
+            for product in cached_products:
+                try:
+                    barcode = product.get('barcode', '')
+                    cost_data = get_product_cost_data(barcode)
+                    
+                    # Güvenli float conversion fonksiyonu
+                    def safe_float(value, default=0):
+                        if value == '' or value is None:
+                            return default
+                        try:
+                            return float(value)
+                        except (ValueError, TypeError):
+                            return default
+                    
+                    # Üretim giderleri toplamını hesapla
+                    production_total = 0
+                    if cost_data.get('production_costs'):
+                        for cost_item in cost_data['production_costs']:
+                            amount = safe_float(cost_item.get('amount', 0))
+                            vat = amount * 0.2
+                            production_total += amount + vat
+                    
+                    # Diğer hesaplamalar - güvenli float conversion
+                    sale_price = safe_float(product.get('ty_price', 0))
+                    cargo_cost = safe_float(cost_data.get('cargo_cost', 0))
+                    commission_rate = safe_float(cost_data.get('commission_rate', 0))
+                    commission_amount = sale_price * (commission_rate / 100) if commission_rate > 0 else 0
+                    withholding_rate = safe_float(cost_data.get('withholding_rate', 0))
+                    withholding_amount = sale_price * (withholding_rate / 100) if withholding_rate > 0 else 0
+                    other_rate = safe_float(cost_data.get('other_expenses_rate', 0))
+                    other_amount = sale_price * (other_rate / 100) if other_rate > 0 else 0
+                    platform_fee = safe_float(cost_data.get('platform_fee', 6.6))
+                    
+                    # Kar analizi hesapla
+                    profit_analysis = None
+                    if sale_price > 0:
+                        try:
+                            profit_analysis = calculate_profit_analysis(barcode, sale_price, cost_data)
+                        except:
+                            profit_analysis = None
+                    
+                    # Hesaplanmış değerleri ekle
+                    calculated_values = {
+                        'production_total': production_total,
+                        'cargo_cost': cargo_cost,
+                        'commission_amount': commission_amount,
+                        'withholding_amount': withholding_amount,
+                        'other_amount': other_amount,
+                        'platform_fee': platform_fee
+                    }
+                    
+                    product_copy = product.copy()
+                    product_copy['cost_data'] = cost_data
+                    product_copy['calculated'] = calculated_values
+                    product_copy['profit_analysis'] = profit_analysis
+                    
+                    products_with_costs.append(product_copy)
+                    
+                except Exception as product_error:
+                    print(f"Ürün işleme hatası {barcode}: {product_error}")
+                    # Hatalı ürünü de ekle ama boş değerlerle
+                    product_copy = product.copy()
+                    product_copy['cost_data'] = {}
+                    product_copy['calculated'] = {
+                        'production_total': 0,
+                        'cargo_cost': 0,
+                        'commission_amount': 0,
+                        'withholding_amount': 0,
+                        'other_amount': 0,
+                        'platform_fee': 6.6
+                    }
+                    product_copy['profit_analysis'] = None
+                    products_with_costs.append(product_copy)
+            
+            return render_template('costs.html', 
+                                 products=products_with_costs,
+                                 cache_empty=False,
+                                 last_updated=last_updated)
+        else:
+            return render_template('costs.html', 
+                                 products=[], 
+                                 cache_empty=True,
+                                 last_updated=None)
+        
+    except Exception as e:
+        print(f"Costs genel hatası: {e}")
+        return render_template('costs.html', 
+                             products=[], 
+                             cache_empty=True,
+                             last_updated=None)
+
+@app.route('/cost_detail/<barcode>')
+@login_required
+def cost_detail(barcode):
+    """Ürün Maliyet Detay Sayfası"""
+    try:
+        # Cache'den ürün bilgisini al
+        cached_products, _ = load_products_cache()
+        
+        # Barkoda göre ürünü bul
+        product = None
+        for p in cached_products:
+            if p.get('barcode') == barcode:
+                product = p
+                break
+        
+        if not product:
+            flash('Ürün bulunamadı!', 'error')
+            return redirect(url_for('costs'))
+        
+        # Maliyet verilerini al
+        cost_data = get_product_cost_data(barcode)
+        
+        # Kar analizini hesapla
+        sale_price = float(product.get('ty_price', 0))
+        profit_analysis = calculate_profit_analysis(barcode, sale_price, cost_data)
+        
+        return render_template('cost_detail.html',
+                             product=product,
+                             cost_data=cost_data,
+                             profit_analysis=profit_analysis)
+        
+    except Exception as e:
+        logging.error(f"Maliyet detay sayfası hatası: {str(e)}")
+        flash('Ürün detay verileri yüklenirken hata oluştu!', 'error')
+        return redirect(url_for('costs'))
+
+@app.route('/save_cost_data', methods=['POST'])
+@login_required
+def save_cost_data():
+    """Maliyet Verilerini Kaydet"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'barcode' not in data:
+            return jsonify({'error': 'Geçersiz istek verisi'}), 400
+        
+        barcode = data['barcode']
+        cost_data = data.get('cost_data', {})
+        
+        if not barcode:
+            return jsonify({'error': 'Barkod gerekli'}), 400
+        
+        if save_product_cost_data(barcode, cost_data):
+            sale_price = float(cost_data.get('sale_price', 0))
+            profit_analysis = calculate_profit_analysis(barcode, sale_price, cost_data)
+            
+
+            # Excel'e kayıt yap
+            try:
+                # Ürün bilgisini cache'den al
+                cached_products, _ = load_products_cache()
+                product_title = None
+                for p in cached_products:
+                    if p.get('barcode') == barcode:
+                        product_title = p.get('title', '')
+                        break
+        
+                # Excel'e kaydet
+                log_cost_data_change(barcode, product_title, session['username'], cost_data, profit_analysis)
+            except Exception as e:
+                logging.error(f"Excel kayıt hatası: {str(e)}")
+                # Excel hatası olsa bile ana fonksiyonu bozmasın
+
+
+            return jsonify({
+                'message': 'Maliyet verileri başarıyla kaydedildi',
+                'profit_analysis': profit_analysis
+            })
+        else:
+            return jsonify({'error': 'Maliyet verileri kaydedilemedi'}), 500
+            
+    except Exception as e:
+        logging.error(f"Maliyet verisi kayıt hatası: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/update_sale_price', methods=['POST'])
+@login_required
+def update_sale_price():
+    """Yeni Satış Fiyatını Trendyol'a Gönder"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'barcode' not in data or 'new_price' not in data:
+            return jsonify({'error': 'Barkod ve yeni fiyat gerekli'}), 400
+        
+        barcode = data['barcode']
+        new_price = float(data['new_price'])
+        
+        if new_price <= 0:
+            return jsonify({'error': 'Fiyat 0\'dan büyük olmalı'}), 400
+        
+        payload = {
+            'items': [
+                {
+                    'barcode': barcode,
+                    'listPrice': new_price,
+                    'salePrice': new_price
+                }
+            ]
+        }
+        
+        url = f"https://apigw.trendyol.com/integration/inventory/sellers/{seller_id}/products/price-and-inventory"
+        headers = {'Content-Type': 'application/json'}
+        
+        response = requests.post(
+            url,
+            auth=HTTPBasicAuth(api_key, api_secret),
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return jsonify({
+                'message': f'✅ Fiyat güncellendi: {barcode} → {new_price}₺',
+                'barcode': barcode,
+                'new_price': new_price
+            })
+        else:
+            return jsonify({
+                'error': f'Trendyol API hatası: {response.status_code}',
+                'details': response.text
+            }), 500
+            
+    except Exception as e:
+        logging.error(f"Fiyat güncelleme hatası: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/debug-cache')
+@login_required
+def debug_cache():
+    """Cache debug sayfası"""
+    try:
+        # Dosya varlığı kontrol
+        cache_exists = os.path.exists(PRODUCTS_CACHE_FILE)
+        
+        if not cache_exists:
+            return f"❌ Cache dosyası bulunamadı: {PRODUCTS_CACHE_FILE}"
+        
+        # Dosya boyutu
+        file_size = os.path.getsize(PRODUCTS_CACHE_FILE)
+        
+        # Manuel okuma
+        with open(PRODUCTS_CACHE_FILE, 'r', encoding='utf-8') as f:
+            cache_content = json.load(f)
+        
+        products = cache_content.get('products', [])
+        last_updated = cache_content.get('last_updated_turkey', 'Bilinmiyor')
+        
+        # load_products_cache fonksiyonu test
+        test_products, test_updated = load_products_cache()
+        
+        html = f"""
+        <h1>🔧 Cache Debug</h1>
+        <p><strong>Dosya:</strong> {PRODUCTS_CACHE_FILE}</p>
+        <p><strong>Dosya var mı:</strong> {'✅ Evet' if cache_exists else '❌ Hayır'}</p>
+        <p><strong>Dosya boyutu:</strong> {file_size} bytes</p>
+        
+        <h3>Manuel Okuma:</h3>
+        <p><strong>Ürün sayısı:</strong> {len(products)}</p>
+        <p><strong>Son güncelleme:</strong> {last_updated}</p>
+        
+        <h3>load_products_cache() Fonksiyonu:</h3>
+        <p><strong>Ürün sayısı:</strong> {len(test_products) if test_products else 0}</p>
+        <p><strong>Son güncelleme:</strong> {test_updated}</p>
+        
+        <h3>İlk 3 Ürün:</h3>
+        """
+        
+        for i, product in enumerate(products[:3]):
+            barcode = product.get('barcode', 'Yok')
+            title = product.get('title', 'Yok')[:50]
+            price = product.get('ty_price', 0)
+            html += f"<p>{i+1}. Barkod: {barcode}, Fiyat: {price}₺, Başlık: {title}...</p>"
+        
+        html += f'<br><a href="/costs">Costs Sayfasını Dene</a>'
+        
+        return html
+        
+    except Exception as e:
+        return f"❌ Debug hatası: {str(e)}"
 
 if __name__ == "__main__":
     import sys

@@ -1,0 +1,69 @@
+{
+  "BLK0000000066": {
+    "production_costs": [
+      {
+        "name": "2 Açık Pembe Papatya",
+        "amount": 80
+      },
+      {
+        "name": "1 koyu Pembe Papatya",
+        "amount": 40
+      },
+      {
+        "name": "2 Mor Papatya",
+        "amount": 80
+      },
+      {
+        "name": "Saksı",
+        "amount": 42
+      },
+      {
+        "name": "Köpük,silikon, yosun",
+        "amount": 50
+      },
+      {
+        "name": "Koli",
+        "amount": 60
+      },
+      {
+        "name": "Askı",
+        "amount": 30
+      }
+    ],
+    "cargo_cost": 178,
+    "commission_rate": 18.2,
+    "withholding_rate": 1,
+    "other_expenses_rate": 1,
+    "platform_fee": 6.6,
+    "sale_price": 999,
+    "last_updated": "2025-06-05T23:00:09.834587"
+  },
+  "last_updated": "2025-06-05T23:00:09.834652",
+  "AGC0000000003": {
+    "production_costs": [
+      {
+        "name": "1 Demet Areka",
+        "amount": 400
+      },
+      {
+        "name": "Saksı",
+        "amount": 71.81
+      },
+      {
+        "name": "Köpük, silikon, yosun",
+        "amount": 20
+      },
+      {
+        "name": "Koli",
+        "amount": 80
+      }
+    ],
+    "cargo_cost": 170,
+    "commission_rate": 18.2,
+    "withholding_rate": 1,
+    "other_expenses_rate": 1,
+    "platform_fee": 6.6,
+    "sale_price": 1199,
+    "last_updated": "2025-06-05T21:15:52.715680"
+  }
+}

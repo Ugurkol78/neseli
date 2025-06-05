@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Kar Takip - Stok Yönetimi</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        
+        nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+        }
+        nav a {
+            color: #4a5568;
+            margin-right: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        nav a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left h1 {
+            color: #2d3748;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .last-updated {
+            color: #4a5568;
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+
+        .stats-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .profit-summary {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .profit-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .profit-value {
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .total-profit {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+
+        .avg-margin {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .no-data-message {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin-bottom: 24px;
+        }
+
+        .no-data-message h3 {
+            color: #2d3748;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .no-data-message p {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .table-wrapper {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1600px;
+        }
+        
+        th, td {
+            padding: 8px 10px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            height: 42px;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+            height: 60px;
+        }
+        
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.04);
+        }
+        
+        tbody tr:nth-child(even) {
+            background: rgba(248, 250, 252, 0.6);
+        }
+        
+        tbody tr:nth-child(even):hover {
+            background: rgba(102, 126, 234, 0.06);
+        }
+
+        img.product-img {
+            height: 50px;
+            width: auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+        
+        img.product-img:hover {
+            transform: scale(1.05);
+        }
+
+        .barcode-cell {
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: underline;
+            transition: color 0.2s ease;
+        }
+
+        .barcode-cell:hover {
+            color: #5a67d8;
+        }
+
+        .currency-value {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .profit-positive {
+            color: #48bb78;
+        }
+
+        .profit-negative {
+            color: #e53e3e;
+        }
+
+        .profit-neutral {
+            color: #718096;
+        }
+
+        .margin-high {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .margin-medium {
+            background: #fefcbf;
+            color: #744210;
+        }
+
+        .margin-low {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        input[type=number] {
+            width: 80px;
+            padding: 4px 6px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 11px;
+            transition: all 0.2s ease;
+            background: white;
+            color: #2d3748;
+            height: 28px;
+            box-sizing: border-box;
+        }
+
+        input[type=number]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .update-price-btn {
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            background: #f093fb;
+            color: white;
+            height: 28px;
+            box-sizing: border-box;
+        }
+        
+        .update-price-btn:hover:not(:disabled) {
+            background: #e879f9;
+            transform: translateY(-1px);
+        }
+        
+        .update-price-btn:disabled {
+            background: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .alert.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+
+        /* Filtreleme ve Sıralama Stilleri */
+        .filter-section {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 6px 10px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            height: 32px;
+        }
+
+        #barcodeFilter {
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .filter-group input:focus, .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-btn, .clear-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            height: 32px;
+        }
+
+        .filter-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .clear-btn {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #c53030;
+            transform: translateY(-1px);
+        }
+
+        .results-count {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #0050b3;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th.sortable:hover {
+            background: #5a67d8;
+        }
+
+        th.sortable::after {
+            content: ' ⇅';
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 10px;
+        }
+
+        th.sort-asc::after {
+            content: ' ↑';
+            color: #ffd700;
+        }
+
+        th.sort-desc::after {
+            content: ' ↓';
+            color: #ffd700;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+            font-style: italic;
+            background: rgba(248, 250, 252, 0.8);
+        }
+
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats-section {
+                justify-content: center;
+            }
+            
+            .container {
+                max-width: 100%;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <nav>
+        <a href="{{ url_for('index') }}">Stok Güncelleme</a>
+        <a href="{{ url_for('match') }}">Eşleştirme</a>
+        <a href="{{ url_for('costs') }}">Kar Takip</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
+        {% endif %}
+        <a href="{{ url_for('profile') }}">Profil</a>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <span style="color: #4a5568; font-size: 14px;">Hoş geldin, {{ session.username }}! 
+                {% if session.role == 'admin' %}<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
+            </span>
+            <a href="{{ url_for('logout') }}" style="background: #e53e3e; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">Çıkış</a>
+        </div>
+    </nav>
+
+    <div class="header">
+        <div class="header-left">
+            <h1>💰 Kar Takip ve Maliyet Analizi</h1>
+            <p class="last-updated">
+                {% if last_updated %}
+                    Son güncelleme: {{ last_updated[:19].replace('T', ' ') }}
+                {% else %}
+                    Henüz veri yüklenmedi
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+
+        {% if not cache_empty and products %}
+    <!-- Filtreleme Bölümü -->
+    <div class="filter-section">
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label for="barcodeFilter">🔍 Barkod Filtresi</label>
+                <input type="text" id="barcodeFilter" placeholder="Barkod ara..." />
+            </div>
+            
+            <div class="filter-group">
+                <label for="profitFilter">📊 Kar Durumu</label>
+                <select id="profitFilter">
+                    <option value="">Tümü</option>
+                    <option value="positive">Karlı (> 0%)</option>
+                    <option value="negative">Zararlı (< 0%)</option>
+                    <option value="zero">Başabaş (= 0%)</option>
+                    <option value="high">Yüksek Kar (> 20%)</option>
+                    <option value="medium">Orta Kar (10-20%)</option>
+                    <option value="low">Düşük Kar (0-10%)</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sortBy">🔄 Sıralama</label>
+                <select id="sortBy">
+                    <option value="">Varsayılan</option>
+                    <option value="profit_rate_desc">Kar Oranı (Yüksek→Düşük)</option>
+                    <option value="profit_rate_asc">Kar Oranı (Düşük→Yüksek)</option>
+                    <option value="barcode_asc">Barkod (A→Z)</option>
+                    <option value="barcode_desc">Barkod (Z→A)</option>
+                    <option value="price_desc">Fiyat (Yüksek→Düşük)</option>
+                    <option value="price_asc">Fiyat (Düşük→Yüksek)</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <button type="button" class="filter-btn" onclick="applyFilters()">🔍 Filtrele</button>
+            </div>
+            
+            <div class="filter-group">
+                <button type="button" class="clear-btn" onclick="clearFilters()">🗑️ Temizle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sonuç Sayısı -->
+    <div class="results-count" id="resultsCount">
+        Toplam {{ products|length }} ürün gösteriliyor
+    </div>
+    {% endif %}
+
+
+    {% if cache_empty %}
+    <div class="no-data-message">
+        <h3>📦 Henüz veri yüklenmedi</h3>
+        <p>Kar analizi için önce ana sayfadan "Verileri Yenile" butonuna tıklayarak Trendyol verilerini yükleyin.</p>
+        <a href="{{ url_for('index') }}" style="background: #667eea; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Ana Sayfaya Git</a>
+    </div>
+    {% elif not products %}
+    <div class="no-data-message">
+        <h3>📊 Ürün bulunamadı</h3>
+        <p>Kar takibi için ürün verisi bulunamadı.</p>
+    </div>
+    {% else %}
+
+    <div class="table-wrapper">
+        <table id="costsTable">
+            <thead>
+                <tr>
+                    <th>Resim</th>
+                    <th class="sortable" onclick="sortTable('barcode')">Barkod</th>
+                    <th>Üretim Maliyeti</th>
+                    <th>Kargo Gideri</th>
+                    <th>Komisyon</th>
+                    <th>Stopaj</th>
+                    <th>Diğer Gider</th>
+                    <th>Platform Bedeli</th>
+                    <th>Ödenecek KDV</th>
+                    <th class="sortable" onclick="sortTable('price')">Satış Fiyatı</th>
+                    <th>Kar Tutarı</th>
+                    <th class="sortable" onclick="sortTable('profit_rate')">Kar Oranı</th>
+                    <th>Yeni Satış Fiyatı</th>
+                    <th>Fiyatı Gönder</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr data-barcode="{{ product.barcode }}" 
+                    data-price="{{ product.ty_price or 0 }}"
+                    data-profit-rate="{% if product.profit_analysis and product.profit_analysis.profit_rate is defined %}{{ product.profit_analysis.profit_rate }}{% else %}0{% endif %}">
+                    <td>
+                        {% if product.images and product.images|length > 0 %}
+                            <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-img" />
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="barcode-cell" onclick="openCostDetail('{{ product.barcode }}')">
+                            {{ product.barcode }}
+                        </span>
+                    </td>
+                    <td class="currency-value">
+                        {% if product.calculated and product.calculated.production_total %}
+                            {{ "{:.2f}".format(product.calculated.production_total) }}₺
+                        {% else %}
+                            0.00₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {% if product.calculated and product.calculated.cargo_cost %}
+                            {{ "{:.2f}".format(product.calculated.cargo_cost) }}₺
+                        {% else %}
+                            0.00₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {% if product.calculated and product.calculated.commission_amount %}
+                            {{ "{:.2f}".format(product.calculated.commission_amount) }}₺
+                        {% else %}
+                            0.00₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {% if product.calculated and product.calculated.withholding_amount %}
+                            {{ "{:.2f}".format(product.calculated.withholding_amount) }}₺
+                        {% else %}
+                            0.00₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {% if product.calculated and product.calculated.other_amount %}
+                            {{ "{:.2f}".format(product.calculated.other_amount) }}₺
+                        {% else %}
+                            0.00₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {% if product.calculated and product.calculated.platform_fee %}
+                            {{ "{:.2f}".format(product.calculated.platform_fee) }}₺
+                        {% else %}
+                            6.60₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {% if product.profit_analysis and product.profit_analysis.net_vat %}
+                            {{ "{:.2f}".format(product.profit_analysis.net_vat) }}₺
+                        {% else %}
+                            0.00₺
+                        {% endif %}
+                    </td>
+                    <td class="currency-value">
+                        {{ "{:.2f}".format(product.ty_price) if product.ty_price else "0.00" }}₺
+                    </td>
+                    <td class="currency-value">
+                        {% if product.profit_analysis and product.profit_analysis.profit_amount is defined %}
+                            {% set profit = product.profit_analysis.profit_amount %}
+                            <span class="{% if profit > 0 %}profit-positive{% elif profit < 0 %}profit-negative{% else %}profit-neutral{% endif %}">
+                                {{ "{:.2f}".format(profit) }}₺
+                            </span>
+                        {% else %}
+                            <span class="profit-neutral">0.00₺</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if product.profit_analysis and product.profit_analysis.profit_rate is defined %}
+                            {% set margin = product.profit_analysis.profit_rate %}
+                            <span class="currency-value {% if margin > 20 %}margin-high{% elif margin > 10 %}margin-medium{% else %}margin-low{% endif %}">
+                                {{ "{:.1f}".format(margin) }}%
+                            </span>
+                        {% else %}
+                            <span class="currency-value margin-low">0.0%</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <input type="number" min="0" step="0.01" value="" class="new-price-input" placeholder="Yeni fiyat" data-barcode="{{ product.barcode }}" />
+                    </td>
+                    <td>
+                        <button type="button" class="update-price-btn" onclick="updateSalePrice('{{ product.barcode }}')">Fiyat Gönder</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Alert gösterme fonksiyonu
+    function showAlert(message, type = 'success') {
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        const alert = document.createElement('div');
+        alert.className = `alert ${type}`;
+        alert.textContent = message;
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    // Maliyet detay sayfasına git
+    function openCostDetail(barcode) {
+        window.location.href = `/cost_detail/${barcode}`;
+    }
+
+    // Satış fiyatı güncelleme
+    async function updateSalePrice(barcode) {
+        const input = document.querySelector(`input[data-barcode="${barcode}"]`);
+        const newPrice = parseFloat(input.value);
+        
+        if (!newPrice || newPrice <= 0) {
+            showAlert('Lütfen geçerli bir fiyat giriniz.', 'error');
+            return;
+        }
+        
+        const button = event.target;
+        button.disabled = true;
+        button.textContent = 'Gönderiliyor...';
+        
+        try {
+            const response = await fetch('/update_sale_price', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    barcode: barcode,
+                    new_price: newPrice
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(data.message, 'success');
+                
+                // Satış fiyatı sütununu güncelle
+                const row = button.closest('tr');
+                const salePriceCell = row.cells[9];
+                salePriceCell.innerHTML = `<span class="currency-value">${newPrice.toFixed(2)}₺</span>`;
+                
+                // Input'u temizle
+                input.value = '';
+                
+                // Sayfa yenileme öner
+                setTimeout(() => {
+                    if (confirm('Fiyat güncellendi! Kar analizini yenilemek için sayfayı yenilemek ister misiniz?')) {
+                        window.location.reload();
+                    }
+                }, 2000);
+                
+            } else {
+                showAlert(data.error || 'Fiyat güncelleme hatası', 'error');
+            }
+        } catch (error) {
+            showAlert('Ağ hatası: ' + error.message, 'error');
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Fiyat Gönder';
+        }
+    }
+
+// Filtreleme ve sıralama değişkenleri
+    let originalData = [];
+    let currentSort = { column: null, direction: 'asc' };
+
+    // Sayfa yüklendiğinde
+    document.addEventListener('DOMContentLoaded', function() {
+        // Orijinal verileri sakla
+        const tbody = document.querySelector('#costsTable tbody');
+        if (tbody) {
+            const rows = tbody.querySelectorAll('tr');
+            originalData = Array.from(rows).map(row => row.cloneNode(true));
+            
+            // Input alanlarına olay dinleyicileri ekle
+            const barcodeFilter = document.getElementById('barcodeFilter');
+            const profitFilter = document.getElementById('profitFilter');
+            const sortBy = document.getElementById('sortBy');
+            
+            if (barcodeFilter) {
+                barcodeFilter.addEventListener('input', debounce(applyFilters, 300));
+                barcodeFilter.addEventListener('input', function() {
+                    this.value = this.value.toUpperCase();
+                });
+            }
+            if (profitFilter) profitFilter.addEventListener('change', applyFilters);
+            if (sortBy) sortBy.addEventListener('change', applySorting);
+        }
+    });
+
+    // Debounce fonksiyonu
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Filtreleri uygula
+    function applyFilters() {
+        const barcodeFilter = document.getElementById('barcodeFilter');
+        const profitFilter = document.getElementById('profitFilter');
+        
+        if (!barcodeFilter || !profitFilter) return;
+        
+        const barcodeValue = barcodeFilter.value.toLowerCase();
+        const profitValue = profitFilter.value;
+        
+        let filteredData = originalData.filter(row => {
+            const barcode = row.dataset.barcode.toLowerCase();
+            const profitRate = parseFloat(row.dataset.profitRate) || 0;
+            
+            // Barkod filtresi
+            const barcodeMatch = barcode.includes(barcodeValue);
+            
+            // Kar oranı filtresi
+            let profitMatch = true;
+            switch (profitValue) {
+                case 'positive':
+                    profitMatch = profitRate > 0;
+                    break;
+                case 'negative':
+                    profitMatch = profitRate < 0;
+                    break;
+                case 'zero':
+                    profitMatch = profitRate === 0;
+                    break;
+                case 'high':
+                    profitMatch = profitRate > 20;
+                    break;
+                case 'medium':
+                    profitMatch = profitRate >= 10 && profitRate <= 20;
+                    break;
+                case 'low':
+                    profitMatch = profitRate >= 0 && profitRate < 10;
+                    break;
+            }
+            
+            return barcodeMatch && profitMatch;
+        });
+        
+        // Tabloyu güncelle
+        updateTable(filteredData);
+        updateResultsCount(filteredData.length);
+    }
+
+    // Sıralamayı uygula
+    function applySorting() {
+        const sortBy = document.getElementById('sortBy');
+        if (!sortBy) return;
+        
+        const sortValue = sortBy.value;
+        const tbody = document.querySelector('#costsTable tbody');
+        if (!tbody) return;
+        
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        if (!sortValue) return;
+        
+        rows.sort((a, b) => {
+            let aVal, bVal;
+            
+            switch (sortValue) {
+                case 'profit_rate_desc':
+                    aVal = parseFloat(a.dataset.profitRate) || 0;
+                    bVal = parseFloat(b.dataset.profitRate) || 0;
+                    return bVal - aVal;
+                    
+                case 'profit_rate_asc':
+                    aVal = parseFloat(a.dataset.profitRate) || 0;
+                    bVal = parseFloat(b.dataset.profitRate) || 0;
+                    return aVal - bVal;
+                    
+                case 'barcode_asc':
+                    aVal = a.dataset.barcode.toLowerCase();
+                    bVal = b.dataset.barcode.toLowerCase();
+                    return aVal.localeCompare(bVal);
+                    
+                case 'barcode_desc':
+                    aVal = a.dataset.barcode.toLowerCase();
+                    bVal = b.dataset.barcode.toLowerCase();
+                    return bVal.localeCompare(aVal);
+                    
+                case 'price_desc':
+                    aVal = parseFloat(a.dataset.price) || 0;
+                    bVal = parseFloat(b.dataset.price) || 0;
+                    return bVal - aVal;
+                    
+                case 'price_asc':
+                    aVal = parseFloat(a.dataset.price) || 0;
+                    bVal = parseFloat(b.dataset.price) || 0;
+                    return aVal - bVal;
+            }
+        });
+        
+        // Sıralanmış satırları tabloya ekle
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Tablo sütununa göre sıralama
+    function sortTable(column) {
+        const tbody = document.querySelector('#costsTable tbody');
+        if (!tbody) return;
+        
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        // Sıralama yönünü belirle
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+        }
+        
+        // Başlık göstergelerini güncelle
+        updateSortHeaders(column, currentSort.direction);
+        
+        // Sıralama
+        rows.sort((a, b) => {
+            let aVal, bVal;
+            
+            switch (column) {
+                case 'barcode':
+                    aVal = a.dataset.barcode.toLowerCase();
+                    bVal = b.dataset.barcode.toLowerCase();
+                    break;
+                case 'price':
+                    aVal = parseFloat(a.dataset.price) || 0;
+                    bVal = parseFloat(b.dataset.price) || 0;
+                    break;
+                case 'profit_rate':
+                    aVal = parseFloat(a.dataset.profitRate) || 0;
+                    bVal = parseFloat(b.dataset.profitRate) || 0;
+                    break;
+            }
+            
+            if (currentSort.direction === 'asc') {
+                return typeof aVal === 'string' ? aVal.localeCompare(bVal) : aVal - bVal;
+            } else {
+                return typeof aVal === 'string' ? bVal.localeCompare(aVal) : bVal - aVal;
+            }
+        });
+        
+        // Tabloyu güncelle
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Sıralama başlık göstergelerini güncelle
+    function updateSortHeaders(activeColumn, direction) {
+        const headers = document.querySelectorAll('th.sortable');
+        headers.forEach(header => {
+            header.className = 'sortable';
+        });
+        
+        const activeHeader = document.querySelector(`th[onclick="sortTable('${activeColumn}')"]`);
+        if (activeHeader) {
+            activeHeader.className = `sortable sort-${direction}`;
+        }
+    }
+
+    // Tabloyu güncelle
+    function updateTable(data) {
+        const tbody = document.querySelector('#costsTable tbody');
+        if (!tbody) return;
+        
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="14" class="no-results">🔍 Filtreleme kriterlerine uygun ürün bulunamadı.</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            data.forEach(row => tbody.appendChild(row.cloneNode(true)));
+        }
+    }
+
+    // Sonuç sayısını güncelle
+    function updateResultsCount(count) {
+        const resultsCount = document.getElementById('resultsCount');
+        if (!resultsCount) return;
+        
+        const totalCount = originalData.length;
+        
+        if (count === totalCount) {
+            resultsCount.textContent = `Toplam ${count} ürün gösteriliyor`;
+        } else {
+            resultsCount.textContent = `${count} / ${totalCount} ürün gösteriliyor`;
+        }
+    }
+
+    // Filtreleri temizle
+    function clearFilters() {
+        const barcodeFilter = document.getElementById('barcodeFilter');
+        const profitFilter = document.getElementById('profitFilter');
+        const sortBy = document.getElementById('sortBy');
+        
+        if (barcodeFilter) barcodeFilter.value = '';
+        if (profitFilter) profitFilter.value = '';
+        if (sortBy) sortBy.value = '';
+        
+        // Tabloyu orijinal haline getir
+        updateTable(originalData);
+        updateResultsCount(originalData.length);
+        
+        // Sıralama göstergelerini temizle
+        const headers = document.querySelectorAll('th.sortable');
+        headers.forEach(header => {
+            header.className = 'sortable';
+        });
+        
+        currentSort = { column: null, direction: 'asc' };
+    }
+
+    console.log("✅ Kar takip sayfası JavaScript yüklendi");
+
+
+    console.log("✅ Kar takip sayfası JavaScript yüklendi");
+</script>
+
+</body>
+</html>
