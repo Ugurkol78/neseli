@@ -590,6 +590,347 @@
     </div>
     {% else %}
 
+
+<!-- Toplu Güncelleme Menüsü - costs.html'de filter-status'tan sonra eklenecek -->
+<div class="bulk-update-section">
+    <div class="bulk-update-header">
+        <h3>💰 Toplu Maliyet Güncelleme</h3>
+    </div>
+    
+    <div class="bulk-update-form">
+        <div class="bulk-form-grid">
+            <div class="bulk-form-group">
+                <label for="bulkCommissionRate">Komisyon Oranı (%)</label>
+                <input type="text" id="bulkCommissionRate" inputmode="decimal" />
+            </div>
+            
+            <div class="bulk-form-group">
+                <label for="bulkWithholdingRate">Stopaj Oranı (%)</label>
+                <input type="text" id="bulkWithholdingRate" inputmode="decimal" />
+            </div>
+            
+            <div class="bulk-form-group">
+                <label for="bulkOtherExpensesRate">Diğer Giderler (%)</label>
+                <input type="text" id="bulkOtherExpensesRate" inputmode="decimal" />
+            </div>
+            
+            <div class="bulk-form-group">
+                <label for="bulkPlatformFee">Platform Bedeli (₺)</label>
+                <input type="text" id="bulkPlatformFee" inputmode="decimal" />
+            </div>
+            
+            <div class="bulk-form-group button-group">
+                <label>&nbsp;</label>
+                <button type="button" id="bulkUpdateBtn" class="bulk-update-btn">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Maliyetleri Güncelle</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="bulk-progress-container" id="bulkProgressContainer" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="bulkProgressFill"></div>
+            </div>
+            <div class="progress-text" id="bulkProgressText">İşlem başlıyor...</div>
+        </div>
+        
+        <div class="bulk-validation-messages" id="bulkValidationMessages" style="display: none;">
+            <!-- Validasyon mesajları buraya gelecek -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Ondalık ayırıcı düzenleme (virgül -> nokta) ve validasyon
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkInputs = [
+        { id: 'bulkCommissionRate', min: 1, max: 100 },
+        { id: 'bulkWithholdingRate', min: 0, max: 100 },
+        { id: 'bulkOtherExpensesRate', min: 0, max: 100 },
+        { id: 'bulkPlatformFee', min: 0, max: null }
+    ];
+    
+    bulkInputs.forEach(inputConfig => {
+        const input = document.getElementById(inputConfig.id);
+        if (input) {
+            // Input event - kullanıcı yazarken
+            input.addEventListener('input', function(e) {
+                let value = e.target.value;
+                
+                // Virgülü noktaya çevir
+                if (value.includes(',')) {
+                    value = value.replace(/,/g, '.');
+                    e.target.value = value;
+                }
+                
+                // Sadece sayı, nokta ve boş değer kabul et
+                const cleanValue = value.replace(/[^0-9.]/g, '');
+                if (cleanValue !== value) {
+                    e.target.value = cleanValue;
+                }
+                
+                console.log(`📝 ${inputConfig.id}: "${e.target.value}"`);
+            });
+            
+            // Blur event - kullanıcı alanı terk edince validasyon
+            input.addEventListener('blur', function(e) {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                    // Min-max kontrolü
+                    if (value < inputConfig.min) {
+                        e.target.value = inputConfig.min;
+                    } else if (inputConfig.max && value > inputConfig.max) {
+                        e.target.value = inputConfig.max;
+                    }
+                }
+            });
+        }
+    });
+    
+    console.log('✅ Ondalık ayırıcı düzeltmesi ve validasyon yüklendi');
+});
+</script>
+
+<style>
+/* Toplu Güncelleme Bölümü Stilleri */
+.bulk-update-section {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-left: 4px solid #667eea;
+}
+
+.bulk-update-header {
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.bulk-update-header h3 {
+    color: #2d3748;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.bulk-update-header p {
+    color: #4a5568;
+    font-size: 12px;
+    margin: 0;
+}
+
+.bulk-form-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1.5fr 1.5fr 1.5fr 200px;
+    gap: 16px;
+    margin-bottom: 6px;
+    align-items: center;
+}
+
+.bulk-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.bulk-form-group.button-group {
+    justify-content: flex-end;
+}
+
+.bulk-form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.bulk-form-group input {
+    padding: 10px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: white;
+    color: #2d3748;
+    min-width: 120px;
+    text-align: right;
+}
+
+.bulk-form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.bulk-form-group input::placeholder {
+    color: #a0aec0;
+}
+
+.validation-note {
+    color: #718096;
+    font-size: 10px;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.bulk-update-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.bulk-update-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bulk-update-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.bulk-update-btn:disabled {
+    background: #cbd5e0;
+    color: #a0aec0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-icon {
+    font-size: 18px;
+}
+
+.bulk-progress-container {
+    max-width: 250px;
+    width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 13px;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.bulk-validation-messages {
+    background: #fed7d7;
+    border: 1px solid #fc8181;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 16px;
+}
+
+.bulk-validation-messages.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.bulk-validation-messages.error {
+    background: #fed7d7;
+    border-color: #fc8181;
+    color: #c53030;
+}
+
+.validation-message {
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.validation-message:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive tasarım */
+@media (max-width: 1200px) {
+    .bulk-form-grid {
+        grid-template-columns: 1fr 1fr 1fr 180px;
+        gap: 12px;
+    }
+    
+    .bulk-form-group:nth-child(4) {
+        grid-column: 1 / 2;
+        grid-row: 2;
+    }
+    
+    .bulk-form-group.button-group {
+        grid-column: 4;
+        grid-row: 1 / 3;
+        align-self: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .bulk-form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .bulk-form-group:nth-child(4) {
+        grid-column: 1;
+        grid-row: auto;
+    }
+    
+    .bulk-form-group.button-group {
+        grid-column: 1 / 3;
+        grid-row: auto;
+        align-self: auto;
+        margin-top: 8px;
+    }
+    
+    .bulk-progress-container {
+        margin-top: 8px;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .bulk-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bulk-form-group.button-group {
+        grid-column: 1;
+    }
+}
+</style>
+
+
     <div class="table-wrapper">
         <table id="costsTable">
             <thead>
@@ -1050,8 +1391,143 @@
 
     console.log("✅ Kar takip sayfası JavaScript yüklendi");
 
+    // Maliyetleri Güncelle butonu işlevselliği
+document.getElementById('bulkUpdateBtn').addEventListener('click', async function() {
+    const button = this;
+    const progressContainer = document.getElementById('bulkProgressContainer');
+    const progressFill = document.getElementById('bulkProgressFill');
+    const progressText = document.getElementById('bulkProgressText');
+    const validationMessages = document.getElementById('bulkValidationMessages');
+    
+    // Form değerlerini al
+    const formData = {};
+    
+    const commissionRate = document.getElementById('bulkCommissionRate').value.trim();
+    const withholdingRate = document.getElementById('bulkWithholdingRate').value.trim();
+    const otherExpensesRate = document.getElementById('bulkOtherExpensesRate').value.trim();
+    const platformFee = document.getElementById('bulkPlatformFee').value.trim();
+    
+    // Sadece doldurulmuş alanları ekle
+    if (commissionRate !== '') {
+        const rate = parseFloat(commissionRate);
+        if (rate < 1 || rate > 100) {
+            showBulkValidationMessage('Komisyon oranı 1-100 arasında olmalıdır.', 'error');
+            return;
+        }
+        formData.commission_rate = rate;
+    }
+    
+    if (withholdingRate !== '') {
+        const rate = parseFloat(withholdingRate);
+        if (rate < 0 || rate > 100) {
+            showBulkValidationMessage('Stopaj oranı 0-100 arasında olmalıdır.', 'error');
+            return;
+        }
+        formData.withholding_rate = rate;
+    }
+    
+    if (otherExpensesRate !== '') {
+        const rate = parseFloat(otherExpensesRate);
+        if (rate < 0 || rate > 100) {
+            showBulkValidationMessage('Diğer giderler oranı 0-100 arasında olmalıdır.', 'error');
+            return;
+        }
+        formData.other_expenses_rate = rate;
+    }
+    
+    if (platformFee !== '') {
+        const fee = parseFloat(platformFee);
+        if (fee < 0) {
+            showBulkValidationMessage('Platform bedeli 0 veya pozitif olmalıdır.', 'error');
+            return;
+        }
+        formData.platform_fee = fee;
+    }
+    
+    // Buton ve progress durumunu güncelle
+    button.disabled = true;
+    button.querySelector('.btn-text').textContent = 'Güncelleniyor...';
+    progressContainer.style.display = 'block';
+    validationMessages.style.display = 'none';
+    
+    try {
+        // İlerleme: %10 - Başlangıç
+        updateBulkProgress(10, 'Güncelleme başlatılıyor...');
+        
+        // Backend'e istek gönder
+        const response = await fetch('/bulk_update_costs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        // İlerleme: %30 - İstek gönderildi
+        updateBulkProgress(30, 'Veriler alınıyor...');
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // İlerleme: %60 - Başarılı
+            updateBulkProgress(60, 'Maliyet hesaplamaları yapılıyor...');
+            
+            // Kısa bekleme
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // İlerleme: %100 - Tamamlandı
+            updateBulkProgress(100, 'Güncelleme tamamlandı!');
+            
+            // Başarı mesajı
+            showBulkValidationMessage(data.message, 'success');
+            
+            // Form temizle
+            document.getElementById('bulkCommissionRate').value = '';
+            document.getElementById('bulkWithholdingRate').value = '';
+            document.getElementById('bulkOtherExpensesRate').value = '';
+            document.getElementById('bulkPlatformFee').value = '';
+            
+            // Sayfa yenileme
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+            
+        } else {
+            showBulkValidationMessage(data.error || 'Güncelleme sırasında hata oluştu.', 'error');
+        }
+        
+    } catch (error) {
+        showBulkValidationMessage('Ağ hatası: ' + error.message, 'error');
+    } finally {
+        // Buton durumunu sıfırla
+        button.disabled = false;
+        button.querySelector('.btn-text').textContent = 'Maliyetleri Güncelle';
+        
+        // Progress bar'ı gizle
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            updateBulkProgress(0, '');
+        }, 3000);
+    }
+});
 
-    console.log("✅ Kar takip sayfası JavaScript yüklendi");
+// Progress bar güncelleme fonksiyonu
+function updateBulkProgress(percentage, text) {
+    const progressFill = document.getElementById('bulkProgressFill');
+    const progressText = document.getElementById('bulkProgressText');
+    
+    progressFill.style.width = percentage + '%';
+    progressText.textContent = text;
+}
+
+// Validasyon mesajı gösterme fonksiyonu
+function showBulkValidationMessage(message, type) {
+    const validationMessages = document.getElementById('bulkValidationMessages');
+    validationMessages.className = `bulk-validation-messages ${type}`;
+    validationMessages.innerHTML = `<div class="validation-message">${message}</div>`;
+    validationMessages.style.display = 'block';
+}
+    
 </script>
 
 </body>
