@@ -1824,7 +1824,9 @@ async function createPriceChart(data, storeName = '') { // YENİ: Mağaza adı p
     
     // 30 günlük dönemde her gün için veri hazırla
     for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
-        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        const dateStr = date.getFullYear() + '-' + 
+                String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(date.getDate()).padStart(2, '0');
         const displayDate = date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' });
         
         labels.push(displayDate);
@@ -2123,7 +2125,9 @@ async function createComparisonChart(data) {
         // 30 günlük veri serisi oluştur
         const priceData = [];
         for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
-            const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            const dateStr = date.getFullYear() + '-' + 
+                String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(date.getDate()).padStart(2, '0');
             priceData.push(priceMap[dateStr] || null);
         }
         

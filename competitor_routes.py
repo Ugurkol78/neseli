@@ -384,8 +384,8 @@ def get_price_history(barcode, slot_number):
             }), 400
         
         # Son 30 gün tarih aralığını hesapla
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=30)
+        end_date = datetime.now().replace(hour=23, minute=59, second=59)
+        start_date = (datetime.now() - timedelta(days=30)).replace(hour=0, minute=0, second=0)
         
         conn = get_db_connection()
         cursor = conn.execute('''
@@ -490,8 +490,8 @@ def get_price_comparison(barcode):
         from datetime import datetime, timedelta
         
         # Son 30 gün tarih aralığını hesapla
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=30)
+        end_date = datetime.now().replace(hour=23, minute=59, second=59)
+        start_date = (datetime.now() - timedelta(days=30)).replace(hour=0, minute=0, second=0)
         
         comparison_data = []
         
