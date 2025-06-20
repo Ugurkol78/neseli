@@ -14,6 +14,10 @@ import shutil
 import logging
 import pytz
 import traceback
+# app.py dosyasının en üstündeki import'lara eklenecek
+from competitor_routes import competitor_bp
+from competitor_scheduler import init_scheduler, cleanup_scheduler
+import atexit
 
 from cost_tracking import log_cost_data_change
 
@@ -1642,104 +1646,15 @@ def debug_cache():
     except Exception as e:
         return f"❌ Debug hatası: {str(e)}"
 
-@app.route('/bulk_update_costs', methods=['POST'])
-@login_required
-def bulk_update_costs():
-    try:
-        data = request.get_json()
-        if data is None:
-            data = {}  # Boş form için boş dict
 
-        # 1. Verileri yenile (mevcut fonksiyonu kullan)
-        products = get_all_products()
-        if not products:
-            return jsonify({'error': 'Trendyol ürünleri alınamadı'}), 500
+# Competitor Blueprint'i kaydet
+app.register_blueprint(competitor_bp)
 
-        hb_products = get_hepsiburada_products()
-        saved_matches = load_matches()
-        
-        # HB stok bilgilerini ekle
-        hb_stock_dict = {}
-        for hb_product in hb_products:
-            merchant_sku = hb_product.get('merchantSku', '')
-            if merchant_sku:
-                hb_stock_dict[merchant_sku] = hb_product.get('availableStock')
+# Scheduler'ı başlat
+init_scheduler()
 
-        for product in products:
-            ty_barcode = product.get('barcode', '')
-            hb_sku = saved_matches.get(ty_barcode, '')
-            product['hb_sku'] = hb_sku
-            product['hb_stock'] = hb_stock_dict.get(hb_sku) if hb_sku else None
-
-        # Products cache'i güncelle
-        save_products_cache(products)
-
-        # 2. Costs.json'ı güncelle
-        from cost_management import load_costs, save_costs
-        costs_data = load_costs()
-        updated_count = 0
-
-        for product in products:
-            barcode = product.get('barcode', '')
-            ty_price = product.get('listPrice', 0)
-            
-            if barcode:
-                # Mevcut cost data'yı al veya yeni oluştur
-                if barcode not in costs_data:
-                    costs_data[barcode] = {
-                        'production_costs': [],
-                        'cargo_cost': 0,
-                        'commission_rate': 15,
-                        'withholding_rate': 0,
-                        'other_expenses_rate': 0,
-                        'platform_fee': 6.6
-                    }
-                
-                # Sadece doldurulmuş alanları güncelle
-                if 'commission_rate' in data:
-                    costs_data[barcode]['commission_rate'] = data['commission_rate']
-                if 'withholding_rate' in data:
-                    costs_data[barcode]['withholding_rate'] = data['withholding_rate']
-                if 'other_expenses_rate' in data:
-                    costs_data[barcode]['other_expenses_rate'] = data['other_expenses_rate']
-                if 'platform_fee' in data:
-                    costs_data[barcode]['platform_fee'] = data['platform_fee']
-                
-                # Fiyatı her zaman güncelle
-                costs_data[barcode]['sale_price'] = ty_price
-                costs_data[barcode]['last_updated'] = datetime.now().isoformat()
-                
-                updated_count += 1
-
-        # Costs.json'ı kaydet
-        save_costs(costs_data)
-
-        # 3. Excel'e log kaydet
-        from cost_tracking import log_cost_data_change
-        from cost_management import calculate_profit_analysis
-        
-        for product in products:
-            barcode = product.get('barcode', '')
-            if barcode in costs_data:
-                cost_data = costs_data[barcode]
-                ty_price = cost_data.get('sale_price', 0)
-                profit_analysis = calculate_profit_analysis(barcode, ty_price, cost_data)
-                
-                log_cost_data_change(
-                    barcode=barcode,
-                    product_title=product.get('title', ''),
-                    username=session['username'],
-                    cost_data=cost_data,
-                    profit_analysis=profit_analysis
-                )
-
-        return jsonify({
-            'message': f'✅ {updated_count} ürünün maliyeti güncellendi ve Excel\'e kaydedildi!'
-        })
-
-    except Exception as e:
-        logging.error(f"Bulk update error: {str(e)}")
-        return jsonify({'error': f'Güncelleme hatası: {str(e)}'}), 500
+# Uygulama kapatılırken scheduler'ı temizle
+atexit.register(cleanup_scheduler)
 
 if __name__ == "__main__":
     import sys

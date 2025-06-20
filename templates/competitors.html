@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Rakip Fiyat Takip - Stok Yönetimi</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #2c3e50;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        
+        nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+        }
+        nav a {
+            color: #4a5568;
+            margin-right: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        nav a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 14px 18px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left h1 {
+            color: #2d3748;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .last-updated {
+            color: #4a5568;
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #4a5568;
+            color: white;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-info {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .table-wrapper {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+        
+        th, td {
+            padding: 10px 8px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            height: 42px;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+            height: 70px;
+        }
+        
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.04);
+        }
+        
+        tbody tr:nth-child(even) {
+            background: rgba(248, 250, 252, 0.6);
+        }
+        
+        tbody tr:nth-child(even):hover {
+            background: rgba(102, 126, 234, 0.06);
+        }
+
+        .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-image:hover {
+            transform: scale(1.05);
+        }
+
+        .barcode-cell {
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: underline;
+            transition: color 0.2s ease;
+            min-width: 120px;
+        }
+
+        .barcode-cell:hover {
+            color: #5a67d8;
+        }
+
+        .competitor-slot {
+            min-width: 120px;
+            padding: 4px;
+        }
+
+        .slot-empty {
+            color: #a0aec0;
+            font-style: italic;
+            font-size: 11px;
+        }
+
+        .slot-data {
+            font-size: 11px;
+        }
+
+        .slot-store {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 2px;
+        }
+
+        .slot-price {
+            color: #e53e3e;
+            font-weight: 700;
+        }
+
+        .slot-date {
+            color: #718096;
+            font-size: 10px;
+        }
+
+        /* Modal/Popup stilleri */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 24px;
+            border-radius: 12px;
+            width: 600px;
+            max-width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #a0aec0;
+            transition: color 0.2s ease;
+        }
+
+        .close-btn:hover {
+            color: #e53e3e;
+        }
+
+        .link-input-group {
+            margin-bottom: 12px;
+        }
+
+        .link-input-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .link-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .link-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .link-input.error {
+            border-color: #e53e3e;
+            background: #fef5f5;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-add {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-save {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .settings-modal .modal-content {
+            width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .alert.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .no-data-message {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin-bottom: 24px;
+        }
+
+        .no-data-message h3 {
+            color: #2d3748;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .no-data-message p {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header-actions {
+                justify-content: center;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+                padding: 16px;
+            }
+            
+            table {
+                min-width: 800px;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <nav>
+        <a href="{{ url_for('index') }}">Stok Güncelleme</a>
+        <a href="{{ url_for('match') }}">Eşleştirme</a>
+        <a href="{{ url_for('competitor.competitors') }}">Rakip Takip</a>
+        {% if session.role == 'admin' %}
+        <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
+        {% endif %}
+        <a href="{{ url_for('profile') }}">Profil</a>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
+            <span style="color: #4a5568; font-size: 14px;">Hoş geldin, {{ session.username }}! 
+                {% if session.role == 'admin' %}<span style="background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
+            </span>
+            <a href="{{ url_for('logout') }}" style="background: #e53e3e; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">Çıkış</a>
+        </div>
+    </nav>
+
+    <div class="header">
+        <div class="header-left">
+            <h1>🎯 Rakip Fiyat Takip</h1>
+            <p class="last-updated">
+                {% if last_update %}
+                    Son güncelleme: {{ last_update[:19].replace('T', ' ') }}
+                {% else %}
+                    Henüz rakip fiyat verisi yok
+                {% endif %}
+            </p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="openSettingsModal()">⚙️ Ayarlar</button>
+            <button class="btn btn-primary" id="manualUpdateBtn" onclick="startManualUpdate()">🔄 Güncelle</button>
+        </div>
+    </div>
+
+    <!-- İlerleme durumu -->
+    <div class="progress-info" id="progressInfo">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span id="progressText">Güncelleme başlatılıyor...</span>
+            <span id="progressCounter">0/0</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div style="font-size: 12px; color: #718096; margin-top: 4px;" id="progressDetail"></div>
+    </div>
+
+    {% if cache_empty %}
+    <div class="no-data-message">
+        <h3>📦 Henüz Trendyol verisi yok</h3>
+        <p>Rakip fiyat takibi için önce ana sayfadan "Verileri Yenile" butonuna tıklayarak Trendyol verilerini yükleyin.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Ana Sayfaya Git</a>
+    </div>
+    {% else %}
+
+    <div class="table-wrapper">
+        <table id="competitorTable">
+            <thead>
+                <tr>
+                    <th>Resim</th>
+                    <th>Barkod</th>
+                    <th>TY Fiyat</th>
+                    <th>Rakip 1</th>
+                    <th>Rakip 2</th>
+                    <th>Rakip 3</th>
+                    <th>Rakip 4</th>
+                    <th>Rakip 5</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr data-barcode="{{ product.barcode }}">
+                    <td>
+                        {% if product.images and product.images|length > 0 %}
+                            <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-image" onclick="openLinkModal('{{ product.barcode }}')" />
+                        {% else %}
+                            <div style="width: 60px; height: 60px; background: #f7fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #a0aec0; cursor: pointer;" onclick="openLinkModal('{{ product.barcode }}')">📷</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="barcode-cell" onclick="openLinkModal('{{ product.barcode }}')">
+                            {{ product.barcode }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="color: #667eea;">{{ "{:.2f}".format(product.ty_price) if product.ty_price else "0.00" }}₺</strong>
+                    </td>
+                    <!-- 5 rakip slot -->
+                    {% for slot in range(1, 6) %}
+                    <td class="competitor-slot" data-slot="{{ slot }}">
+                        <div class="slot-empty">Boş</div>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Link Düzenleme Modal -->
+<div id="linkModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Rakip Linklerini Düzenle</h3>
+            <button class="close-btn" onclick="closeLinkModal()">&times;</button>
+        </div>
+        
+        <div id="linkInputs">
+            <!-- JavaScript ile doldurulacak -->
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn btn-add" id="addLinkBtn" onclick="addLinkInput()">+ Link Ekle</button>
+            <div>
+                <button class="btn btn-cancel" onclick="closeLinkModal()">İptal</button>
+                <button class="btn btn-save" onclick="saveLinks()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ayarlar Modal -->
+<div id="settingsModal" class="modal settings-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Rakip Takip Ayarları</h3>
+            <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="scheduleTime">Otomatik Güncelleme Saati (HH:MM)</label>
+            <input type="time" id="scheduleTime" />
+            <small style="color: #718096; font-size: 12px; margin-top: 4px; display: block;">
+                Türkiye saatiyle günlük otomatik veri çekme saati
+            </small>
+        </div>
+        
+        <div class="modal-actions">
+            <div></div>
+            <div>
+                <button class="btn btn-cancel" onclick="closeSettingsModal()">İptal</button>
+                <button class="btn btn-save" onclick="saveSettings()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fiyat Geçmişi Grafik Modal -->
+<div id="priceChartModal" class="modal">
+    <div class="modal-content" style="width: 900px; max-width: 95%; height: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="chartModalTitle">📈 Fiyat Geçmişi</h3>
+            <button class="close-btn" onclick="closePriceChartModal()">&times;</button>
+        </div>
+        
+        <div style="height: 480px; padding: 20px; position: relative;">
+            <!-- Yükleniyor göstergesi -->
+            <div id="chartLoading" style="text-align: center; padding: 100px;">
+                <div style="font-size: 18px; color: #4a5568; margin-bottom: 20px;">📊 Grafik hazırlanıyor...</div>
+                <div style="width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+            </div>
+            
+            <!-- Grafik canvas -->
+            <canvas id="priceChart" style="display: none; max-height: 400px;"></canvas>
+            
+            <!-- Veri yoksa mesaj -->
+            <div id="noDataMessage" style="display: none; text-align: center; padding: 100px; color: #718096;">
+                <div style="font-size: 48px; margin-bottom: 20px;">📉</div>
+                <h4>Bu slot için henüz fiyat geçmişi yok</h4>
+                <p>Fiyat verileri birikmeye başladığında grafik burada görünecek.</p>
+            </div>
+        </div>
+        
+        <!-- Grafik bilgileri -->
+        <div style="padding: 0 20px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+            <div style="display: flex; justify-content: between; align-items: center; padding-top: 12px; font-size: 12px; color: #718096;">
+                <span id="chartInfo">Son 30 günlük fiyat trendi</span>
+                <span id="chartStats"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Spinner animasyonu */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Grafik modal özel stilleri */
+#priceChartModal .modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Grafik hover efektleri */
+.chart-container {
+    position: relative;
+    height: 400px;
+}
+
+/* Responsive grafik */
+@media (max-width: 768px) {
+    #priceChartModal .modal-content {
+        width: 98%;
+        height: 500px;
+        margin: 5% auto;
+    }
+}
+</style>
+
+<script>
+// Global değişkenler
+let currentBarcode = '';
+let linkCount = 1;
+let updateStatusInterval = null;
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+    loadCompetitorData();
+    loadSettings();
+    
+    // Her 5 saniyede bir güncelleme durumunu kontrol et
+    updateStatusInterval = setInterval(checkUpdateStatus, 5000);
+});
+
+// Alert gösterme fonksiyonu
+function showAlert(message, type = 'success') {
+    const existingAlerts = document.querySelectorAll('.alert');
+    existingAlerts.forEach(alert => alert.remove());
+    
+    const alert = document.createElement('div');
+    alert.className = `alert ${type}`;
+    alert.textContent = message;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Belirli bir ürün için rakip fiyat verilerini yükle
+async function loadCompetitorDataForProduct(barcode) {
+    try {
+        console.log(`Barkod için veri çekiliyor: ${barcode}`);
+        const url = '/competitors/prices/' + barcode; // String concatenation kullan
+        console.log('Fetch URL:', url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log('API Response:', data);
+        
+        if (data.success && data.prices) {
+            // Bu barkoda ait satırı bul ve güncelle
+            const row = document.querySelector(`tr[data-barcode="${barcode}"]`);
+            if (row) {
+                console.log('Satır bulundu, slotlar güncelleniyor...');
+                updateRowSlots(row, data.prices);
+            } else {
+                console.error(`Satır bulunamadı: ${barcode}`);
+            }
+        } else {
+            console.error('API başarısız veya boş data:', data);
+        }
+        
+    } catch (error) {
+        console.error('Tek ürün rakip veri yükleme hatası:', error);
+    }
+}
+async function loadCompetitorData() {
+    try {
+        const rows = document.querySelectorAll('#competitorTable tbody tr');
+        
+        for (const row of rows) {
+            const barcode = row.dataset.barcode;
+            if (!barcode) continue;
+            
+            const response = await fetch(`/competitors/prices/${barcode}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                updateRowSlots(row, data.prices);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Rakip veri yükleme hatası:', error);
+    }
+}
+
+// Satır slotlarını güncelle - GÜNCELLENMIŞ VERSİYON
+function updateRowSlots(row, prices) {
+    const barcode = row.dataset.barcode;
+    
+    // Önce tüm slotları temizle
+    for (let slot = 1; slot <= 5; slot++) {
+        const slotCell = row.querySelector(`[data-slot="${slot}"]`);
+        if (slotCell) {
+            slotCell.innerHTML = '<div class="slot-empty">Boş</div>';
+            // Click event'i kaldır
+            slotCell.style.cursor = 'default';
+            slotCell.onclick = null;
+        }
+    }
+    
+    // Fiyat verilerini slotlara yerleştir
+    prices.forEach(price => {
+        const slotCell = row.querySelector(`[data-slot="${price.slot_number}"]`);
+        if (slotCell && price.slot_number >= 1 && price.slot_number <= 5) {
+            const date = new Date(price.scrape_datetime);
+            const formattedDate = date.toLocaleDateString('tr-TR');
+            
+            slotCell.innerHTML = `
+                <div class="slot-data">
+                    <div class="slot-store">${price.seller_name || 'Bilinmiyor'}</div>
+                    <div class="slot-price">${price.price ? price.price.toFixed(2) + '₺' : 'N/A'}</div>
+                    <div class="slot-date">${formattedDate}</div>
+                </div>
+            `;
+            
+            // ⭐ YENİ: Dolu slot'lara click event ekle
+            slotCell.style.cursor = 'pointer';
+            slotCell.onclick = () => openPriceChartModal(barcode, price.slot_number);
+            
+            // Hover efekti için CSS
+            slotCell.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = 'rgba(102, 126, 234, 0.1)';
+                this.style.transform = 'scale(1.02)';
+                this.style.transition = 'all 0.2s ease';
+            });
+            
+            slotCell.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+                this.style.transform = 'scale(1)';
+            });
+        }
+    });
+}
+// Link modal açma
+async function openLinkModal(barcode) {
+    currentBarcode = barcode;
+    
+    try {
+        // Mevcut linkleri çek
+        const response = await fetch(`/competitors/links/${barcode}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            createLinkInputs(data.links);
+            document.getElementById('linkModal').style.display = 'block';
+        } else {
+            showAlert('Linkler yüklenirken hata oluştu: ' + data.error, 'error');
+        }
+        
+    } catch (error) {
+        showAlert('Ağ hatası: ' + error.message, 'error');
+    }
+}
+
+// Link input alanlarını oluştur
+function createLinkInputs(links = ['']) {
+    const container = document.getElementById('linkInputs');
+    container.innerHTML = '';
+    
+    linkCount = 0;
+    
+    // En az bir input, en fazla 5 input
+    const inputCount = Math.max(1, Math.min(5, links.length));
+    
+    for (let i = 0; i < inputCount; i++) {
+        addLinkInputToContainer(links[i] || '');
+    }
+    
+    updateAddButton();
+}
+
+// Tek bir link input alanı ekle
+function addLinkInputToContainer(value = '') {
+    const container = document.getElementById('linkInputs');
+    linkCount++;
+    
+    const group = document.createElement('div');
+    group.className = 'link-input-group';
+    group.innerHTML = `
+        <label>Rakip Link ${linkCount}</label>
+        <input type="url" class="link-input" value="${value}" placeholder="https://www.trendyol.com/..." />
+    `;
+    
+    container.appendChild(group);
+}
+
+// Yeni link input ekle
+function addLinkInput() {
+    if (linkCount < 5) {
+        addLinkInputToContainer();
+        updateAddButton();
+    }
+}
+
+// Ekle butonunu güncelle
+function updateAddButton() {
+    const addBtn = document.getElementById('addLinkBtn');
+    addBtn.disabled = linkCount >= 5;
+    
+    if (linkCount >= 5) {
+        addBtn.textContent = 'Maksimum 5 Link';
+    } else {
+        addBtn.textContent = '+ Link Ekle';
+    }
+}
+
+// Linkleri kaydet
+async function saveLinks() {
+    console.log("saveLinks çağrıldı, currentBarcode:", currentBarcode); // DEBUG
+    
+    // BARKODU EN BAŞTA KAYDET!
+    const barcodeToUpdate = currentBarcode; // ⭐ En başta kaydet
+    
+    const inputs = document.querySelectorAll('#linkInputs .link-input');
+    const links = Array.from(inputs).map(input => input.value.trim());
+    
+    // Trendyol link kontrolü
+    const trendyolPattern = /^https?:\/\/(www\.)?trendyol\.com\/.*/;
+    const invalidLinks = links.filter(link => link && !trendyolPattern.test(link));
+    
+    if (invalidLinks.length > 0) {
+        showAlert('Geçersiz Trendyol linki tespit edildi!', 'error');
+        
+        // Hatalı input'ları işaretle
+        inputs.forEach(input => {
+            const value = input.value.trim();
+            if (value && !trendyolPattern.test(value)) {
+                input.classList.add('error');
+            } else {
+                input.classList.remove('error');
+            }
+        });
+        return;
+    }
+    
+    if (!barcodeToUpdate) { // ⭐ Kaydettiğimiz değeri kullan
+        showAlert('Barkod bilgisi eksik!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/competitors/links/${barcodeToUpdate}`, { // ⭐ Kaydettiğimiz değeri kullan
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ links })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            closeLinkModal(); // ⭐ Modal'ı kapat (currentBarcode burada temizlenir)
+            
+            // YENİ: Kısa bir bekleme sonra rakip verilerini yenile
+            showAlert('Rakip fiyat verisi çekiliyor...', 'info');
+            
+            console.log(`setTimeout için barkod: ${barcodeToUpdate}`); // ⭐ Artık doğru değer
+            
+            // 5 saniye bekle (scraping için), sonra verileri yenile
+            setTimeout(async () => {
+                console.log(`Barkod için veri yükleniyor: ${barcodeToUpdate}`); // ⭐ Artık doğru değer
+                await loadCompetitorDataForProduct(barcodeToUpdate);
+                showAlert('Rakip fiyat verisi güncellendi!', 'success');
+            }, 5000);
+            
+        } else {
+            showAlert('Hata: ' + data.error, 'error');
+        }
+        
+    } catch (error) {
+        showAlert('Ağ hatası: ' + error.message, 'error');
+    }
+}
+
+// Link modal kapatma
+function closeLinkModal() {
+    document.getElementById('linkModal').style.display = 'none';
+    currentBarcode = '';
+    
+    // Input hata sınıflarını temizle
+    document.querySelectorAll('.link-input').forEach(input => {
+        input.classList.remove('error');
+    });
+}
+
+// Ayarlar modal açma
+async function openSettingsModal() {
+    await loadSettings();
+    document.getElementById('settingsModal').style.display = 'block';
+}
+
+// Ayarlar modal kapatma
+function closeSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+// Ayarları yükle
+async function loadSettings() {
+    try {
+        const response = await fetch('/competitors/settings');
+        const data = await response.json();
+        
+        if (data.success) {
+            const scheduleTime = data.settings.schedule_time || '09:00';
+            document.getElementById('scheduleTime').value = scheduleTime;
+        }
+        
+    } catch (error) {
+        console.error('Ayar yükleme hatası:', error);
+    }
+}
+
+// Ayarları kaydet
+async function saveSettings() {
+    const scheduleTime = document.getElementById('scheduleTime').value;
+    
+    if (!scheduleTime) {
+        showAlert('Lütfen bir saat seçin!', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/competitors/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ schedule_time: scheduleTime })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            closeSettingsModal();
+        } else {
+            showAlert('Hata: ' + data.error, 'error');
+        }
+        
+    } catch (error) {
+        showAlert('Ağ hatası: ' + error.message, 'error');
+    }
+}
+
+// Manuel güncelleme başlat
+async function startManualUpdate() {
+    const btn = document.getElementById('manualUpdateBtn');
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = 'Başlatılıyor...';
+        
+        const response = await fetch('/competitors/update/manual', {
+            method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            showProgressInfo();
+        } else {
+            showAlert('Hata: ' + data.error, 'error');
+            btn.disabled = false;
+            btn.textContent = '🔄 Güncelle';
+        }
+        
+    } catch (error) {
+        showAlert('Ağ hatası: ' + error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '🔄 Güncelle';
+    }
+}
+
+// İlerleme bilgisini göster
+function showProgressInfo() {
+    document.getElementById('progressInfo').style.display = 'block';
+}
+
+// İlerleme bilgisini gizle
+function hideProgressInfo() {
+    document.getElementById('progressInfo').style.display = 'none';
+    
+    const btn = document.getElementById('manualUpdateBtn');
+    btn.disabled = false;
+    btn.textContent = '🔄 Güncelle';
+}
+
+// Güncelleme durumunu kontrol et
+async function checkUpdateStatus() {
+    try {
+        const response = await fetch('/competitors/update/status');
+        const data = await response.json();
+        
+        if (data.success) {
+            const status = data.status;
+            
+            if (status.is_running) {
+                showProgressInfo();
+                
+                // İlerleme çubuğunu güncelle
+                const progress = status.total_items > 0 ? (status.current_progress / status.total_items) * 100 : 0;
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressCounter').textContent = `${status.current_progress}/${status.total_items}`;
+                document.getElementById('progressText').textContent = 'Güncelleme devam ediyor...';
+                document.getElementById('progressDetail').textContent = status.current_item || '';
+                
+            } else {
+                hideProgressInfo();
+                
+                // Eğer az önce işlem bitmiş ve sayfa henüz yenilenmemişse, verileri yenile
+                if (status.current_progress > 0) {
+                    loadCompetitorData();
+                }
+            }
+        }
+        
+    } catch (error) {
+        // Silent error - normal durum
+    }
+}
+
+// Modal dışına tıklanırsa kapat
+window.onclick = function(event) {
+    const linkModal = document.getElementById('linkModal');
+    const settingsModal = document.getElementById('settingsModal');
+    
+    if (event.target === linkModal) {
+        closeLinkModal();
+    }
+    if (event.target === settingsModal) {
+        closeSettingsModal();
+    }
+}
+
+console.log("✅ Rakip takip sayfası JavaScript yüklendi");
+
+// ===== FİYAT GEÇMİŞİ GRAFİK FONKSİYONLARI =====
+
+let priceChart = null; // Chart.js instance
+
+// Fiyat geçmişi modal açma
+async function openPriceChartModal(barcode, slotNumber) {
+    try {
+        // Modal'ı göster ve loading state'i başlat
+        document.getElementById('priceChartModal').style.display = 'block';
+        document.getElementById('chartLoading').style.display = 'block';
+        document.getElementById('priceChart').style.display = 'none';
+        document.getElementById('noDataMessage').style.display = 'none';
+        
+        // Modal başlığını güncelle
+        document.getElementById('chartModalTitle').textContent = `📈 ${barcode} - Slot ${slotNumber} Fiyat Geçmişi`;
+        
+        // API'den veri çek
+        const response = await fetch(`/competitors/price-history/${barcode}/${slotNumber}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.price_history && data.price_history.length > 0) {
+                // Grafik oluştur
+                await createPriceChart(data);
+                
+                // Loading'i gizle, grafigi göster
+                document.getElementById('chartLoading').style.display = 'none';
+                document.getElementById('priceChart').style.display = 'block';
+                
+                // İstatistikleri güncelle
+                updateChartStats(data);
+            } else {
+                // Veri yoksa mesaj göster
+                document.getElementById('chartLoading').style.display = 'none';
+                document.getElementById('noDataMessage').style.display = 'block';
+                
+                // Bilgi güncelle
+                document.getElementById('chartInfo').textContent = 'Bu slot için henüz fiyat verisi yok';
+                document.getElementById('chartStats').textContent = '';
+            }
+        } else {
+            throw new Error(data.error || 'Veri alınamadı');
+        }
+        
+    } catch (error) {
+        console.error('Fiyat grafiği hatası:', error);
+        showAlert('Grafik yüklenirken hata oluştu: ' + error.message, 'error');
+        closePriceChartModal();
+    }
+}
+
+// Chart.js ile grafik oluşturma
+async function createPriceChart(data) {
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    
+    // Mevcut grafiği temizle
+    if (priceChart) {
+        priceChart.destroy();
+    }
+    
+    // Veriyi hazırla
+    const labels = [];
+    const prices = [];
+    const backgroundColors = [];
+    
+    // Son 30 günlük tüm tarihleri oluştur
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+    
+    // Veri haritası oluştur (tarih -> fiyat)
+    const priceMap = {};
+    data.price_history.forEach(item => {
+        priceMap[item.date] = item.price;
+    });
+    
+    // 30 günlük dönemde her gün için veri hazırla
+    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        const displayDate = date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' });
+        
+        labels.push(displayDate);
+        
+        if (priceMap[dateStr]) {
+            prices.push(priceMap[dateStr]);
+            backgroundColors.push('rgba(102, 126, 234, 0.8)'); // Mavi - veri var
+        } else {
+            prices.push(null); // Veri yok
+            backgroundColors.push('rgba(160, 174, 192, 0.3)'); // Gri - veri yok
+        }
+    }
+    
+    // Chart.js konfigürasyonu
+    const config = {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Fiyat (₺)',
+                data: prices,
+                borderColor: 'rgb(102, 126, 234)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4, // Yumuşak çizgiler
+                pointBackgroundColor: backgroundColors,
+                pointBorderColor: 'rgb(102, 126, 234)',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+                spanGaps: false // Boş veriler arasında çizgi çekme
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `${data.barcode} - Slot ${data.slot_number} (Son 30 Gün)`,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    color: '#2d3748'
+                },
+                legend: {
+                    display: false // Legend'i gizle
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(45, 55, 72, 0.9)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgb(102, 126, 234)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: function(context) {
+                            const date = context[0].label;
+                            return `📅 ${date}`;
+                        },
+                        label: function(context) {
+                            const value = context.raw;
+                            if (value === null) {
+                                return '❌ Veri yok';
+                            }
+                            return `💰 ${value.toFixed(2)}₺`;
+                        },
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            const historyItem = data.price_history.find(item => {
+                                const itemDate = new Date(item.date);
+                                const chartDate = labels[index];
+                                return itemDate.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }) === chartDate;
+                            });
+                            
+                            if (historyItem) {
+                                return [`🏪 ${historyItem.seller_name || 'Bilinmiyor'}`, `📦 ${historyItem.product_name?.substring(0, 40) || ''}...`];
+                            }
+                            return '';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Tarih',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(160, 174, 192, 0.2)'
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        maxTicksLimit: 10 // Maksimum 10 tarih etiketi göster
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Fiyat (₺)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(160, 174, 192, 0.2)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(2) + '₺';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            },
+            animations: {
+                tension: {
+                    duration: 1000,
+                    easing: 'easeInOutCubic',
+                    from: 0.3,
+                    to: 0.4
+                }
+            }
+        }
+    };
+    
+    // Grafiği oluştur
+    priceChart = new Chart(ctx, config);
+}
+
+// Grafik istatistiklerini güncelle
+function updateChartStats(data) {
+    const history = data.price_history;
+    
+    if (history.length === 0) {
+        document.getElementById('chartStats').textContent = 'Veri yok';
+        return;
+    }
+    
+    // İstatistikleri hesapla
+    const prices = history.map(item => item.price).filter(price => price !== null);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+    const latestPrice = history[history.length - 1].price;
+    
+    // Fiyat değişimi
+    const firstPrice = history[0].price;
+    const priceChange = latestPrice - firstPrice;
+    const priceChangePercent = ((priceChange / firstPrice) * 100);
+    
+    // Değişim yönü emojisi
+    const changeEmoji = priceChange > 0 ? '📈' : priceChange < 0 ? '📉' : '➡️';
+    const changeColor = priceChange > 0 ? '#e53e3e' : priceChange < 0 ? '#38a169' : '#718096';
+    
+    document.getElementById('chartInfo').textContent = `${history.length} günlük veri | Min: ${minPrice.toFixed(2)}₺ | Max: ${maxPrice.toFixed(2)}₺ | Ort: ${avgPrice.toFixed(2)}₺`;
+    
+    document.getElementById('chartStats').innerHTML = `
+        <span style="color: ${changeColor};">
+            ${changeEmoji} ${priceChangePercent >= 0 ? '+' : ''}${priceChangePercent.toFixed(1)}% 
+            (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}₺)
+        </span>
+    `;
+}
+
+// Fiyat grafiği modal kapatma
+function closePriceChartModal() {
+    document.getElementById('priceChartModal').style.display = 'none';
+    
+    // Grafiği temizle
+    if (priceChart) {
+        priceChart.destroy();
+        priceChart = null;
+    }
+}
+
+// Modal click event'leri güncelle
+window.onclick = function(event) {
+    const linkModal = document.getElementById('linkModal');
+    const settingsModal = document.getElementById('settingsModal');
+    const priceChartModal = document.getElementById('priceChartModal');
+    
+    if (event.target === linkModal) {
+        closeLinkModal();
+    }
+    if (event.target === settingsModal) {
+        closeSettingsModal();
+    }
+    if (event.target === priceChartModal) {
+        closePriceChartModal();
+    }
+}
+
+console.log("✅ Fiyat geçmişi grafik modülü yüklendi");
+
+
+</script>
+
+</body>
+</html>
