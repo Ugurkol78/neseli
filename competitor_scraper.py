@@ -1,6 +1,8 @@
 """
 Rakip Fiyat Takip Modülü - Web Scraping
 Trendyol sayfalarından ürün bilgilerini çeker
+YENİ: Slot 0 (NeşeliÇiçekler) desteği eklendi
+DÜZELTME: Tüm parametre uyumsuzlukları giderildi
 """
 
 import requests
@@ -28,6 +30,10 @@ REQUEST_DELAY_MIN = 2  # Minimum bekleme süresi (saniye)
 REQUEST_DELAY_MAX = 5  # Maximum bekleme süresi (saniye)
 REQUEST_TIMEOUT = 15   # İstek timeout süresi (saniye)
 
+# YENİ: Slot 0 için özel ayarlar
+NESELICICEKLER_DELAY_MIN = 3  # NeşeliÇiçekler için daha uzun bekleme
+NESELICICEKLER_DELAY_MAX = 7
+
 # Global scraping durumu
 scraping_status = {
     'is_running': False,
@@ -36,7 +42,10 @@ scraping_status = {
     'current_item': '',
     'started_by': '',
     'start_time': None,
-    'errors': []
+    'errors': [],
+    'include_slot_0': False,  # YENİ: Slot 0 dahil mi?
+    'slot_0_processed': 0,    # YENİ: Slot 0 işlem sayısı
+    'competitor_processed': 0  # YENİ: Rakip slot işlem sayısı
 }
 
 scraping_lock = threading.Lock()
@@ -55,22 +64,28 @@ def get_random_headers() -> Dict[str, str]:
         'Sec-Fetch-Site': 'none'
     }
 
-def scrape_trendyol_product(url: str) -> Optional[Dict[str, str]]:
+def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str, str]]:
     """
     Trendyol ürün sayfasından bilgileri çeker
+    YENİ: slot_number parametresi eklendi (slot 0 için özel işlemler)
     Returns: {'product_name': str, 'price': float, 'seller_name': str} or None
     """
     try:
         headers = get_random_headers()
         
-        # Random delay
-        delay = random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX)
+        # YENİ: Slot 0 için daha uzun bekleme
+        if slot_number == 0:
+            delay = random.uniform(NESELICICEKLER_DELAY_MIN, NESELICICEKLER_DELAY_MAX)
+            logging.info(f"NeşeliÇiçekler slot scraping (daha uzun bekleme): {delay:.1f}s")
+        else:
+            delay = random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX)
+        
         time.sleep(delay)
         
         response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         
-        soup = BeautifulSoup(response.content, 'lxml')  # lxml kullan (daha hızlı)
+        soup = BeautifulSoup(response.content, 'lxml')
         
         # Ürün adını çek - TAM BAŞLIK
         product_name = None
@@ -90,7 +105,12 @@ def scrape_trendyol_product(url: str) -> Optional[Dict[str, str]]:
             if element and element.get_text(strip=True):
                 # HTML tag'larını temizle ve tam metni al
                 product_name = element.get_text(separator=' ', strip=True)
-                logging.info(f"Ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
+                
+                # YENİ: Slot 0 için özel loglama
+                if slot_number == 0:
+                    logging.info(f"NeşeliÇiçekler ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
+                else:
+                    logging.info(f"Ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
                 break
         
         # Fiyatı çek
@@ -113,7 +133,12 @@ def scrape_trendyol_product(url: str) -> Optional[Dict[str, str]]:
                 if price_clean:
                     try:
                         price = float(price_clean.replace(',', '.'))
-                        logging.info(f"Fiyat bulundu: {price}")
+                        
+                        # YENİ: Slot 0 için özel loglama
+                        if slot_number == 0:
+                            logging.info(f"NeşeliÇiçekler fiyat bulundu: {price}₺")
+                        else:
+                            logging.info(f"Fiyat bulundu: {price}₺")
                         break
                     except ValueError:
                         continue
@@ -139,7 +164,12 @@ def scrape_trendyol_product(url: str) -> Optional[Dict[str, str]]:
             element = soup.select_one(selector)
             if element and element.get_text(strip=True):
                 seller_name = element.get_text(strip=True)
-                logging.info(f"Satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
+                
+                # YENİ: Slot 0 için özel loglama
+                if slot_number == 0:
+                    logging.info(f"NeşeliÇiçekler satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
+                else:
+                    logging.info(f"Satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
                 break
         
         # Dinamik class arama (yedek)
@@ -147,10 +177,26 @@ def scrape_trendyol_product(url: str) -> Optional[Dict[str, str]]:
             merchant_divs = soup.find_all('div', class_=lambda x: x and 'merchant-name' in str(x))
             if merchant_divs:
                 seller_name = merchant_divs[0].get_text(strip=True)
-                logging.info(f"Dinamik class ile satıcı bulundu: {seller_name}")
+                
+                # YENİ: Slot 0 için özel loglama
+                if slot_number == 0:
+                    logging.info(f"NeşeliÇiçekler dinamik class ile satıcı bulundu: {seller_name}")
+                else:
+                    logging.info(f"Dinamik class ile satıcı bulundu: {seller_name}")
         
-        # CenNetHome text'ini direkt ara (son çare)
-        if not seller_name:
+        # YENİ: Slot 0 için NeşeliÇiçekler kontrolü
+        if slot_number == 0:
+            # NeşeliÇiçekler text'ini direkt ara
+            neseli_spans = soup.find_all('span', string=lambda text: text and 'NeşeliÇiçekler' in text)
+            if neseli_spans:
+                seller_name = neseli_spans[0].get_text(strip=True)
+                logging.info(f"NeşeliÇiçekler direct text search ile bulundu: {seller_name}")
+            elif not seller_name:
+                # Slot 0 ise ve satıcı bulunamazsa NeşeliÇiçekler olarak varsay
+                seller_name = "NeşeliÇiçekler"
+                logging.info(f"Slot 0 için varsayılan satıcı: {seller_name}")
+        else:
+            # Rakip ürünler için CenNetHome kontrolü
             cennet_spans = soup.find_all('span', string=lambda text: text and 'CenNetHome' in text)
             if cennet_spans:
                 seller_name = cennet_spans[0].get_text(strip=True)
@@ -158,31 +204,44 @@ def scrape_trendyol_product(url: str) -> Optional[Dict[str, str]]:
         
         # Eğer satıcı hala bulunamazsa
         if not seller_name:
-            logging.warning(f"Satıcı bulunamadı - URL: {url}")
-            seller_name = "Bilinmiyor"
+            if slot_number == 0:
+                logging.warning(f"NeşeliÇiçekler satıcı bulunamadı - URL: {url}")
+                seller_name = "NeşeliÇiçekler"  # Varsayılan
+            else:
+                logging.warning(f"Satıcı bulunamadı - URL: {url}")
+                seller_name = "Bilinmiyor"
         
         # Sonuçları kontrol et
         if product_name and price is not None:
             return {
                 'product_name': product_name[:200],  # Uzunluk sınırı
                 'price': price,
-                'seller_name': seller_name[:100] if seller_name else "Bilinmiyor"
+                'seller_name': seller_name[:100] if seller_name else ("NeşeliÇiçekler" if slot_number == 0 else "Bilinmiyor")
             }
         else:
-            logging.warning(f"Eksik veri - URL: {url}, Name: {product_name}, Price: {price}, Seller: {seller_name}")
+            slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Slot {slot_number}"
+            logging.warning(f"Eksik veri - {slot_info} - URL: {url}, Name: {product_name}, Price: {price}, Seller: {seller_name}")
             return None
             
     except requests.exceptions.RequestException as e:
-        logging.error(f"Request hatası - {url}: {str(e)}")
+        slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Slot {slot_number}"
+        logging.error(f"Request hatası - {slot_info} - {url}: {str(e)}")
         return None
     except Exception as e:
-        logging.error(f"Scraping hatası - {url}: {str(e)}")
+        slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Slot {slot_number}"
+        logging.error(f"Scraping hatası - {slot_info} - {url}: {str(e)}")
         return None
 
 def update_scraping_status(is_running: bool = None, progress: int = None, 
                           total: int = None, current_item: str = None,
-                          started_by: str = None, error: str = None):
-    """Scraping durumunu günceller"""
+                          started_by: str = None, error: str = None,
+                          include_slot_0: bool = None, 
+                          slot_0_processed: int = None,
+                          competitor_processed: int = None):
+    """
+    Scraping durumunu günceller
+    YENİ: Slot 0 istatistikleri eklendi
+    """
     global scraping_status
     
     with scraping_lock:
@@ -191,6 +250,8 @@ def update_scraping_status(is_running: bool = None, progress: int = None,
             if is_running:
                 scraping_status['start_time'] = time.time()
                 scraping_status['errors'] = []
+                scraping_status['slot_0_processed'] = 0
+                scraping_status['competitor_processed'] = 0
             
         if progress is not None:
             scraping_status['current_progress'] = progress
@@ -206,9 +267,21 @@ def update_scraping_status(is_running: bool = None, progress: int = None,
             
         if error is not None:
             scraping_status['errors'].append(error)
+            
+        if include_slot_0 is not None:
+            scraping_status['include_slot_0'] = include_slot_0
+            
+        if slot_0_processed is not None:
+            scraping_status['slot_0_processed'] = slot_0_processed
+            
+        if competitor_processed is not None:
+            scraping_status['competitor_processed'] = competitor_processed
 
 def get_update_status() -> Dict:
-    """Mevcut scraping durumunu döndürür"""
+    """
+    Mevcut scraping durumunu döndürür
+    YENİ: Slot 0 istatistikleri dahil
+    """
     with scraping_lock:
         status = scraping_status.copy()
         if status['start_time']:
@@ -220,11 +293,13 @@ def get_update_status() -> Dict:
 def scrape_single_link(barcode: str, slot_number: int, url: str, scraped_by: str) -> bool:
     """
     Tek bir link için scraping yapar
+    YENİ: slot_number 0 desteği - DÜZELTME: scrape_source parametresi kaldırıldı
     """
     try:
-        logging.info(f"Scraping başlatılıyor: {barcode} - Slot {slot_number} - {url}")
+        slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Rakip Slot {slot_number}"
+        logging.info(f"Scraping başlatılıyor: {barcode} - {slot_info} - {url}")
         
-        product_data = scrape_trendyol_product(url)
+        product_data = scrape_trendyol_product(url, slot_number)
         
         if product_data:
             success = save_scraped_price(
@@ -235,30 +310,32 @@ def scrape_single_link(barcode: str, slot_number: int, url: str, scraped_by: str
                 price=product_data['price'],
                 seller_name=product_data['seller_name'],
                 scraped_by=scraped_by
+                # scrape_source kaldırıldı
             )
             
             if success:
-                logging.info(f"Scraping başarılı: {barcode} - {product_data['price']}₺")
+                logging.info(f"Scraping başarılı: {barcode} - {slot_info} - {product_data['price']}₺")
                 return True
             else:
-                logging.error(f"Veri kaydetme hatası: {barcode} - {url}")
+                logging.error(f"Veri kaydetme hatası: {barcode} - {slot_info} - {url}")
                 return False
         else:
-            logging.warning(f"Scraping başarısız: {barcode} - {url}")
+            logging.warning(f"Scraping başarısız: {barcode} - {slot_info} - {url}")
             return False
             
     except Exception as e:
-        logging.error(f"Scraping exception: {barcode} - {url} - {str(e)}")
+        slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Rakip Slot {slot_number}"
+        logging.error(f"Scraping exception: {barcode} - {slot_info} - {url} - {str(e)}")
         return False
 
 def start_scraping_for_new_links(barcode: str, links: List[str], scraped_by: str):
     """
-    Yeni kaydedilen linkler için scraping başlatır
+    Yeni kaydedilen linkler için scraping başlatır (ESKİ FONKSİYON - Sadece slot 1-5)
     Arka planda çalışır
     """
     def scrape_worker():
         try:
-            active_links = get_links_by_barcode(barcode)
+            active_links = get_links_by_barcode(barcode, include_slot_0=False)
             link_dict = {link['slot_number']: link['url'] for link in active_links}
             
             for slot_number, url in enumerate(links, 1):
@@ -274,24 +351,58 @@ def start_scraping_for_new_links(barcode: str, links: List[str], scraped_by: str
     thread.daemon = True
     thread.start()
 
+def start_scraping_for_new_links_by_slots(barcode: str, slot_links: Dict[int, str], scraped_by: str):
+    """
+    YENİ: Slot numaraları ile yeni kaydedilen linkler için scraping başlatır
+    slot_links: {slot_number: url}
+    """
+    def scrape_worker():
+        try:
+            for slot_number, url in slot_links.items():
+                if url and url.strip():
+                    scrape_single_link(barcode, slot_number, url.strip(), scraped_by)
+                    
+                    # Slot 0 için daha uzun bekleme
+                    if slot_number == 0:
+                        time.sleep(random.uniform(NESELICICEKLER_DELAY_MIN, NESELICICEKLER_DELAY_MAX))
+                    else:
+                        time.sleep(random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX))
+                        
+        except Exception as e:
+            logging.error(f"Yeni slot link scraping hatası: {str(e)}")
+    
+    # Arka planda çalıştır
+    thread = threading.Thread(target=scrape_worker)
+    thread.daemon = True
+    thread.start()
+
 def start_manual_update(username: str):
     """
-    Manuel güncelleme başlatır
+    Manuel güncelleme başlatır - ESKİ FONKSİYON (Sadece slot 1-5)
     Tüm aktif linkler için scraping yapar
+    """
+    return start_manual_update_with_slot_0(username, include_slot_0=False)
+
+def start_manual_update_with_slot_0(username: str, include_slot_0: bool = True):
+    """
+    YENİ: Manuel güncelleme başlatır (Slot 0 dahil edilebilir)
     """
     def manual_update_worker():
         try:
-            update_scraping_status(is_running=True, started_by=username)
+            update_scraping_status(is_running=True, started_by=username, include_slot_0=include_slot_0)
             
             # Tüm aktif linkleri al
-            all_links = get_all_active_links()
+            all_links = get_all_active_links(include_slot_0=include_slot_0)
             total_links = len(all_links)
             
             update_scraping_status(total=total_links, progress=0)
             
-            logging.info(f"Manuel güncelleme başlatıldı: {total_links} link")
+            slot_info = "Slot 0-5" if include_slot_0 else "Slot 1-5"
+            logging.info(f"Manuel güncelleme başlatıldı: {total_links} link ({slot_info})")
             
             success_count = 0
+            slot_0_count = 0
+            competitor_count = 0
             
             for i, link_data in enumerate(all_links):
                 barcode = link_data['barcode']
@@ -299,21 +410,38 @@ def start_manual_update(username: str):
                 url = link_data['url']
                 
                 # Durumu güncelle
+                slot_display = "NeşeliÇiçekler" if slot_number == 0 else f"Rakip Slot {slot_number}"
                 update_scraping_status(
                     progress=i + 1,
-                    current_item=f"{barcode} - Slot {slot_number}"
+                    current_item=f"{barcode} - {slot_display}"
                 )
                 
-                # Scraping yap
+                # Scraping yap - DÜZELTME: 4 parametre
                 success = scrape_single_link(barcode, slot_number, url, username)
                 
                 if success:
                     success_count += 1
+                    if slot_number == 0:
+                        slot_0_count += 1
+                        update_scraping_status(slot_0_processed=slot_0_count)
+                    else:
+                        competitor_count += 1
+                        update_scraping_status(competitor_processed=competitor_count)
                 else:
-                    error_msg = f"Scraping hatası: {barcode} - Slot {slot_number}"
+                    error_msg = f"Scraping hatası: {barcode} - {slot_display}"
                     update_scraping_status(error=error_msg)
+                
+                # Slot 0 için daha uzun bekleme
+                if slot_number == 0:
+                    time.sleep(random.uniform(NESELICICEKLER_DELAY_MIN, NESELICICEKLER_DELAY_MAX))
+                else:
+                    time.sleep(random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX))
             
-            logging.info(f"Manuel güncelleme tamamlandı: {success_count}/{total_links} başarılı")
+            stats_info = f"{success_count}/{total_links} başarılı"
+            if include_slot_0:
+                stats_info += f" (NeşeliÇiçekler: {slot_0_count}, Rakipler: {competitor_count})"
+            
+            logging.info(f"Manuel güncelleme tamamlandı: {stats_info}")
             
         except Exception as e:
             error_msg = f"Manuel güncelleme hatası: {str(e)}"
@@ -334,24 +462,27 @@ def start_manual_update(username: str):
     
     return True
 
-def start_scheduled_update(username: str = "scheduler"):
+def start_scheduled_update(username: str = "scheduler", include_slot_0: bool = True):
     """
     Zamanlanmış güncelleme başlatır
-    Otomatik sistem tarafından çağrılır
+    YENİ: include_slot_0 parametresi eklendi
     """
     def scheduled_update_worker():
         try:
-            update_scraping_status(is_running=True, started_by=username)
+            update_scraping_status(is_running=True, started_by=username, include_slot_0=include_slot_0)
             
             # Tüm aktif linkleri al
-            all_links = get_all_active_links()
+            all_links = get_all_active_links(include_slot_0=include_slot_0)
             total_links = len(all_links)
             
             update_scraping_status(total=total_links, progress=0)
             
-            logging.info(f"Otomatik güncelleme başlatıldı: {total_links} link")
+            slot_info = "Slot 0-5" if include_slot_0 else "Slot 1-5"
+            logging.info(f"Otomatik güncelleme başlatıldı: {total_links} link ({slot_info})")
             
             success_count = 0
+            slot_0_count = 0
+            competitor_count = 0
             
             for i, link_data in enumerate(all_links):
                 barcode = link_data['barcode']
@@ -359,24 +490,38 @@ def start_scheduled_update(username: str = "scheduler"):
                 url = link_data['url']
                 
                 # Durumu güncelle
+                slot_display = "NeşeliÇiçekler" if slot_number == 0 else f"Rakip Slot {slot_number}"
                 update_scraping_status(
                     progress=i + 1,
-                    current_item=f"{barcode} - Slot {slot_number}"
+                    current_item=f"{barcode} - {slot_display}"
                 )
                 
-                # Scraping yap
+                # Scraping yap - DÜZELTME: 4 parametre
                 success = scrape_single_link(barcode, slot_number, url, username)
                 
                 if success:
                     success_count += 1
+                    if slot_number == 0:
+                        slot_0_count += 1
+                        update_scraping_status(slot_0_processed=slot_0_count)
+                    else:
+                        competitor_count += 1
+                        update_scraping_status(competitor_processed=competitor_count)
                 else:
-                    error_msg = f"Otomatik scraping hatası: {barcode} - Slot {slot_number}"
+                    error_msg = f"Otomatik scraping hatası: {barcode} - {slot_display}"
                     update_scraping_status(error=error_msg)
                 
-                # Otomatik güncellemede daha uzun bekleme
-                time.sleep(random.uniform(3, 7))
+                # Otomatik güncellemede daha uzun bekleme - Slot 0 için extra uzun
+                if slot_number == 0:
+                    time.sleep(random.uniform(NESELICICEKLER_DELAY_MIN + 2, NESELICICEKLER_DELAY_MAX + 3))
+                else:
+                    time.sleep(random.uniform(REQUEST_DELAY_MIN + 1, REQUEST_DELAY_MAX + 2))
             
-            logging.info(f"Otomatik güncelleme tamamlandı: {success_count}/{total_links} başarılı")
+            stats_info = f"{success_count}/{total_links} başarılı"
+            if include_slot_0:
+                stats_info += f" (NeşeliÇiçekler: {slot_0_count}, Rakipler: {competitor_count})"
+            
+            logging.info(f"Otomatik güncelleme tamamlandı: {stats_info}")
             
         except Exception as e:
             error_msg = f"Otomatik güncelleme hatası: {str(e)}"
@@ -400,3 +545,88 @@ def start_scheduled_update(username: str = "scheduler"):
 def is_scraping_running() -> bool:
     """Scraping işleminin devam edip etmediğini kontrol eder"""
     return scraping_status['is_running']
+
+# YENİ FONKSİYONLAR: NeşeliÇiçekler özel işlemleri
+
+def start_neselicicekler_only_update(username: str):
+    """
+    Sadece NeşeliÇiçekler (slot 0) linklerini günceller
+    """
+    def neseli_update_worker():
+        try:
+            update_scraping_status(is_running=True, started_by=username, include_slot_0=True)
+            
+            # Sadece slot 0 linklerini al
+            from competitor_tracking import get_all_active_links_by_slot
+            neseli_links = get_all_active_links_by_slot(0)
+            total_links = len(neseli_links)
+            
+            update_scraping_status(total=total_links, progress=0)
+            
+            logging.info(f"NeşeliÇiçekler güncelleme başlatıldı: {total_links} link")
+            
+            success_count = 0
+            
+            for i, link_data in enumerate(neseli_links):
+                barcode = link_data['barcode']
+                url = link_data['url']
+                
+                # Durumu güncelle
+                update_scraping_status(
+                    progress=i + 1,
+                    current_item=f"{barcode} - NeşeliÇiçekler"
+                )
+                
+                # Scraping yap - DÜZELTME: 4 parametre
+                success = scrape_single_link(barcode, 0, url, username)
+                
+                if success:
+                    success_count += 1
+                    update_scraping_status(slot_0_processed=success_count)
+                else:
+                    error_msg = f"NeşeliÇiçekler scraping hatası: {barcode}"
+                    update_scraping_status(error=error_msg)
+                
+                # Uzun bekleme
+                time.sleep(random.uniform(NESELICICEKLER_DELAY_MIN, NESELICICEKLER_DELAY_MAX))
+            
+            logging.info(f"NeşeliÇiçekler güncelleme tamamlandı: {success_count}/{total_links} başarılı")
+            
+        except Exception as e:
+            error_msg = f"NeşeliÇiçekler güncelleme hatası: {str(e)}"
+            logging.error(error_msg)
+            update_scraping_status(error=error_msg)
+        finally:
+            update_scraping_status(is_running=False, current_item="")
+    
+    # Eğer başka bir scraping devam ediyorsa başlatma
+    if scraping_status['is_running']:
+        logging.warning("Scraping zaten devam ediyor, NeşeliÇiçekler işlem başlatılmadı")
+        return False
+    
+    # Arka planda çalıştır
+    thread = threading.Thread(target=neseli_update_worker)
+    thread.daemon = True
+    thread.start()
+    
+    return True
+
+def get_scraping_statistics() -> Dict:
+    """
+    Scraping istatistiklerini getirir
+    """
+    try:
+        from competitor_tracking import get_neselicicekler_price_stats, get_total_prices_count
+        
+        stats = {
+            'neselicicekler': get_neselicicekler_price_stats(),
+            'competitor_total': get_total_prices_count(include_slot_0=False),
+            'all_total': get_total_prices_count(include_slot_0=True),
+            'scraping_status': get_update_status()
+        }
+        
+        return stats
+        
+    except Exception as e:
+        logging.error(f"İstatistik getirme hatası: {str(e)}")
+        return {}

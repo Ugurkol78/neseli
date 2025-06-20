@@ -1,6 +1,7 @@
 """
 Rakip Fiyat Takip Modülü - Route Yönetimi
 Trendyol ürünleri için rakip fiyat analizi ve takip sistemi
+YENİ: Slot 0 (NeşeliÇiçekler) desteği eklendi
 """
 
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash
@@ -14,7 +15,7 @@ from competitor_tracking import (
     get_active_prices_by_barcode, get_competitor_settings,
     save_competitor_settings, get_last_update,
     get_total_links_count, get_total_prices_count,
-    get_db_connection  # ⭐ Bunu ekleyin
+    get_db_connection
 )
 from competitor_scraper import (
     start_scraping_for_new_links, start_manual_update,
@@ -56,13 +57,13 @@ def competitors():
             flash('Önce ana sayfadan "Verileri Yenile" butonuna tıklayarak Trendyol verilerini yükleyin!', 'error')
             return redirect(url_for('index'))
         
-        # Her ürün için rakip fiyat verilerini hazırla
+        # Her ürün için rakip fiyat verilerini hazırla (sadece slot 1-5)
         competitor_data = {}
         for product in products:
             barcode = product.get('barcode', '')
             if barcode:
-                # Bu barkod için aktif fiyatları al
-                prices = get_active_prices_by_barcode(barcode)
+                # Bu barkod için aktif fiyatları al (sadece slot 1-5, slot 0 hariç)
+                prices = get_active_prices_by_barcode(barcode, exclude_slot_0=True)
                 competitor_data[barcode] = prices
         
         # Son güncelleme zamanını çek
@@ -84,21 +85,26 @@ def competitors():
 def get_competitor_links(barcode):
     """
     Belirli bir barkod için kayıtlı rakip linklerini getirir
-    Popup açılırken mevcut linkler için kullanılır
+    YENİ: Slot 0 (NeşeliÇiçekler) da dahil edilir
     """
     try:
-        links = get_links_by_barcode(barcode)
+        # Tüm linkler (slot 0-5)
+        all_links = get_links_by_barcode(barcode, include_slot_0=True)
         
-        # 5 slot için array hazırla
-        link_array = [''] * 5
-        for link in links:
-            slot_num = link['slot_number']
-            if 1 <= slot_num <= 5:
-                link_array[slot_num - 1] = link['url']
+        # Frontend için format: slot numarası ve URL
+        links_response = []
+        for link in all_links:
+            links_response.append({
+                'slot_number': link['slot_number'],
+                'url': link['url'],
+                'is_active': link['is_active'],
+                'created_at': link['created_at'],
+                'updated_at': link['updated_at']
+            })
         
         return jsonify({
             'success': True,
-            'links': link_array,
+            'links': links_response,
             'barcode': barcode
         })
         
@@ -109,49 +115,88 @@ def get_competitor_links(barcode):
             'error': str(e)
         }), 500
 
+
 @competitor_bp.route('/competitors/links/<barcode>', methods=['POST'])
 @login_required
 def save_competitor_links(barcode):
     """
     Rakip linklerini kaydeder
-    Popup'tan gelen link verilerini işler
+    YENİ: Slot 0 (NeşeliÇiçekler) desteği eklendi + DEBUG LOGGING
     """
     try:
         data = request.get_json()
         links = data.get('links', [])
+        include_slot_0 = data.get('include_slot_0', False)
         username = session.get('username')
         
-        # Boş olmayan linkleri temizle ve kontrol et
-        clean_links = [link.strip() for link in links]
-        non_empty_links = [link for link in clean_links if link]
+        logging.info(f"🔧 DEBUG: Link kaydetme başlatıldı - Barkod: {barcode}")
+        logging.info(f"🔧 DEBUG: Gelen linkler: {links}")
+        logging.info(f"🔧 DEBUG: include_slot_0: {include_slot_0}")
+        
+        # YENİ: Slot mapping sistemi
+        # links[0] = slot 0 (NeşeliÇiçekler)
+        # links[1-5] = slot 1-5 (Rakipler)
+        
+        if include_slot_0:
+            # Yeni sistem: slot 0 dahil
+            slot_links = {}
+            for i, link_url in enumerate(links):
+                slot_number = i  # Index 0 = slot 0, index 1 = slot 1, vs.
+                if link_url and link_url.strip():
+                    slot_links[slot_number] = link_url.strip()
+        else:
+            # Eski sistem: sadece slot 1-5
+            slot_links = {}
+            for i, link_url in enumerate(links):
+                slot_number = i + 1  # Index 0 = slot 1, index 1 = slot 2, vs.
+                if link_url and link_url.strip():
+                    slot_links[slot_number] = link_url.strip()
+        
+        logging.info(f"🔧 DEBUG: Slot mapping sonucu: {slot_links}")
         
         # Link validasyonu
+        non_empty_links = [url for url in slot_links.values() if url]
         is_valid, invalid_links = validate_trendyol_links(non_empty_links)
         
         if not is_valid:
+            logging.error(f"🔧 DEBUG: Geçersiz linkler: {invalid_links}")
             return jsonify({
                 'success': False,
                 'error': f'Geçersiz Trendyol linki: {", ".join(invalid_links)}'
             }), 400
         
-        # Linkleri kaydet
-        save_result = save_links(barcode, clean_links, username)
+        logging.info(f"🔧 DEBUG: Link validasyonu başarılı")
+        
+        # Linkleri kaydet (güncellenmiş save_links fonksiyonu)
+        logging.info(f"🔧 DEBUG: save_links_with_slots çağrılıyor...")
+        save_result = save_links_with_slots(barcode, slot_links, username, include_slot_0)
         
         if save_result:
-            # Yeni linkler için scraping başlat
-            start_scraping_for_new_links(barcode, clean_links, username)
+            logging.info(f"🔧 DEBUG: Linkler kaydedildi, scraping başlatılıyor...")
+            
+            # Yeni linkler için scraping başlat (slot 0 dahil)
+            try:
+                start_scraping_for_new_links_with_slots(barcode, slot_links, username)
+                logging.info(f"🔧 DEBUG: Scraping thread başlatıldı!")
+            except Exception as scrape_error:
+                logging.error(f"🔧 DEBUG: Scraping başlatma hatası: {str(scrape_error)}")
+            
+            slot_count = len([url for url in slot_links.values() if url])
+            slot_info = "NeşeliÇiçekler dahil " if include_slot_0 else ""
             
             return jsonify({
                 'success': True,
-                'message': 'Linkler başarıyla kaydedildi ve fiyat güncelleme başlatıldı!'
+                'message': f'Linkler başarıyla kaydedildi ({slot_info}{slot_count} link) ve fiyat güncelleme başlatıldı!'
             })
         else:
+            logging.error(f"🔧 DEBUG: Link kaydetme başarısız!")
             return jsonify({
                 'success': False,
                 'error': 'Linkler kaydedilirken hata oluştu!'
             }), 500
             
     except Exception as e:
+        logging.error(f"🔧 DEBUG: Link kaydetme exception: {str(e)}")
         logging.error(f"Link kaydetme hatası - {barcode}: {str(e)}")
         return jsonify({
             'success': False,
@@ -163,10 +208,11 @@ def save_competitor_links(barcode):
 def get_competitor_prices(barcode):
     """
     Belirli bir barkod için aktif rakip fiyatlarını getirir
-    Ana sayfada slot verilerini doldurmak için kullanılır
+    GÜNCELLEME: Slot 0 hariç tutulur (sadece rakip fiyatlar)
     """
     try:
-        prices = get_active_prices_by_barcode(barcode)
+        # Sadece slot 1-5 fiyatları (slot 0 hariç)
+        prices = get_active_prices_by_barcode(barcode, exclude_slot_0=True)
         
         return jsonify({
             'success': True,
@@ -186,7 +232,7 @@ def get_competitor_prices(barcode):
 def manual_update():
     """
     Manuel güncelleme başlatır
-    Tüm aktif linkler için scraping yapar
+    YENİ: Slot 0 (NeşeliÇiçekler) da dahil edilir
     """
     try:
         username = session.get('username')
@@ -198,13 +244,13 @@ def manual_update():
                 'error': 'Başka bir güncelleme işlemi devam ediyor. Lütfen bekleyin.'
             }), 400
         
-        # Manuel güncelleme başlat
-        success = start_manual_update(username)
+        # Manuel güncelleme başlat (slot 0 dahil)
+        success = start_manual_update_with_slot_0(username)
         
         if success:
             return jsonify({
                 'success': True,
-                'message': 'Manuel güncelleme başlatıldı!'
+                'message': 'Manuel güncelleme başlatıldı (NeşeliÇiçekler dahil)!'
             })
         else:
             return jsonify({
@@ -319,17 +365,23 @@ def save_settings():
             'error': str(e)
         }), 500
 
-
 # YENİ ROUTE: Fiyat Geçmişi Grafiği İçin
 @competitor_bp.route('/competitors/price-history/<barcode>/<int:slot_number>')
 @login_required
 def get_price_history(barcode, slot_number):
     """
     Belirli bir barkod ve slot için son 30 günlük fiyat geçmişini getirir
-    Grafik popup için kullanılır
+    YENİ: Slot 0 (NeşeliÇiçekler) de desteklenir ama grafik gösterilmez
     """
     try:
         from datetime import datetime, timedelta
+        
+        # Slot 0 kontrolü - grafik gösterilmez ama API çalışır
+        if slot_number == 0:
+            return jsonify({
+                'success': False,
+                'error': 'NeşeliÇiçekler fiyat geçmişi grafik olarak gösterilmez'
+            }), 400
         
         # Son 30 gün tarih aralığını hesapla
         end_date = datetime.now()
@@ -366,7 +418,7 @@ def get_price_history(barcode, slot_number):
         
         # Link bilgisini de al
         link_info = None
-        links = get_links_by_barcode(barcode)
+        links = get_links_by_barcode(barcode, include_slot_0=True)
         for link in links:
             if link['slot_number'] == slot_number:
                 link_info = link
@@ -392,24 +444,22 @@ def get_price_history(barcode, slot_number):
             'error': str(e)
         }), 500
 
-# YENİ ROUTE: Veritabanı import kontrolü eklenmesi gerek
-try:
-    from competitor_tracking import get_db_connection
-except ImportError:
-    logging.error("competitor_tracking modülü import edilemedi!")
-
 @competitor_bp.route('/competitors/debug')
 @login_required
 def debug_info():
     """
     Debug bilgileri için endpoint
-    Geliştirme aşamasında kullanılacak
+    YENİ: Slot 0 istatistikleri de dahil
     """
     try:
         debug_data = {
             'tables_exist': check_tables_exist(),
-            'total_links': get_total_links_count(),
-            'total_prices': get_total_prices_count(),
+            'total_links': get_total_links_count(include_slot_0=True),
+            'total_competitor_links': get_total_links_count(include_slot_0=False),
+            'total_neselicicekler_links': get_total_links_count(slot_0_only=True),
+            'total_prices': get_total_prices_count(include_slot_0=True),
+            'total_competitor_prices': get_total_prices_count(include_slot_0=False),
+            'total_neselicicekler_prices': get_total_prices_count(slot_0_only=True),
             'last_update': get_last_update(),
             'scheduler_status': get_scheduler_status(),
             'scraping_status': get_update_status()
@@ -426,6 +476,179 @@ def debug_info():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# YENİ ROUTE: Fiyat Karşılaştırması
+@competitor_bp.route('/competitors/comparison/<barcode>')
+@login_required
+def get_price_comparison(barcode):
+    """
+    Belirli bir barkod için tüm scraping kaynaklarının son 30 günlük fiyat karşılaştırmasını getirir
+    Sadece Slot 0 (NeşeliÇiçekler) + Slot 1-5 (Rakipler) - TY ana fiyatı dahil değil
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Son 30 gün tarih aralığını hesapla
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+        
+        comparison_data = []
+        
+        # SADECE SCRAPING VERİLERİ: Slot 0-5 (NeşeliÇiçekler + Rakipler)
+        conn = get_db_connection()
+        
+        # Her slot için en son aktif fiyat verilerini al (slot 0 dahil)
+        active_prices = get_active_prices_by_barcode(barcode, exclude_slot_0=False)
+        
+        for price_data in active_prices:
+            slot_number = price_data['slot_number']
+            seller_name = price_data['seller_name']
+            
+            # Bu slot için son 30 günlük fiyat geçmişini al
+            cursor = conn.execute('''
+                SELECT 
+                    DATE(scrape_datetime) as price_date,
+                    price,
+                    product_name,
+                    seller_name,
+                    MAX(scrape_datetime) as latest_scrape
+                FROM competitor_prices 
+                WHERE barcode = ? 
+                AND slot_number = ? 
+                AND status = 'A'
+                AND datetime(scrape_datetime) >= datetime(?)
+                AND datetime(scrape_datetime) <= datetime(?)
+                GROUP BY DATE(scrape_datetime)
+                ORDER BY price_date ASC
+            ''', (barcode, slot_number, start_date.isoformat(), end_date.isoformat()))
+            
+            price_history = []
+            for row in cursor.fetchall():
+                price_history.append({
+                    'date': row['price_date'],
+                    'price': row['price'],
+                    'product_name': row['product_name'],
+                    'seller_name': row['seller_name']
+                })
+            
+            # Veri varsa comparison_data'ya ekle
+            if price_history:
+                # Source name belirleme
+                if slot_number == 0:
+                    source_name = f"NeşeliÇiçekler ({seller_name})"
+                    source_type = 'neselicicekler'
+                else:
+                    source_name = f"{seller_name}"  # Sadece mağaza adı
+                    source_type = 'competitor'
+                
+                comparison_data.append({
+                    'source_name': source_name,
+                    'source_type': source_type,
+                    'slot_number': slot_number,
+                    'latest_price': price_history[-1]['price'] if price_history else None,
+                    'price_history': price_history
+                })
+        
+        conn.close()
+        
+        # Slot numarasına göre sırala (slot 0 en başta)
+        comparison_data.sort(key=lambda x: x['slot_number'])
+        
+        # Karşılaştırma için minimum 2 kaynak gerekli
+        if len(comparison_data) < 2:
+            return jsonify({
+                'success': True,
+                'comparison_data': [],
+                'barcode': barcode,
+                'message': 'Karşılaştırma için en az 2 scraping verisi gereklidir'
+            })
+        
+        return jsonify({
+            'success': True,
+            'barcode': barcode,
+            'comparison_data': comparison_data,
+            'total_sources': len(comparison_data),
+            'date_range': {
+                'start': start_date.strftime('%d.%m.%Y'),
+                'end': end_date.strftime('%d.%m.%Y')
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"Fiyat karşılaştırma hatası - {barcode}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+# DÜZELTME: Bu kısımları competitor_routes.py dosyasında değiştirin
+
+# YENİ FONKSİYONLAR: Slot 0 desteği için - DÜZELTME
+
+def save_links_with_slots(barcode: str, slot_links: dict, username: str, include_slot_0: bool = False):
+    """
+    Slot numaraları ile linkleri kaydet
+    slot_links: {slot_number: url}
+    DÜZELTME: Doğru fonksiyon çağrısı
+    """
+    try:
+        from competitor_tracking import save_links_by_slots  # DOĞRU İMPORT
+        return save_links_by_slots(barcode, slot_links, username, include_slot_0)
+    except ImportError:
+        # Fallback: Eski save_links fonksiyonunu kullan
+        logging.warning("save_links_by_slots fonksiyonu bulunamadı, eski sistem kullanılıyor")
+        from competitor_tracking import save_links
+        
+        # Slot mapping'i eski format'a çevir
+        links_array = [''] * 6  # 0-5 slots
+        for slot_num, url in slot_links.items():
+            if 0 <= slot_num <= 5:
+                links_array[slot_num] = url
+        
+        # Slot 0'ı skip et eğer include_slot_0 False ise
+        if not include_slot_0:
+            links_array = links_array[1:]  # İlk elementi çıkar
+        
+        return save_links(barcode, links_array, username)
+
+def start_scraping_for_new_links_with_slots(barcode: str, slot_links: dict, username: str):
+    """
+    Yeni kaydedilen linkler için scraping başlat (slot 0 dahil)
+    DÜZELTME: Doğru fonksiyon çağrısı
+    """
+    try:
+        from competitor_scraper import start_scraping_for_new_links_by_slots  # DOĞRU İMPORT
+        return start_scraping_for_new_links_by_slots(barcode, slot_links, username)
+    except ImportError:
+        # Fallback: Eski fonksiyonu kullan ama sadece slot 1-5 için
+        logging.warning("start_scraping_for_new_links_by_slots fonksiyonu bulunamadı")
+        from competitor_scraper import start_scraping_for_new_links
+        
+        # Sadece slot 1-5 linklerini çıkar
+        competitor_links = []
+        for slot_num in range(1, 6):
+            if slot_num in slot_links:
+                competitor_links.append(slot_links[slot_num])
+            else:
+                competitor_links.append('')
+        
+        return start_scraping_for_new_links(barcode, competitor_links, username)
+
+def start_manual_update_with_slot_0(username: str):
+    """
+    Manuel güncelleme başlat (slot 0 dahil)
+    """
+    try:
+        from competitor_scraper import start_manual_update_with_slot_0 as scraper_manual_update
+        return scraper_manual_update(username)
+    except ImportError:
+        # Fallback: Eski fonksiyonu kullan
+        logging.warning("start_manual_update_with_slot_0 fonksiyonu bulunamadı, eski sistem kullanılıyor")
+        from competitor_scraper import start_manual_update
+        return start_manual_update(username)
 
 # Hata yakalama
 @competitor_bp.errorhandler(404)
