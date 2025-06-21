@@ -1121,7 +1121,15 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStatusInterval = setInterval(checkUpdateStatus, 5000);
 
     // YENİ: Filtreleme işlemlerini başlat
-    initializeFiltering();
+    initializeFiltering();  
+
+    // YENİ: Admin olmayan kullanıcılar için buton ipucu
+    const userRole = '{{ session.role }}';
+    const updateBtn = document.getElementById('manualUpdateBtn');
+    if (userRole !== 'admin' && updateBtn) {
+        updateBtn.title = 'Sadece Admin Yetkili Kullanıcılar Kullanabilir';
+        updateBtn.style.opacity = '0.7';
+    }
 });
 
 // YENİ: Filtreleme sistemini başlat
@@ -1644,6 +1652,15 @@ async function saveSettings() {
 
 // Manuel güncelleme başlat
 async function startManualUpdate() {
+
+    // YENİ: Admin kontrolü
+    const userRole = '{{ session.role }}'; // Jinja2'den role bilgisini al
+    if (userRole !== 'admin') {
+        showAlert('❌ Sadece Admin Yetkili Kullanıcılar Bu Özelliği Kullanabilir', 'error');
+        return; // Fonksiyonu sonlandır
+    }
+
+
     const btn = document.getElementById('manualUpdateBtn');
     
     try {
