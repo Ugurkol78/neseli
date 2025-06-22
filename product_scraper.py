@@ -83,7 +83,7 @@ def setup_chrome_driver() -> webdriver.Chrome:
     # VPS için ayarlar
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-plugins')
-    chrome_options.add_argument('--disable-images')  # ← BU SATIR ÖNEMLİ!
+    # chrome_options.add_argument('--disable-images')  # ← BU SATIR ÖNEMLİ!
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--disable-features=VizDisplayCompositor')
     chrome_options.add_argument('--remote-debugging-port=9222')
