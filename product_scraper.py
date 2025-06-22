@@ -83,6 +83,15 @@ def setup_chrome_driver() -> webdriver.Chrome:
     chrome_options.add_argument('--disable-plugins')
     chrome_options.add_argument('--disable-images')  # Hız için resimleri yükleme
     
+    # VPS için yeni eklemeler
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+    chrome_options.add_argument('--remote-debugging-port=9222')
+    chrome_options.add_argument('--user-data-dir=/tmp/chrome-user-data')
+    chrome_options.add_argument('--single-process')
+    chrome_options.add_argument('--disable-background-timer-throttling')
+    chrome_options.add_argument('--disable-web-security')
+    
     try:
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
