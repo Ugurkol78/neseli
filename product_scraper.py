@@ -518,26 +518,24 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             except:
                 print("🔍 SELENIUM DEBUG: Score element araması başarısız")
         
-            # Image URL
+        # Image URL çek
+        image_selectors = [
+            '.product-images img',
+            '.gallery-modal img',
+            'img[data-testid="product-image"]',
+            '.product-image img'
+        ]
+        
+        for selector in image_selectors:
             try:
-                image_element = driver.find_element(By.CSS_SELECTOR, ".product-image img")
-                image_url = image_element.get_attribute("src")
-                if not image_url:
-                    image_url = image_element.get_attribute("data-src")
-                print(f"🔍 SELENIUM DEBUG: Image URL bulundu: {image_url}")
+                image_element = driver.find_element(By.CSS_SELECTOR, selector)
+                image_url = image_element.get_attribute('src')
+                if image_url:
+                    result['image_url'] = image_url
+                    print(f"🔍 SELENIUM DEBUG: Image URL bulundu ({selector})")
+                    break
             except:
-                try:
-                    image_element = driver.find_element(By.CSS_SELECTOR, ".detail-gallery img")
-                    image_url = image_element.get_attribute("src")
-                    print(f"🔍 SELENIUM DEBUG: Image URL (alternatif) bulundu: {image_url}")
-                except:
-                    try:
-                        image_element = driver.find_element(By.CSS_SELECTOR, "img[data-testid='product-image']")
-                        image_url = image_element.get_attribute("src")
-                        print(f"🔍 SELENIUM DEBUG: Image URL (testid) bulundu: {image_url}")
-                    except:
-                        print("🔍 SELENIUM DEBUG: Image URL bulunamadı")
-                        image_url = None
+                continue
         
         # Sales data çek (sepet işlemi)
         if not result.get('sales_3day'):
