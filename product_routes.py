@@ -582,6 +582,163 @@ def format_rating(rating):
     except:
         return "⭐ 0,0"
 
+
+# product_routes.py dosyasının sonuna eklenecek kod (mevcut test route'undan önce)
+
+@product_bp.route('/products/debug-images')
+@admin_required
+def debug_images():
+    """
+    Image URL sorununu analiz eder - PROD DEBUG ENDPOINT
+    Sadece admin kullanabilir, geçici debug amaçlı
+    """
+    try:
+        debug_info = {
+            'timestamp': datetime.now().isoformat(),
+            'database_analysis': {},
+            'recent_scraping': {},
+            'template_data': {},
+            'system_info': {}
+        }
+        
+        # 1. Veritabanı analizi
+        conn = get_db_connection()
+        try:
+            # Toplam ürün sayısı
+            cursor = conn.execute('SELECT COUNT(*) as count FROM product_links WHERE is_active = 1')
+            total_products = cursor.fetchone()['count']
+            
+            # Image URL'li ürün sayısı
+            cursor = conn.execute('''
+                SELECT COUNT(*) as count FROM product_links 
+                WHERE is_active = 1 AND product_image_url IS NOT NULL AND product_image_url != ''
+            ''')
+            products_with_images = cursor.fetchone()['count']
+            
+            # Image URL'siz ürünler
+            cursor = conn.execute('''
+                SELECT id, product_url, product_title, product_image_url, created_at
+                FROM product_links 
+                WHERE is_active = 1 AND (product_image_url IS NULL OR product_image_url = '')
+                ORDER BY created_at DESC LIMIT 5
+            ''')
+            products_without_images = []
+            for row in cursor.fetchall():
+                products_without_images.append({
+                    'id': row['id'],
+                    'url': row['product_url'][:50] + '...',
+                    'title': row['product_title'][:30] + '...' if row['product_title'] else 'No title',
+                    'image_url': row['product_image_url'],
+                    'created_at': row['created_at']
+                })
+            
+            # Sample image URL'li ürünler
+            cursor = conn.execute('''
+                SELECT id, product_url, product_title, product_image_url, created_at
+                FROM product_links 
+                WHERE is_active = 1 AND product_image_url IS NOT NULL AND product_image_url != ''
+                ORDER BY created_at DESC LIMIT 5
+            ''')
+            products_with_images_sample = []
+            for row in cursor.fetchall():
+                products_with_images_sample.append({
+                    'id': row['id'],
+                    'url': row['product_url'][:50] + '...',
+                    'title': row['product_title'][:30] + '...' if row['product_title'] else 'No title',
+                    'image_url': row['product_image_url'][:50] + '...' if row['product_image_url'] else 'None',
+                    'created_at': row['created_at']
+                })
+            
+            debug_info['database_analysis'] = {
+                'total_products': total_products,
+                'products_with_images': products_with_images,
+                'products_without_images': total_products - products_with_images,
+                'image_url_percentage': round((products_with_images / total_products * 100), 2) if total_products > 0 else 0,
+                'sample_without_images': products_without_images,
+                'sample_with_images': products_with_images_sample
+            }
+            
+        except Exception as db_error:
+            debug_info['database_analysis']['error'] = str(db_error)
+        finally:
+            conn.close()
+        
+        # 2. Son scraping verileri analizi
+        try:
+            conn = get_db_connection()
+            cursor = conn.execute('''
+                SELECT product_link_id, scraped_at, scraped_by, product_title
+                FROM product_data 
+                WHERE is_active = 1 
+                ORDER BY scraped_at DESC LIMIT 10
+            ''')
+            recent_scraping_data = []
+            for row in cursor.fetchall():
+                # Bu product_link_id için image URL var mı kontrol et
+                cursor2 = conn.execute('''
+                    SELECT product_image_url FROM product_links WHERE id = ?
+                ''', (row['product_link_id'],))
+                link_data = cursor2.fetchone()
+                
+                recent_scraping_data.append({
+                    'link_id': row['product_link_id'],
+                    'scraped_at': row['scraped_at'],
+                    'scraped_by': row['scraped_by'],
+                    'title': row['product_title'][:30] + '...' if row['product_title'] else 'No title',
+                    'has_image_url': bool(link_data and link_data['product_image_url'])
+                })
+            
+            debug_info['recent_scraping'] = {
+                'recent_scraping_count': len(recent_scraping_data),
+                'recent_scraping_data': recent_scraping_data
+            }
+            conn.close()
+            
+        except Exception as scraping_error:
+            debug_info['recent_scraping']['error'] = str(scraping_error)
+        
+        # 3. Template data analizi (get_latest_product_data fonksiyonunu test et)
+        try:
+            template_products = get_latest_product_data()
+            
+            products_analysis = []
+            for product in template_products[:5]:  # İlk 5 ürün
+                products_analysis.append({
+                    'link_id': product['link_id'],
+                    'title': product['product_title'][:30] + '...',
+                    'has_image_in_template': bool(product.get('product_image_url')),
+                    'image_url_sample': product.get('product_image_url', '')[:50] + '...' if product.get('product_image_url') else 'None'
+                })
+            
+            debug_info['template_data'] = {
+                'total_template_products': len(template_products),
+                'products_with_image_in_template': len([p for p in template_products if p.get('product_image_url')]),
+                'sample_products': products_analysis
+            }
+            
+        except Exception as template_error:
+            debug_info['template_data']['error'] = str(template_error)
+        
+        # 4. Sistem bilgileri
+        debug_info['system_info'] = {
+            'tables_exist': check_product_tables_exist(),
+            'scraping_running': is_scraping_running(),
+            'python_env': 'prod',
+            'debug_endpoint_working': True
+        }
+        
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info
+        })
+        
+    except Exception as e:
+        logging.error(f"Debug images endpoint hatası: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 # Test route'u (geliştirme aşamasında kullanılabilir)
 @product_bp.route('/products/test')
 @login_required
@@ -608,3 +765,4 @@ def test_product_system():
             'success': False,
             'error': str(e)
         }), 500
+
