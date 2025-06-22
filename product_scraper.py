@@ -69,6 +69,8 @@ def get_random_headers() -> Dict[str, str]:
 
 def setup_chrome_driver() -> webdriver.Chrome:
     """Chrome WebDriver'ı headless modda kuruluma hazırlar"""
+    print(f"🔍 PROD DEBUG: Chrome driver kuruluyor...")
+    
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
@@ -81,7 +83,7 @@ def setup_chrome_driver() -> webdriver.Chrome:
     # VPS için ayarlar
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-plugins')
-    chrome_options.add_argument('--disable-images')
+    chrome_options.add_argument('--disable-images')  # ← BU SATIR ÖNEMLİ!
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--disable-features=VizDisplayCompositor')
     chrome_options.add_argument('--remote-debugging-port=9222')
@@ -90,14 +92,18 @@ def setup_chrome_driver() -> webdriver.Chrome:
     chrome_options.add_argument('--disable-background-timer-throttling')
     chrome_options.add_argument('--disable-web-security')
     
+    print(f"🔍 PROD DEBUG: Chrome options ayarlandı (headless mode)")
+    
     try:
         # Manuel path kullan
         service = Service('/usr/bin/chromedriver')
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        print(f"✅ PROD DEBUG: Chrome driver başarıyla kuruldu")
         return driver
     except Exception as e:
-        logging.error(f"Chrome driver kurulum hatası: {str(e)}")
+        print(f"❌ PROD DEBUG: Chrome driver kurulum hatası: {str(e)}")
+        logging.error(f"PROD DEBUG: Chrome driver hatası: {str(e)}")
         raise
 
 def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
@@ -525,17 +531,49 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             'img[data-testid="product-image"]',
             '.product-image img'
         ]
-        
-        for selector in image_selectors:
+
+        print(f"🔍 PROD DEBUG: Image selector araması başlıyor...")
+        logging.info(f"PROD DEBUG: Image URL çekme başlıyor - URL: {url}")
+
+        for i, selector in enumerate(image_selectors):
             try:
+                print(f"🔍 PROD DEBUG: Image selector {i+1}/{len(image_selectors)} deneniyor: {selector}")
                 image_element = driver.find_element(By.CSS_SELECTOR, selector)
                 image_url = image_element.get_attribute('src')
+                print(f"🔍 PROD DEBUG: Element bulundu! Src attribute: {image_url}")
+                
                 if image_url:
                     result['image_url'] = image_url
-                    print(f"🔍 SELENIUM DEBUG: Image URL bulundu ({selector})")
+                    print(f"✅ PROD DEBUG: Image URL başarıyla çekildi ({selector}): {image_url[:100]}...")
+                    logging.info(f"PROD DEBUG: Image URL başarıyla elde edildi: {image_url}")
                     break
-            except:
+                else:
+                    print(f"⚠️ PROD DEBUG: Element bulundu ama src attribute boş ({selector})")
+            except Exception as selector_error:
+                print(f"❌ PROD DEBUG: Image selector hatası ({selector}): {str(selector_error)}")
                 continue
+
+        if not result.get('image_url'):
+            print(f"❌ PROD DEBUG: Hiçbir image selector çalışmadı! Tüm selector'lar denendi.")
+            logging.warning(f"PROD DEBUG: Image URL bulunamadı - URL: {url}")
+            
+            # DEBUG: Sayfada img elementlerini ara
+            try:
+                all_images = driver.find_elements(By.TAG_NAME, 'img')
+                print(f"🔍 PROD DEBUG: Sayfada toplam {len(all_images)} img elementi bulundu")
+                
+                # İlk 3 img elementinin src'sini göster
+                for i, img in enumerate(all_images[:3]):
+                    try:
+                        src = img.get_attribute('src')
+                        print(f"🔍 PROD DEBUG: Img {i+1} src: {src[:100] if src else 'None'}...")
+                    except:
+                        print(f"🔍 PROD DEBUG: Img {i+1} src okunamadı")
+                        
+            except Exception as img_debug_error:
+                print(f"❌ PROD DEBUG: Img elementleri debug hatası: {str(img_debug_error)}")
+
+        print(f"🔍 PROD DEBUG: Image URL final result: {result.get('image_url', 'None')}")
         
         # Sales data çek (sepet işlemi)
         if not result.get('sales_3day'):
@@ -847,6 +885,12 @@ def scrape_single_product(product_link_id: int, product_url: str, scraped_by: st
         print(f"🔍 DEBUG: Kaydedilecek veri: {basic_info}")
         
         # Veri kaydet - SALES ALANLARI EKLENDİ
+        print(f"🔍 PROD DEBUG: save_product_data çağrılıyor...")
+        print(f"🔍 PROD DEBUG: product_link_id: {product_link_id}")
+        print(f"🔍 PROD DEBUG: product_image_url: {basic_info.get('image_url', 'None')}")
+        logging.info(f"PROD DEBUG: Veri kaydediliyor - Link ID: {product_link_id}, Image URL var mı: {bool(basic_info.get('image_url'))}")
+
+
         success = save_product_data(
             product_link_id=product_link_id,
             seller_name=basic_info.get('seller', 'Bilinmiyor'),
@@ -862,10 +906,15 @@ def scrape_single_product(product_link_id: int, product_url: str, scraped_by: st
             # daily_estimated_sales KALDIRDIK - zaten fonksiyonda hesaplanıyor!
         )
         
+        # Debug çıktıları SONRA ekle
         if success:
+            print(f"✅ PROD DEBUG: save_product_data başarılı - Image URL kaydedildi mi: {bool(basic_info.get('image_url'))}")
+            logging.info(f"PROD DEBUG: Veri kaydetme başarılı - Link ID: {product_link_id}")
             print(f"🔍 DEBUG: Ürün scraping başarılı: {product_url}")
             return True
         else:
+            print(f"❌ PROD DEBUG: save_product_data başarısız!")
+            logging.error(f"PROD DEBUG: Veri kaydetme başarısız - Link ID: {product_link_id}")
             print(f"🔍 DEBUG: Veri kaydetme hatası: {product_url}")
             return False
             
