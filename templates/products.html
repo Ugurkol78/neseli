@@ -1853,7 +1853,13 @@ function startSingleProductMonitoring() {
                 // Yeni eklenen ürünü bul
                 const newProduct = data.products.find(p => p.link_id === currentSingleProductId);
                 
-                if (newProduct && newProduct.product_title && newProduct.product_title !== 'Başlık yükleniyor...') {
+                if (newProduct && 
+                    newProduct.product_title && 
+                    newProduct.product_title !== 'Başlık yükleniyor...' &&
+                    newProduct.price && 
+                    newProduct.rating &&
+                    newProduct.image_url &&
+                    newProduct.seller_name) {
                     // Scraping tamamlandı!
                     updateSingleProductProgress(100, "✅ Tamamlandı! Sayfa yenileniyor...", "Başarılı!");
                     
