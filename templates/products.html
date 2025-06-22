@@ -1839,7 +1839,7 @@ function updateSingleProductProgress(percentage, text, status) {
 function startSingleProductMonitoring() {
     let progressPercentage = 50;
     let checkCount = 0;
-    const maxChecks = 120; // 2 dakika maksimum bekleme
+    const maxChecks = 300; // 5 dakika maksimum bekleme (gerçekte scraping 2-3 dakika sürebiliyor)
     
     singleProductProgressInterval = setInterval(async () => {
         checkCount++;
@@ -1883,25 +1883,23 @@ function startSingleProductMonitoring() {
                         "Resim URL'si bulunuyor...",
                         "Yorum ve puan bilgileri alınıyor...",
                         "Satış verileri hesaplanıyor...",
-                        "Veriler kaydediliyor..."
+                        "Veriler kaydediliyor...",
+                        "Son kontroller yapılıyor...",
+                        "İşlem tamamlanıyor..."
                     ];
                     
-                    const messageIndex = Math.min(Math.floor(checkCount / 5), progressMessages.length - 1);
+                    const messageIndex = Math.min(Math.floor(checkCount / 8), progressMessages.length - 1);
                     updateSingleProductProgress(progressPercentage, progressMessages[messageIndex], "Çekiliyor...");
                 }
             }
             
             // Maksimum bekleme süresini aştıysa
             if (checkCount >= maxChecks) {
-                updateSingleProductProgress(90, "⚠️ İşlem uzun sürüyor, sayfa yenileniyor...", "Timeout");
+                updateSingleProductProgress(95, "⚠️ İşlem uzun sürüyor, arka planda devam ediyor...", "Bekliyor");
                 
                 setTimeout(() => {
                     hideSingleProductProgress();
-                    showAlert('⚠️ Veri çekme işlemi uzun sürdü. Sayfa yenileniyor...', 'info');
-                    
-                    setTimeout(() => {
-                        window.location.reload(true);
-                    }, 2000);
+                    showAlert('⚠️ Veri çekme işlemi arka planda devam ediyor. Sayfayı yenileyerek kontrol edebilirsiniz.', 'info');
                 }, 3000);
             }
             
