@@ -7,6 +7,7 @@ Competitor routes'a benzer yapı
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash
 from functools import wraps
 import logging
+from datetime import datetime, timedelta
 
 # Product modül importları
 from product_tracking import (
