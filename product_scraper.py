@@ -70,7 +70,7 @@ def get_random_headers() -> Dict[str, str]:
 def setup_chrome_driver() -> webdriver.Chrome:
     """Chrome WebDriver'ı headless modda kuruluma hazırlar"""
     chrome_options = Options()
-    chrome_options.add_argument('--headless')  # Görünür pencere yok
+    chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
@@ -78,12 +78,10 @@ def setup_chrome_driver() -> webdriver.Chrome:
     chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
     
-    # macOS için özel ayarlar
+    # VPS için ayarlar
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-plugins')
-    chrome_options.add_argument('--disable-images')  # Hız için resimleri yükleme
-    
-    # VPS için yeni eklemeler
+    chrome_options.add_argument('--disable-images')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--disable-features=VizDisplayCompositor')
     chrome_options.add_argument('--remote-debugging-port=9222')
@@ -93,7 +91,9 @@ def setup_chrome_driver() -> webdriver.Chrome:
     chrome_options.add_argument('--disable-web-security')
     
     try:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        # Manuel path kullan
+        service = Service('/usr/bin/chromedriver')
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         return driver
     except Exception as e:
