@@ -1200,10 +1200,10 @@ async function saveProduct() {
     }
     
     // Tarih formatını kontrol et
-    const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
-    if (!datePattern.test(firstCommentDate)) {
+    const dateValidation = validateDateFormat(firstCommentDate);
+    if (!dateValidation.valid) {
         document.getElementById('firstCommentDate').classList.add('error');
-        showAlert('Tarih formatı DD/MM/YYYY olmalıdır!', 'error');
+        showAlert(dateValidation.message, 'error');
         return;
     }
     
@@ -1925,6 +1925,80 @@ function closeAddProductModal() {
     
     // NOT: İlerleme çubuğunu kapatma - çünkü scraping devam ediyor
 }
+
+// Otomatik tarih formatı
+function formatDateInput(input) {
+    // Sadece rakamları al
+    let value = input.value.replace(/\D/g, '');
+    
+    // Maksimum 8 rakam (DDMMYYYY)
+    if (value.length > 8) {
+        value = value.substring(0, 8);
+    }
+    
+    // Otomatik formatla
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2);
+    }
+    if (value.length >= 5) {
+        value = value.substring(0, 5) + '/' + value.substring(5);
+    }
+    
+    input.value = value;
+}
+
+
+// Gelişmiş tarih validasyonu
+function validateDateFormat(dateString) {
+    // DD/MM/YYYY formatını kontrol et
+    const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateString.match(datePattern);
+    
+    if (!match) {
+        return { valid: false, message: 'Tarih formatı DD/MM/YYYY olmalıdır!' };
+    }
+    
+    const day = parseInt(match[1]);
+    const month = parseInt(match[2]);
+    const year = parseInt(match[3]);
+    
+    // Temel tarih kontrolü
+    if (day < 1 || day > 31) {
+        return { valid: false, message: 'Gün 1-31 arasında olmalıdır!' };
+    }
+    
+    if (month < 1 || month > 12) {
+        return { valid: false, message: 'Ay 1-12 arasında olmalıdır!' };
+    }
+    
+    if (year < 2000 || year > new Date().getFullYear()) {
+        return { valid: false, message: 'Yıl 2000-' + new Date().getFullYear() + ' arasında olmalıdır!' };
+    }
+    
+    return { valid: true };
+}
+
+// Sayfa yüklendiğinde tarih input'unu hazırla
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('firstCommentDate');
+    
+    if (dateInput) {
+        // Kullanıcı yazarken otomatik formatla
+        dateInput.addEventListener('input', function(e) {
+            formatDateInput(e.target);
+        });
+        
+        // Placeholder'ı güncelle
+        dateInput.placeholder = 'Örnek: 15012024 → 15/01/2024';
+        
+        // Focus olduğunda ipucu göster
+        dateInput.addEventListener('focus', function() {
+            if (!this.value) {
+                showAlert('💡 İpucu: Sadece rakamları yazın, "/" otomatik eklenecek (örn: 15012024)', 'info');
+            }
+        });
+    }
+});
 
 console.log("✅ Ürün izleme sayfası JavaScript yüklendi - Price ve Seller Rating desteği eklendi");
 
