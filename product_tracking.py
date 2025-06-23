@@ -385,7 +385,8 @@ def get_latest_product_data() -> List[Dict]:
 
 def get_product_history_data(product_link_id: int, data_type: str, days: int = 30) -> List[Dict]:
     """
-    Belirli bir ürün için belirtilen veri tipinin geçmişini getirir (grafik için)
+    Belirli bir ürün için belirtilen veri tipinin son 30 günlük geçmişini getirir
+    Her gün için en son kaydı alır, kayıt yoksa o günü atlar
     data_type: 'comment_count', 'rating', 'question_count', 'daily_estimated_sales', 'price', 'seller_rating', 'sales_3day'
     """
     conn = get_db_connection()
@@ -395,21 +396,22 @@ def get_product_history_data(product_link_id: int, data_type: str, days: int = 3
         if data_type not in valid_types:
             return []
         
-        # Son N günlük veriyi çek
+        # Son N günlük veriyi çek - HER GÜN İÇİN EN SON KAYIT
         start_date = (datetime.now() - timedelta(days=days)).isoformat()
         
         cursor = conn.execute(f'''
             SELECT 
                 DATE(scraped_at) as date,
                 {data_type} as value,
-                scraped_at,
+                MAX(scraped_at) as latest_scraped_at,
                 product_title
             FROM product_data 
             WHERE product_link_id = ? 
             AND is_active = 1
             AND datetime(scraped_at) >= datetime(?)
             AND {data_type} IS NOT NULL
-            ORDER BY scraped_at ASC
+            GROUP BY DATE(scraped_at)
+            ORDER BY date ASC
         ''', (product_link_id, start_date))
         
         history = []
@@ -417,7 +419,7 @@ def get_product_history_data(product_link_id: int, data_type: str, days: int = 3
             history.append({
                 'date': row['date'],
                 'value': row['value'],
-                'scraped_at': row['scraped_at'],
+                'scraped_at': row['latest_scraped_at'],
                 'product_title': row['product_title']
             })
         
