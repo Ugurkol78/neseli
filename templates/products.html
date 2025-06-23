@@ -479,7 +479,7 @@
         .modal {
             display: none;
             position: fixed;
-            z-index: 10000;
+            z-index: 20000;
             left: 0;
             top: 0;
             width: 100%;
@@ -588,6 +588,7 @@
             max-width: 95%;
             height: 600px;
             overflow: hidden;
+            z-index: 20001; /* YENİ: EN ÜSTE ÇIKARILDI */
         }
 
         .chart-container {
@@ -643,10 +644,15 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 10001;
+            z-index: 15000;
             min-width: 300px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             animation: slideIn 0.3s ease-out;
+        }
+
+        /* YENİ: Modal açıkken alert gizleme */
+        .modal-open .alert {
+            display: none !important;
         }
         
         .alert.success {
@@ -1025,6 +1031,23 @@ let currentChart = null;
 let currentDeleteId = null;
 let singleProductProgressInterval = null;
 let currentSingleProductId = null;
+let isModalOpen = false; // YENİ: Modal durum takibi
+
+// CSS animasyonu ekle
+const style = document.createElement('style');
+style.textContent = `
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+`;
+document.head.appendChild(style);
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
@@ -1138,8 +1161,26 @@ function clearAllFilters() {
     filterTable();
 }
 
-// Alert gösterme fonksiyonu
+// YENİ: Modal durum yönetimi
+function setModalState(isOpen) {
+    isModalOpen = isOpen;
+    
+    // Body'ye class ekle/çıkar
+    if (isOpen) {
+        document.body.classList.add('modal-open');
+    } else {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+// Alert gösterme fonksiyonu - GELİŞTİRİLDİ
 function showAlert(message, type = 'success') {
+    // Modal açıkken alert gösterme (önemli hata mesajları hariç)
+    if (isModalOpen && type !== 'error') {
+        console.log('📢 Alert blocked (modal open):', message, type);
+        return;
+    }
+    
     const existingAlerts = document.querySelectorAll('.alert');
     existingAlerts.forEach(alert => alert.remove());
     
@@ -1148,17 +1189,22 @@ function showAlert(message, type = 'success') {
     alert.textContent = message;
     document.body.appendChild(alert);
     
+    // KISA SÜRE: 3 saniye (5 saniye yerine)
+    const autoRemoveTime = type === 'error' ? 6000 : 3000;
+    
     setTimeout(() => {
         if (alert.parentNode) {
-            alert.remove();
+            alert.style.animation = 'slideOut 0.3s ease-in forwards';
+            setTimeout(() => alert.remove(), 300);
         }
-    }, 5000);
+    }, autoRemoveTime);
 }
 
 // Ürün ekleme modal açma
 function openAddProductModal() {
     document.getElementById('addProductModal').style.display = 'block';
     document.getElementById('productUrl').focus();
+    setModalState(true); // YENİ
 }
 
 // Ürün ekleme modal kapatma
@@ -1365,10 +1411,12 @@ function createProductRow(product) {
 async function openSettingsModal() {
     await loadSettings();
     document.getElementById('settingsModal').style.display = 'block';
+    setModalState(true); // YENİ
 }
 
 // Ayarlar modal kapatma
 function closeSettingsModal() {
+    setModalState(false); // YENİ
     document.getElementById('settingsModal').style.display = 'none';
 }
 
@@ -1516,10 +1564,12 @@ function openProductUrl(url) {
 function confirmDeleteProduct(productLinkId) {
     currentDeleteId = productLinkId;
     document.getElementById('deleteConfirmModal').style.display = 'block';
+    setModalState(true); // YENİ
 }
 
 // Silme onay modal kapatma
 function closeDeleteConfirmModal() {
+    setModalState(false); // YENİ
     document.getElementById('deleteConfirmModal').style.display = 'none';
     currentDeleteId = null;
 }
@@ -1557,6 +1607,7 @@ async function openChartModal(productLinkId, dataType) {
     try {
         // Modal'ı göster ve loading state'i başlat
         document.getElementById('chartModal').style.display = 'block';
+        setModalState(true); // YENİ: Modal açık olduğunu kaydet
         document.getElementById('chartLoading').style.display = 'block';
         document.getElementById('dataChart').style.display = 'none';
         document.getElementById('chartNoData').style.display = 'none';
@@ -1786,6 +1837,7 @@ function updateChartStats(data) {
 
 // Grafik modal kapatma
 function closeChartModal() {
+    setModalState(false); // YENİ
     document.getElementById('chartModal').style.display = 'none';
     
     // Grafiği temizle
@@ -1912,6 +1964,7 @@ function startSingleProductMonitoring() {
 
 // Modal kapatma fonksiyonlarını güncelle - MEVCUT FUNKTIONLARA EKLE:
 function closeAddProductModal() {
+    setModalState(false); // YENİ - BURAYA EKLE
     document.getElementById('addProductModal').style.display = 'none';
     
     // Input'ları temizle
@@ -2001,6 +2054,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log("✅ Ürün izleme sayfası JavaScript yüklendi - Price ve Seller Rating desteği eklendi");
+
+// ESC tuşu ile modal kapatma
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && isModalOpen) {
+        console.log('⌨️ ESC tuşu ile modal kapatılıyor...');
+        
+        // Hangi modal açıksa onu kapat
+        if (document.getElementById('chartModal').style.display === 'block') {
+            closeChartModal();
+        } else if (document.getElementById('addProductModal').style.display === 'block') {
+            closeAddProductModal();
+        } else if (document.getElementById('settingsModal').style.display === 'block') {
+            closeSettingsModal();
+        } else if (document.getElementById('deleteConfirmModal').style.display === 'block') {
+            closeDeleteConfirmModal();
+        }
+    }
+});
 
 // Sayfa yüklendiğinde interval'ları temizle - MEVCUT KODA EKLE:
 window.addEventListener('beforeunload', function() {
