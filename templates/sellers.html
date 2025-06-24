@@ -2064,45 +2064,18 @@ function startSingleSellerMonitoring() {
         console.log(message, data);
         
         const time = new Date().toLocaleTimeString();
-        const logEntry = data ? `[${time}] ${message} ${JSON.stringify(data)}` : `[${time}] ${message}`;
+        const logEntry = data ? `[${time}] ${message}\n${JSON.stringify(data, null, 2)}` : `[${time}] ${message}`;
         
-        // localStorage'a kaydet
-        let savedLogs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
-        savedLogs.push(logEntry);
-        
-        // Son 50 mesajı tut
-        if (savedLogs.length > 50) {
-            savedLogs = savedLogs.slice(-50);
+        // Her önemli mesajı alert olarak göster
+        if (message.includes('Satıcı bulundu') || 
+            message.includes('Satıcı bulunamadı') || 
+            message.includes('Başarı koşulu') ||
+            message.includes('interval durduruldu')) {
+            
+            setTimeout(() => {
+                alert(logEntry);
+            }, 100);
         }
-        localStorage.setItem('debugLogs', JSON.stringify(savedLogs));
-        
-        // DOM'a yazdır
-        let debugDiv = document.getElementById('debugMessages');
-        if (!debugDiv) {
-            debugDiv = document.createElement('div');
-            debugDiv.id = 'debugMessages';
-            debugDiv.style.cssText = 'position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.9); color:#00ff00; padding:10px; font-family:monospace; font-size:11px; max-width:500px; max-height:400px; overflow-y:auto; z-index:99999; border-radius:5px; border:1px solid #333;';
-            
-            // Kaydedilmiş logları yükle
-            const allLogs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
-            debugDiv.innerHTML = allLogs.map(log => `<div style="margin-bottom:2px; word-wrap:break-word;">${log}</div>`).join('');
-            
-            // Temizle butonu ekle
-            const clearBtn = document.createElement('button');
-            clearBtn.textContent = 'Temizle';
-            clearBtn.style.cssText = 'position:absolute; top:5px; right:5px; background:#ff0000; color:white; border:none; padding:2px 6px; font-size:10px; cursor:pointer;';
-            clearBtn.onclick = () => {
-                localStorage.removeItem('debugLogs');
-                debugDiv.innerHTML = '';
-            };
-            debugDiv.appendChild(clearBtn);
-            
-            document.body.appendChild(debugDiv);
-        } else {
-            debugDiv.innerHTML += `<div style="margin-bottom:2px; word-wrap:break-word;">${logEntry}</div>`;
-        }
-        
-        debugDiv.scrollTop = debugDiv.scrollHeight;
     }
 
     // 🛡️ Toplu güncelleme progress bar'ını gizle
