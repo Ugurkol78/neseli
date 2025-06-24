@@ -467,13 +467,15 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             print(f"🔍 SELENIUM DEBUG: Wait hatası: {e}")
             pass
 
-        print(f"🔍 SELENIUM DEBUG: Price element HTML: {price_element.get_attribute('outerHTML')}")
 
         for selector in price_selectors:
             try:
                 price_element = driver.find_element(By.CSS_SELECTOR, selector)
                 price_text = price_element.text.strip()
                 print(f"🔍 SELENIUM DEBUG: Price element text ({selector}): '{price_text}'")
+
+                print(f"🔍 SELENIUM DEBUG: Price element HTML: {price_element.get_attribute('outerHTML')}")
+
                 
                 # Fiyat temizleme - TL, ₺ sembollerini kaldır ve gelişmiş parsing
                 if price_text:
