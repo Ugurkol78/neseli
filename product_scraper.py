@@ -143,13 +143,13 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         # Fiyat - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
+           '.prc-dsc', 
            'span.price-view-discounted',                    # "2.789,07 TL" - Ana selector
            '.price-view-price-view span.price-view-discounted',  # Daha spesifik
            '[data-testid="price"] .price-view-discounted',  # Data-testid ile
            '.campaign-price-content .new-price',            # YENİ: Campaign price format
            '.campaign-price-content p.new-price',           # YENİ: Daha spesifik selector
            '[data-testid="price-current-price"]',
-           '.prc-dsc',
            '.prc-slg', 
            '.product-price .prc-dsc',
         ]
@@ -433,45 +433,31 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         
         # Price çek - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
-            'span.price-view-discounted',                    # "2.789,07 TL" - Ana selector
-            '.price-view-price-view span.price-view-discounted',  # Daha spesifik
-            '[data-testid="price"] .price-view-discounted',  # Data-testid ile
-            '.campaign-price-content .new-price',            # YENİ: Campaign price format
-            '.campaign-price-content p.new-price',           # YENİ: Daha spesifik selector
-            'div.campaign-price-content p.new-price',        # ← VİRGÜL EKLENDİ!
+            '.prc-dsc',                                      # ✅ İNDİRİMLİ FİYAT
+            'span.price-view-discounted',                    
+            '.price-view-price-view span.price-view-discounted',  
+            '[data-testid="price"] .price-view-discounted',  
+            '.campaign-price-content .new-price',            
+            '.campaign-price-content p.new-price',           
+            'div.campaign-price-content p.new-price',        
             '[data-testid="price-current-price"]',
             '.price-current',
-            'span[class*="price"]',
-            '.prc-dsc',
             '.prc-slg', 
             '.product-price .prc-dsc',
             '.prc-cntr .prc-dsc',
             '.price-container span',
-            'div[class*="price"] span',
             '.product-price span:last-child',
             'span[data-testid*="price"]',
+            # ❌ BUNLARI EN SONA TAŞIYIN:
+            'span[class*="price"]',        # ← ESKİ FİYAT ALIYOR
+            'div[class*="price"] span',    # ← ESKİ FİYAT ALIYOR
         ]
-
-        # ✅ BURAYA EKLEYİN - Fiyat alanının yüklenmesini bekle
-        try:
-            
-            wait = WebDriverWait(driver, 10)
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="price"]')))
-            time.sleep(2)  # Ekstra güvenlik
-            print("🔍 SELENIUM DEBUG: Fiyat alanı yüklendi, devam ediliyor...")
-        except Exception as e:
-            print(f"🔍 SELENIUM DEBUG: Wait hatası: {e}")
-            pass
-
 
         for selector in price_selectors:
             try:
                 price_element = driver.find_element(By.CSS_SELECTOR, selector)
                 price_text = price_element.text.strip()
                 print(f"🔍 SELENIUM DEBUG: Price element text ({selector}): '{price_text}'")
-
-                print(f"🔍 SELENIUM DEBUG: Price element HTML: {price_element.get_attribute('outerHTML')}")
-
                 
                 # Fiyat temizleme - TL, ₺ sembollerini kaldır ve gelişmiş parsing
                 if price_text:
