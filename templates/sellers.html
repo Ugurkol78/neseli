@@ -2059,6 +2059,25 @@ function updateSingleSellerProgress(percentage, text, status) {
 }
 
 function startSingleSellerMonitoring() {
+    // Debug helper fonksiyonu
+    function debugLog(message, data = null) {
+        console.log(message, data);
+        
+        // DOM'a da yazdır
+        let debugDiv = document.getElementById('debugMessages');
+        if (!debugDiv) {
+            debugDiv = document.createElement('div');
+            debugDiv.id = 'debugMessages';
+            debugDiv.style.cssText = 'position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.9); color:#00ff00; padding:10px; font-family:monospace; font-size:11px; max-width:500px; max-height:400px; overflow-y:auto; z-index:99999; border-radius:5px; border:1px solid #333;';
+            document.body.appendChild(debugDiv);
+        }
+        
+        const time = new Date().toLocaleTimeString();
+        const logEntry = data ? `[${time}] ${message} ${JSON.stringify(data)}` : `[${time}] ${message}`;
+        debugDiv.innerHTML += `<div style="margin-bottom:2px; word-wrap:break-word;">${logEntry}</div>`;
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+    }
+
     // 🛡️ Toplu güncelleme progress bar'ını gizle
     const progressInfo = document.getElementById('progressInfo');
     if (progressInfo) {
@@ -2068,7 +2087,7 @@ function startSingleSellerMonitoring() {
     let checkCount = 0;
     const maxChecks = 240; // 4 dakika maksimum
     
-    console.log('🔍 DEBUG: Single seller monitoring interval başlatıldı');
+    debugLog('🔍 DEBUG: Single seller monitoring interval başlatıldı');
     
     singleSellerProgressInterval = setInterval(async () => {
         checkCount++;
@@ -2101,7 +2120,7 @@ function startSingleSellerMonitoring() {
                 
                 // DEBUG EKLE
                 if (newSeller) {
-                    console.log('🔍 DEBUG: Satıcı bulundu:', {
+                    debugLog('🔍 DEBUG: Satıcı bulundu:', {
                         seller_name: newSeller.seller_name,
                         seller_score: newSeller.seller_score,
                         product_count: newSeller.product_count,
@@ -2109,8 +2128,8 @@ function startSingleSellerMonitoring() {
                         currentSingleSellerId: currentSingleSellerId
                     });
                 } else {
-                    console.log('🔍 DEBUG: Satıcı bulunamadı, currentSingleSellerId:', currentSingleSellerId);
-                    console.log('🔍 DEBUG: Mevcut seller link_id\'ler:', data.sellers.map(s => s.link_id));
+                    debugLog('🔍 DEBUG: Satıcı bulunamadı, currentSingleSellerId:', currentSingleSellerId);
+                    debugLog('🔍 DEBUG: Mevcut seller link_id\'ler:', data.sellers.map(s => s.link_id));
                 }
                 
                 // Yeni verinin gelip gelmediğini kontrol et
@@ -2119,13 +2138,13 @@ function startSingleSellerMonitoring() {
                     newSeller.seller_name !== 'Satıcı adı yükleniyor...' &&
                     (newSeller.seller_score > 0 || newSeller.product_count > 0)) {
                     
-                    console.log('🔍 DEBUG: Başarı koşulu sağlandı, interval durduruluyor');
+                    debugLog('🔍 DEBUG: Başarı koşulu sağlandı, interval durduruluyor');
                     updateSingleSellerProgress(100, "✅ Tamamlandı! Sayfa yenileniyor...", "Başarılı!");
                     
                     // INTERVAL'I DURDUR!
                     clearInterval(singleSellerProgressInterval);
                     singleSellerProgressInterval = null;
-                    console.log('🔍 DEBUG: Single seller monitoring interval durduruldu - başarılı');
+                    debugLog('🔍 DEBUG: Single seller monitoring interval durduruldu - başarılı');
                     
                     setTimeout(() => {
                         hideSingleSellerProgress();
@@ -2141,7 +2160,7 @@ function startSingleSellerMonitoring() {
                     
                     return; // Fonksiyondan çık
                 } else if (newSeller) {
-                    console.log('🔍 DEBUG: Satıcı bulundu ama koşul sağlanmadı:', {
+                    debugLog('🔍 DEBUG: Satıcı bulundu ama koşul sağlanmadı:', {
                         hasSellerName: !!newSeller.seller_name,
                         sellerNameValid: newSeller.seller_name !== 'Satıcı adı yükleniyor...',
                         hasScore: newSeller.seller_score > 0,
@@ -2179,7 +2198,7 @@ function startSingleSellerMonitoring() {
                 // INTERVAL'I DURDUR!
                 clearInterval(singleSellerProgressInterval);
                 singleSellerProgressInterval = null;
-                console.log('🔍 DEBUG: Single seller monitoring interval durduruldu - timeout');
+                debugLog('🔍 DEBUG: Single seller monitoring interval durduruldu - timeout');
                 
                 setTimeout(() => {
                     hideSingleSellerProgress();
@@ -2195,7 +2214,7 @@ function startSingleSellerMonitoring() {
                 // INTERVAL'I DURDUR!
                 clearInterval(singleSellerProgressInterval);
                 singleSellerProgressInterval = null;
-                console.log('🔍 DEBUG: Single seller monitoring interval durduruldu - hata');
+                debugLog('🔍 DEBUG: Single seller monitoring interval durduruldu - hata');
                 
                 hideSingleSellerProgress();
                 showAlert('⚠️ Veri takibinde sorun oluştu. Sayfayı yenileyin.', 'error');
