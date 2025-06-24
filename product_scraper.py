@@ -525,6 +525,8 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                 print(f"🔍 SELENIUM DEBUG: Price selector hatası ({selector}): {str(e)}")
                 continue
 
+        # Sayfa kaynağında fiyat arama kısmını BU ile değiştirin:
+
         if not result.get('price'):
             print(f"❌ SELENIUM DEBUG: HİÇBİR PRICE SELECTOR ÇALIŞMADI!")
             print(f"🔍 SELENIUM DEBUG: Sayfa kaynak kodu price kontrolü...")
@@ -532,40 +534,85 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             # Sayfa kaynağında fiyat ara
             page_source = driver.page_source
             
-            # Çeşitli fiyat pattern'leri ara
-            price_patterns = [
-                r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*TL',
-                r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*₺',
-                r'"price"[^>]*>([^<]+)',
-                r'prc-dsc[^>]*>([^<]+)',
-                r'price-view-discounted[^>]*>([^<]+)'
+            # ÖNCELİKLE İNDİRİMLİ FİYAT PATTERN'LERİNİ ARA
+            discounted_patterns = [
+                r'prc-dsc[^>]*>([^<]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)[^<]*)',  # .prc-dsc class'ı
+                r'price-view-discounted[^>]*>([^<]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)[^<]*)',  # discounted class
+                r'campaign-price[^>]*>([^<]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)[^<]*)',  # campaign price
             ]
             
-            for pattern in price_patterns:
+            # İndirimli fiyat ara
+            for pattern in discounted_patterns:
                 matches = re.findall(pattern, page_source, re.IGNORECASE)
                 if matches:
-                    print(f"🔍 SELENIUM DEBUG: Pattern bulundu ({pattern}): {matches[:3]}")  # İlk 3 match
+                    print(f"🔍 SELENIUM DEBUG: İndirimli fiyat pattern bulundu ({pattern}): {matches[:3]}")
                     
-                    # İlk geçerli fiyatı dene
                     for match in matches:
                         try:
-                            clean_match = re.sub(r'[^\d,.]', '', match)
+                            # match[1] sayısal kısmı içerir
+                            price_text = match[1] if isinstance(match, tuple) else match
+                            clean_match = re.sub(r'[^\d,.]', '', price_text)
+                            
                             if clean_match:
-                                # Basit float conversion
-                                if ',' in clean_match:
+                                if ',' in clean_match and '.' not in clean_match:
                                     test_price = float(clean_match.replace(',', '.'))
+                                elif '.' in clean_match and ',' not in clean_match:
+                                    test_price = float(clean_match)
+                                elif ',' in clean_match and '.' in clean_match:
+                                    # Virgül decimal, nokta binlik varsayımı
+                                    test_price = float(clean_match.replace('.', '').replace(',', '.'))
                                 else:
                                     test_price = float(clean_match)
                                 
                                 if 10 <= test_price <= 1000000:  # Makul fiyat aralığı
                                     result['price'] = test_price
-                                    print(f"🔍 SELENIUM DEBUG: Pattern'den fiyat bulundu: {result['price']}")
+                                    print(f"🔍 SELENIUM DEBUG: İndirimli fiyat bulundu: {result['price']}")
                                     break
-                        except:
+                        except Exception as e:
+                            print(f"🔍 SELENIUM DEBUG: İndirimli fiyat parse hatası: {e}")
                             continue
                     
                     if result.get('price'):
                         break
+            
+            # Eğer indirimli fiyat bulunamadıysa, genel fiyat pattern'lerini dene
+            if not result.get('price'):
+                print(f"🔍 SELENIUM DEBUG: İndirimli fiyat bulunamadı, genel fiyat aranıyor...")
+                
+                general_patterns = [
+                    r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*TL',
+                    r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*₺',
+                    r'"price"[^>]*>([^<]+)',
+                ]
+                
+                for pattern in general_patterns:
+                    matches = re.findall(pattern, page_source, re.IGNORECASE)
+                    if matches:
+                        print(f"🔍 SELENIUM DEBUG: Genel fiyat pattern bulundu ({pattern}): {matches[:3]}")
+                        
+                        # TÜM MATCH'LERİ KONTROL ET - EN DÜŞÜK GEÇERLİ FİYATI AL (İNDİRİMLİ OLABİLİR)
+                        valid_prices = []
+                        for match in matches:
+                            try:
+                                clean_match = re.sub(r'[^\d,.]', '', match)
+                                if clean_match:
+                                    if ',' in clean_match:
+                                        test_price = float(clean_match.replace(',', '.'))
+                                    else:
+                                        test_price = float(clean_match)
+                                    
+                                    if 10 <= test_price <= 1000000:
+                                        valid_prices.append(test_price)
+                            except:
+                                continue
+                        
+                        if valid_prices:
+                            # EN DÜŞÜK FİYATI AL (büyük ihtimalle indirimli)
+                            result['price'] = min(valid_prices)
+                            print(f"🔍 SELENIUM DEBUG: En düşük geçerli fiyat seçildi: {result['price']} (Tüm fiyatlar: {valid_prices})")
+                            break
+
+        print(f"🔍 SELENIUM DEBUG: Final price result: {result.get('price', 'NONE')}")
 
         print(f"🔍 SELENIUM DEBUG: Final price result: {result.get('price', 'NONE')}")
         
