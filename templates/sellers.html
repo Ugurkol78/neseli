@@ -1741,7 +1741,6 @@ async function checkUpdateStatus() {
             const status = data.status;
             
             if (status.is_running) {
-                // Sadece scraping çalışıyorsa interval devam etsin
                 showProgressInfo();
                 
                 const progress = status.total_items > 0 ? (status.current_progress / status.total_items) * 100 : 0;
@@ -1750,46 +1749,35 @@ async function checkUpdateStatus() {
                 document.getElementById('progressText').textContent = 'Satıcı verileri güncelleniyor...';
                 document.getElementById('progressDetail').textContent = status.current_item || '';
                 
+                // Interval başlat (eğer yoksa)
+                if (!updateStatusInterval) {
+                    updateStatusInterval = setInterval(checkUpdateStatus, 5000);
+                }
             } else {
-                // Scraping durmuş
                 hideProgressInfo();
                 
-                // Sadece bir kez sayfa yenile (eğer modal açık değilse)
-                if (status.current_progress > 0 && !isModalOpen) {
-                    // Interval'ı hemen durdur
-                    if (updateStatusInterval) {
-                        clearInterval(updateStatusInterval);
-                        updateStatusInterval = null;
-                        console.log('🔍 DEBUG: Update status interval durduruldu - scraping bitti');
-                    }
-                    
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                } else {
-                    // Interval'ı durdur - scraping çalışmıyor
-                    if (updateStatusInterval) {
-                        clearInterval(updateStatusInterval);
-                        updateStatusInterval = null;
-                        console.log('🔍 DEBUG: Update status interval durduruldu - scraping yok');
-                    }
+                // Interval'ı durdur
+                if (updateStatusInterval) {
+                    clearInterval(updateStatusInterval);
+                    updateStatusInterval = null;
+                }
+                
+                // SAYFA YENİLEME KALDIRILDI - Sadece bilgi mesajı
+                if (status.current_progress > 0) {
+                    showAlert('✅ Veri güncelleme tamamlandı!', 'success');
                 }
             }
         } else {
-            // API hatası varsa interval'ı durdur
             if (updateStatusInterval) {
                 clearInterval(updateStatusInterval);
                 updateStatusInterval = null;
-                console.log('🔍 DEBUG: Update status interval durduruldu - API hatası');
             }
         }
         
     } catch (error) {
-        // Network hatası varsa interval'ı durdur
         if (updateStatusInterval) {
             clearInterval(updateStatusInterval);
             updateStatusInterval = null;
-            console.log('🔍 DEBUG: Update status interval durduruldu - network hatası');
         }
     }
 }
@@ -1827,9 +1815,14 @@ async function executeDeleteSeller() {
             showAlert(data.message, 'success');
             closeDeleteConfirmModal();
             
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            // Satırı tablodan kaldır
+            const rowToDelete = document.querySelector(`tr[data-link-id="${currentDeleteId}"]`);
+            if (rowToDelete) {
+                rowToDelete.remove();
+                updateFilterCount();
+            }
+            
+            // SAYFA YENİLEME KALDIRILDI
         } else {
             showAlert('Hata: ' + data.error, 'error');
         }
@@ -2062,20 +2055,6 @@ function startSingleSellerMonitoring() {
     // Debug helper fonksiyonu
     function debugLog(message, data = null) {
         console.log(message, data);
-        
-        const time = new Date().toLocaleTimeString();
-        const logEntry = data ? `[${time}] ${message}\n${JSON.stringify(data, null, 2)}` : `[${time}] ${message}`;
-        
-        // Her önemli mesajı alert olarak göster
-        if (message.includes('Satıcı bulundu') || 
-            message.includes('Satıcı bulunamadı') || 
-            message.includes('Başarı koşulu') ||
-            message.includes('interval durduruldu')) {
-            
-            setTimeout(() => {
-                alert(logEntry);
-            }, 100);
-        }
     }
 
     // 🛡️ Toplu güncelleme progress bar'ını gizle
