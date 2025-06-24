@@ -2150,12 +2150,16 @@ function startSingleSellerMonitoring() {
                         hideSingleSellerProgress();
                         showAlert('✅ Satıcı başarıyla eklendi ve veriler çekildi!', 'success');
                         
-                        // Modal açıksa sayfa yenileme
+                        // GEÇICI OLARAK KAPALI - Modal açıksa sayfa yenileme
+                        /*
                         if (!isModalOpen) {
                             setTimeout(() => {
                                 window.location.reload(true);
                             }, 1500);
                         }
+                        */
+                        
+                        debugLog('🔍 DEBUG: İşlem tamamlandı, sayfa yenileme atlandı');
                     }, 2000);
                     
                     return; // Fonksiyondan çık
