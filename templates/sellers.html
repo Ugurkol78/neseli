@@ -1741,6 +1741,7 @@ async function checkUpdateStatus() {
             const status = data.status;
             
             if (status.is_running) {
+                // Sadece scraping çalışıyorsa interval devam etsin
                 showProgressInfo();
                 
                 const progress = status.total_items > 0 ? (status.current_progress / status.total_items) * 100 : 0;
@@ -1750,28 +1751,46 @@ async function checkUpdateStatus() {
                 document.getElementById('progressDetail').textContent = status.current_item || '';
                 
             } else {
+                // Scraping durmuş
                 hideProgressInfo();
                 
-                if (status.current_progress > 0) {
-                    // Herhangi bir modal açıksa sayfa yenileme
-                    if (!isModalOpen) {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
+                // Sadece bir kez sayfa yenile (eğer modal açık değilse)
+                if (status.current_progress > 0 && !isModalOpen) {
+                    // Interval'ı hemen durdur
+                    if (updateStatusInterval) {
+                        clearInterval(updateStatusInterval);
+                        updateStatusInterval = null;
+                        console.log('🔍 DEBUG: Update status interval durduruldu - scraping bitti');
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    // Interval'ı durdur - scraping çalışmıyor
+                    if (updateStatusInterval) {
+                        clearInterval(updateStatusInterval);
+                        updateStatusInterval = null;
+                        console.log('🔍 DEBUG: Update status interval durduruldu - scraping yok');
                     }
                 }
-                
-                // Scraping çalışmıyorsa interval'ı durdur
-                if (updateStatusInterval) {
-                    clearInterval(updateStatusInterval);
-                    updateStatusInterval = null;
-                    console.log('🔍 DEBUG: Update status interval durduruldu - scraping bitti');
-                }
+            }
+        } else {
+            // API hatası varsa interval'ı durdur
+            if (updateStatusInterval) {
+                clearInterval(updateStatusInterval);
+                updateStatusInterval = null;
+                console.log('🔍 DEBUG: Update status interval durduruldu - API hatası');
             }
         }
         
     } catch (error) {
-        // Silent error
+        // Network hatası varsa interval'ı durdur
+        if (updateStatusInterval) {
+            clearInterval(updateStatusInterval);
+            updateStatusInterval = null;
+            console.log('🔍 DEBUG: Update status interval durduruldu - network hatası');
+        }
     }
 }
 
