@@ -143,15 +143,15 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         # Fiyat - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
-            '.prc-dsc',
-            '.prc-slg', 
-            '.product-price .prc-dsc',
-            '[data-testid="price-current-price"]',
-            '.campaign-price-content .new-price',  # YENİ: Campaign price format
-            '.campaign-price-content p.new-price', # YENİ: Daha spesifik selector
             '.price-view-discounted',                    # ✅ YENİ
             'span.price-view-discounted',               # ✅ YENİ
             '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
+            '.campaign-price-content .new-price',  # YENİ: Campaign price format
+            '.campaign-price-content p.new-price', # YENİ: Daha spesifik selector
+            '[data-testid="price-current-price"]',
+            '.prc-dsc',
+            '.prc-slg', 
+            '.product-price .prc-dsc',
         ]
         for selector in price_selectors:
             element = soup.select_one(selector)
@@ -433,23 +433,23 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         
         # Price çek - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
-            '.prc-dsc',
-            '.prc-slg', 
-            '.product-price .prc-dsc',
+            '.price-view-discounted',                    # ✅ YENİ
+            'span.price-view-discounted',               # ✅ YENİ
+            '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
+            '.campaign-price-content .new-price',    # YENİ: Campaign price format
+            '.campaign-price-content p.new-price',   # YENİ: Daha spesifik selector
+            'div.campaign-price-content p.new-price' # YENİ: En spesifik selector
             '[data-testid="price-current-price"]',
             '.price-current',
             'span[class*="price"]',
+            '.prc-dsc',
+            '.prc-slg', 
+            '.product-price .prc-dsc',
             '.prc-cntr .prc-dsc',
             '.price-container span',
             'div[class*="price"] span',
             '.product-price span:last-child',
             'span[data-testid*="price"]',
-            '.campaign-price-content .new-price',    # YENİ: Campaign price format
-            '.campaign-price-content p.new-price',   # YENİ: Daha spesifik selector
-            'div.campaign-price-content p.new-price' # YENİ: En spesifik selector
-            '.price-view-discounted',                    # ✅ YENİ
-            'span.price-view-discounted',               # ✅ YENİ
-            '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
         ]
 
         for selector in price_selectors:
