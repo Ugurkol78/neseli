@@ -2150,16 +2150,10 @@ function startSingleSellerMonitoring() {
                         hideSingleSellerProgress();
                         showAlert('✅ Satıcı başarıyla eklendi ve veriler çekildi!', 'success');
                         
-                        // GEÇICI OLARAK KAPALI - Modal açıksa sayfa yenileme
-                        /*
-                        if (!isModalOpen) {
-                            setTimeout(() => {
-                                window.location.reload(true);
-                            }, 1500);
-                        }
-                        */
+                        // Sayfa yenilemek yerine tabloyu güncelle
+                        refreshTableWithNewSeller(currentSingleSellerId);
                         
-                        debugLog('🔍 DEBUG: İşlem tamamlandı, sayfa yenileme atlandı');
+                        debugLog('🔍 DEBUG: İşlem tamamlandı, tablo güncellendi');
                     }, 2000);
                     
                     return; // Fonksiyondan çık
@@ -2226,6 +2220,90 @@ function startSingleSellerMonitoring() {
         }
         
     }, 2000); // 2 saniyede bir kontrol et
+}
+
+// Tabloyu yeni satıcı ile güncelle
+async function refreshTableWithNewSeller(sellerId) {
+    try {
+        const response = await fetch(`/sellers/refresh-data?t=${new Date().getTime()}`);
+        const data = await response.json();
+        
+        if (data.success && data.sellers) {
+            const newSeller = data.sellers.find(s => s.link_id === sellerId);
+            
+            if (newSeller) {
+                // Tabloya yeni satır ekle
+                addNewSellerRowToTable(newSeller);
+                
+                // Filtre sayaçlarını güncelle
+                updateFilterCount();
+                
+                debugLog('🔍 DEBUG: Yeni satıcı tabloya eklendi:', newSeller);
+            }
+        }
+    } catch (error) {
+        debugLog('🔍 DEBUG: Tablo güncelleme hatası:', error.message);
+        // Hata varsa sayfa yenile
+        setTimeout(() => window.location.reload(), 1000);
+    }
+}
+
+// Yeni satıcı satırını tabloya ekle
+function addNewSellerRowToTable(seller) {
+    const tableBody = document.querySelector('#sellersTable tbody');
+    if (!tableBody) return;
+    
+    const newRow = document.createElement('tr');
+    newRow.setAttribute('data-link-id', seller.link_id);
+    
+    newRow.innerHTML = `
+        <td class="seller-name" onclick="openSellerUrl('${seller.all_products_url}')">
+            ${seller.seller_name ? (seller.seller_name.length > 25 ? seller.seller_name.substring(0, 25) + '...' : seller.seller_name) : '-'}
+        </td>
+        <td class="location-cell">${seller.location || '-'}</td>
+        <td class="data-cell">${seller.store_age && seller.store_age > 0 ? seller.store_age + ' Yıl' : '-'}</td>
+        <td class="score-cell" onclick="openChartModal(${seller.link_id}, 'seller_score')">
+            ${seller.seller_score && seller.seller_score > 0 ? seller.seller_score.toFixed(1) : '-'}
+        </td>
+        <td class="data-cell" onclick="openChartModal(${seller.link_id}, 'follower_count')">
+            ${seller.follower_count && seller.follower_count > 0 ? formatFollowerCount(seller.follower_count) : '-'}
+        </td>
+        <td class="data-cell" onclick="openChartModal(${seller.link_id}, 'product_count')">
+            ${seller.product_count && seller.product_count > 0 ? seller.product_count : '-'}
+        </td>
+        <td class="rating-cell" onclick="openChartModal(${seller.link_id}, 'overall_rating')">
+            ${seller.overall_rating && seller.overall_rating > 0 ? seller.overall_rating.toFixed(1) : '-'}
+        </td>
+        <td class="data-cell" onclick="openChartModal(${seller.link_id}, 'total_reviews')">
+            ${seller.total_reviews && seller.total_reviews > 0 ? seller.total_reviews : '-'}
+        </td>
+        <td class="data-cell" onclick="openChartModal(${seller.link_id}, 'total_comments')">
+            ${seller.total_comments && seller.total_comments > 0 ? seller.total_comments : '-'}
+        </td>
+        <td class="date-cell">${seller.last_update || '-'}</td>
+        <td>
+            <button class="delete-btn" onclick="confirmDeleteSeller(${seller.link_id})" title="Satıcıyı Sil">✕</button>
+        </td>
+    `;
+    
+    // Yeni satırı en üste ekle
+    tableBody.insertBefore(newRow, tableBody.firstChild);
+    
+    // Satır animasyonu
+    newRow.style.backgroundColor = '#e6f7ff';
+    setTimeout(() => {
+        newRow.style.backgroundColor = '';
+    }, 2000);
+}
+
+// Takipçi sayısını formatla (helper fonksiyon)
+function formatFollowerCount(count) {
+    if (count >= 1000000) {
+        return (count / 1000000).toFixed(1) + 'M';
+    } else if (count >= 1000) {
+        return (count / 1000).toFixed(1) + 'B';
+    }
+    return count.toString();
 }
 
 // Modal dışına tıklanırsa kapat
