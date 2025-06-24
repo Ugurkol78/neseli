@@ -454,10 +454,6 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
 
         # ✅ BURAYA EKLEYİN - Fiyat alanının yüklenmesini bekle
         try:
-            from selenium.webdriver.support.ui import WebDriverWait
-            from selenium.webdriver.support import expected_conditions as EC
-            from selenium.webdriver.common.by import By
-            import time
             
             wait = WebDriverWait(driver, 10)
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="price"]')))
