@@ -149,6 +149,9 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
             '[data-testid="price-current-price"]',
             '.campaign-price-content .new-price',  # YENİ: Campaign price format
             '.campaign-price-content p.new-price', # YENİ: Daha spesifik selector
+            '.price-view-discounted',                    # ✅ YENİ
+            'span.price-view-discounted',               # ✅ YENİ
+            '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
         ]
         for selector in price_selectors:
             element = soup.select_one(selector)
@@ -444,6 +447,9 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             '.campaign-price-content .new-price',    # YENİ: Campaign price format
             '.campaign-price-content p.new-price',   # YENİ: Daha spesifik selector
             'div.campaign-price-content p.new-price' # YENİ: En spesifik selector
+            '.price-view-discounted',                    # ✅ YENİ
+            'span.price-view-discounted',               # ✅ YENİ
+            '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
         ]
 
         for selector in price_selectors:
