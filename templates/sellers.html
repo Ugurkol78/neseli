@@ -1705,9 +1705,13 @@ async function startManualUpdate() {
             showAlert(data.message, 'success');
             showProgressInfo();
             
-            // 🔥 YENİ EKLENEN: Interval başlat
+            // 🔥 DEBUG: Interval başlatma
+            console.log('🔍 DEBUG: Interval başlatılıyor...');
             if (!updateStatusInterval) {
                 updateStatusInterval = setInterval(checkUpdateStatus, 2000);
+                console.log('🔍 DEBUG: Interval başlatıldı, ID:', updateStatusInterval);
+            } else {
+                console.log('🔍 DEBUG: Interval zaten var:', updateStatusInterval);
             }
         } else {
             showAlert('Hata: ' + data.error, 'error');
