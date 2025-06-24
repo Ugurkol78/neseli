@@ -431,7 +431,7 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             except:
                 continue
         
-        # Price çek - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
+        # Price çek - FULL DEBUG MODE
         price_selectors = [
             '.prc-dsc',                                      # ✅ İNDİRİMLİ FİYAT
             'span.price-view-discounted',                    
@@ -448,70 +448,126 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             '.price-container span',
             '.product-price span:last-child',
             'span[data-testid*="price"]',
-            # ❌ BU SATIRLARI SİLİN VEYA EN SONA TAŞIYIN:
-            # 'span[class*="price"]',        
-            # 'div[class*="price"] span',    
         ]
 
+        print(f"🔍 SELENIUM DEBUG: Price çekme başlıyor...")
+
+        # ÖNCE SAYFADA HANGİ PRICE ELEMENT'LERİ VAR BAKALIM
+        try:
+            print(f"🔍 SELENIUM DEBUG: Sayfadaki tüm price-related elementler:")
+            
+            # Genel price element'lerini bul
+            all_price_elements = driver.find_elements(By.CSS_SELECTOR, '*[class*="price"], *[class*="prc"], *[data-testid*="price"]')
+            for i, elem in enumerate(all_price_elements[:10]):  # İlk 10 tanesi
+                try:
+                    elem_class = elem.get_attribute('class')
+                    elem_text = elem.text.strip()
+                    elem_tag = elem.tag_name
+                    print(f"🔍 SELENIUM DEBUG: Element {i+1}: <{elem_tag} class='{elem_class}'>{elem_text}</tag>")
+                except:
+                    pass
+                    
+            print(f"🔍 SELENIUM DEBUG: Toplam price-related element sayısı: {len(all_price_elements)}")
+            
+        except Exception as e:
+            print(f"🔍 SELENIUM DEBUG: Price element listesi hatası: {str(e)}")
+
+        # ŞİMDİ SELECTOR'LARI TEK TEK DENE
         for selector in price_selectors:
             try:
                 price_element = driver.find_element(By.CSS_SELECTOR, selector)
                 price_text = price_element.text.strip()
-                print(f"🔍 SELENIUM DEBUG: Price element text ({selector}): '{price_text}'")
+                print(f"🔍 SELENIUM DEBUG: Price element BULUNDU ({selector}): '{price_text}'")
                 
-                # Fiyat temizleme - TL, ₺ sembollerini kaldır ve gelişmiş parsing
+                # Fiyat temizleme
                 if price_text:
-                    # "2.959 TL" formatını handle et
                     price_clean = re.sub(r'[^\d,.]', '', price_text)  # Sadece rakam, virgül ve nokta bırak
+                    print(f"🔍 SELENIUM DEBUG: Price clean: '{price_clean}'")
                     
                     if price_clean:
                         try:
-                            # Binlik ayırıcı ve decimal ayırıcı mantığı
-                            if '.' in price_clean and ',' in price_clean:
-                                # Hem nokta hem virgül varsa, hangisi sonuncu onu decimal kabul et
-                                last_dot = price_clean.rfind('.')
-                                last_comma = price_clean.rfind(',')
-                                
-                                if last_dot > last_comma:
-                                    # Nokta decimal ayırıcı, virgül binlik
-                                    price_clean = price_clean.replace(',', '')
-                                    result['price'] = float(price_clean)
+                            # Basit parsing - önce virgülü nokta yap
+                            if ',' in price_clean:
+                                if '.' in price_clean:
+                                    # Hem nokta hem virgül var - en sondaki decimal
+                                    last_dot = price_clean.rfind('.')
+                                    last_comma = price_clean.rfind(',')
+                                    
+                                    if last_dot > last_comma:
+                                        # Nokta decimal, virgül binlik
+                                        result['price'] = float(price_clean.replace(',', ''))
+                                    else:
+                                        # Virgül decimal, nokta binlik  
+                                        result['price'] = float(price_clean.replace('.', '').replace(',', '.'))
                                 else:
-                                    # Virgül decimal ayırıcı, nokta binlik
-                                    price_clean = price_clean.replace('.', '').replace(',', '.')
-                                    result['price'] = float(price_clean)
-                            elif '.' in price_clean:
-                                # Sadece nokta var
-                                parts = price_clean.split('.')
-                                if len(parts) > 1 and len(parts[-1]) <= 2:
-                                    # Son kısım 2 hane veya daha azsa decimal
-                                    result['price'] = float(price_clean)
-                                else:
-                                    # Binlik ayırıcı olarak kullanılmış
-                                    result['price'] = float(price_clean.replace('.', ''))
-                            elif ',' in price_clean:
-                                # Sadece virgül var
-                                parts = price_clean.split(',')
-                                if len(parts) == 2 and len(parts[-1]) <= 2:
-                                    # Decimal ayırıcı
-                                    result['price'] = float(price_clean.replace(',', '.'))
-                                else:
-                                    # Binlik ayırıcı
-                                    result['price'] = float(price_clean.replace(',', ''))
+                                    # Sadece virgül var - decimal mi yoksa binlik mi?
+                                    parts = price_clean.split(',')
+                                    if len(parts) == 2 and len(parts[1]) <= 2:
+                                        # Decimal
+                                        result['price'] = float(price_clean.replace(',', '.'))
+                                    else:
+                                        # Binlik
+                                        result['price'] = float(price_clean.replace(',', ''))
                             else:
-                                # Sadece rakam var
+                                # Sadece nokta veya hiçbiri
                                 result['price'] = float(price_clean)
                             
-                            print(f"🔍 SELENIUM DEBUG: Price bulundu ({selector}): {result['price']}")
+                            print(f"🔍 SELENIUM DEBUG: Price BAŞARIYLA parse edildi ({selector}): {result['price']}")
                             break
                             
                         except ValueError as ve:
                             print(f"🔍 SELENIUM DEBUG: Price parse hatası ({selector}): {price_clean} - {ve}")
                             continue
-                            
+                else:
+                    print(f"🔍 SELENIUM DEBUG: Price element boş ({selector})")
+                    
             except Exception as e:
-                print(f"🔍 SELENIUM DEBUG: Price hatası ({selector}): {str(e)}")
+                print(f"🔍 SELENIUM DEBUG: Price selector hatası ({selector}): {str(e)}")
                 continue
+
+        if not result.get('price'):
+            print(f"❌ SELENIUM DEBUG: HİÇBİR PRICE SELECTOR ÇALIŞMADI!")
+            print(f"🔍 SELENIUM DEBUG: Sayfa kaynak kodu price kontrolü...")
+            
+            # Sayfa kaynağında fiyat ara
+            page_source = driver.page_source
+            
+            # Çeşitli fiyat pattern'leri ara
+            price_patterns = [
+                r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*TL',
+                r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*₺',
+                r'"price"[^>]*>([^<]+)',
+                r'prc-dsc[^>]*>([^<]+)',
+                r'price-view-discounted[^>]*>([^<]+)'
+            ]
+            
+            for pattern in price_patterns:
+                matches = re.findall(pattern, page_source, re.IGNORECASE)
+                if matches:
+                    print(f"🔍 SELENIUM DEBUG: Pattern bulundu ({pattern}): {matches[:3]}")  # İlk 3 match
+                    
+                    # İlk geçerli fiyatı dene
+                    for match in matches:
+                        try:
+                            clean_match = re.sub(r'[^\d,.]', '', match)
+                            if clean_match:
+                                # Basit float conversion
+                                if ',' in clean_match:
+                                    test_price = float(clean_match.replace(',', '.'))
+                                else:
+                                    test_price = float(clean_match)
+                                
+                                if 10 <= test_price <= 1000000:  # Makul fiyat aralığı
+                                    result['price'] = test_price
+                                    print(f"🔍 SELENIUM DEBUG: Pattern'den fiyat bulundu: {result['price']}")
+                                    break
+                        except:
+                            continue
+                    
+                    if result.get('price'):
+                        break
+
+        print(f"🔍 SELENIUM DEBUG: Final price result: {result.get('price', 'NONE')}")
         
         # Seller name çek
         seller_selectors = [
