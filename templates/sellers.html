@@ -1860,6 +1860,11 @@ function updateSingleSellerProgress(percentage, text, status) {
 }
 
 function startSingleSellerMonitoring() {
+    // 🛡️ Toplu güncelleme progress bar'ını gizle
+    const progressInfo = document.getElementById('progressInfo');
+    if (progressInfo) {
+        progressInfo.style.display = 'none';
+    }
     let progressPercentage = 50;
     let checkCount = 0;
     const maxChecks = 240; // 4 dakika maksimum

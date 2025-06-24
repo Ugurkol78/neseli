@@ -132,7 +132,8 @@ def add_seller():
                         )
                         
                         # Sadece bu satıcı için scraping yap
-                        success = scrape_all_sellers(specific_seller_id=seller_link_id)
+                        success = scrape_all_sellers(specific_seller_id=seller_link_id, username=username)
+
                         
                         if success:
                             update_seller_scraping_status(

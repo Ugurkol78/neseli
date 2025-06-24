@@ -593,44 +593,187 @@ def scrape_seller_profile_page_selenium(url: str) -> Optional[Dict[str, any]]:
             print(f"⚠️ SELLER DEBUG: Genel rating arama hatası: {str(e)}")
      
 
-                # Total Reviews ve Total Comments çekme
+        # YENİ GÜNCELLEMEED KOD (Bu kod ile değiştirin):
         try:
-            reviews_selectors = [
-                '.product-review-section__review-count.ta-right',  # HTML'den çıkan class
-                'span[class*="review-count"]',                      # Partial class match
-                '.product-review-section__review-count'             # Genel class
+            print(f"🔍 SELLER DEBUG: Reviews/Comments aranıyor...")
+            
+            # 1) Önce sayfa kaynak kodunda direct arama yap
+            page_source = driver.page_source
+            
+            # DEBUG: "Değerlendirme" ve "Yorum" kelimelerini içeren satırları bul
+            debug_lines = []
+            for line_num, line in enumerate(page_source.split('\n')):
+                line_clean = line.strip().lower()
+                if ('değerlendirme' in line_clean or 'yorum' in line_clean) and any(char.isdigit() for char in line_clean):
+                    debug_lines.append((line_num, line.strip()))
+            
+            print(f"🔍 SELLER DEBUG: Değerlendirme/Yorum ile ilgili {len(debug_lines)} satır bulundu")
+            for i, (line_num, line) in enumerate(debug_lines[:10]):  # İlk 10 tanesini göster
+                print(f"  {i+1}. Satır {line_num}: {line[:100]}...")
+            
+            # 2) Pattern matching ile sayfa kaynağında ara
+            review_patterns = [
+                r'(\d+(?:[.,]\d+)*)\s*Değerlendirme',         # "664 Değerlendirme"
+                r'(\d+(?:[.,]\d+)*)\s*değerlendirme',         # "664 değerlendirme"
+                r'(\d+(?:[.,]\d+)*)\s*[Dd]eğerlendirme',      # Case insensitive
+                r'>(\d+(?:[.,]\d+)*)</span>\s*Değerlendirme', # HTML tag içinde
+                r'Değerlendirme[^0-9]*(\d+(?:[.,]\d+)*)',     # Ters sıralama
             ]
             
-            for selector in reviews_selectors:
+            comment_patterns = [
+                r'(\d+(?:[.,]\d+)*)\s*Yorum',                 # "426 Yorum"
+                r'(\d+(?:[.,]\d+)*)\s*yorum',                 # "426 yorum"
+                r'(\d+(?:[.,]\d+)*)\s*[Yy]orum',              # Case insensitive
+                r'>(\d+(?:[.,]\d+)*)</span>\s*Yorum',         # HTML tag içinde
+                r'Yorum[^0-9]*(\d+(?:[.,]\d+)*)',             # Ters sıralama
+            ]
+            
+            # Reviews arama
+            for pattern in review_patterns:
+                matches = re.findall(pattern, page_source, re.IGNORECASE)
+                if matches:
+                    print(f"🔍 SELLER DEBUG: Review pattern '{pattern}' ile bulunan matches: {matches}")
+                    for match in matches:
+                        try:
+                            review_count_str = str(match).replace(',', '').replace('.', '')
+                            review_count = int(review_count_str)
+                            if review_count > 0:  # 0'dan büyük olmalı
+                                result['total_reviews'] = review_count
+                                print(f"✅ SELLER DEBUG: Total reviews bulundu (pattern): {result['total_reviews']}")
+                                break
+                        except ValueError:
+                            continue
+                if result.get('total_reviews'):
+                    break
+            
+            # Comments arama  
+            for pattern in comment_patterns:
+                matches = re.findall(pattern, page_source, re.IGNORECASE)
+                if matches:
+                    print(f"🔍 SELLER DEBUG: Comment pattern '{pattern}' ile bulunan matches: {matches}")
+                    for match in matches:
+                        try:
+                            comment_count_str = str(match).replace(',', '').replace('.', '')
+                            comment_count = int(comment_count_str)
+                            if comment_count > 0:  # 0'dan büyük olmalı
+                                result['total_comments'] = comment_count
+                                print(f"✅ SELLER DEBUG: Total comments bulundu (pattern): {result['total_comments']}")
+                                break
+                        except ValueError:
+                            continue
+                if result.get('total_comments'):
+                    break
+            
+            # 3) Eğer pattern matching başarısızsa, CSS selector'larla dene
+            if not result.get('total_reviews') or not result.get('total_comments'):
+                print(f"🔍 SELLER DEBUG: Pattern matching başarısız, CSS selector'lar deneniyor...")
+                
+                # Gelişmiş CSS selector'lar
+                review_selectors = [
+                    '.product-review-section__review-count',
+                    'span[class*="review-count"]',
+                    'span[class*="degerlendirme"]',
+                    '[data-testid*="review"]',
+                    '.review-count',
+                    '.degerlendirme-count',
+                    'span:contains("Değerlendirme")',  # jQuery style (Selenium'da çalışmaz ama referans için)
+                ]
+                
+                comment_selectors = [
+                    '.product-review-section__comment-count', 
+                    'span[class*="comment-count"]',
+                    'span[class*="yorum"]',
+                    '[data-testid*="comment"]',
+                    '.comment-count',
+                    '.yorum-count'
+                ]
+                
+                # Reviews için selector deneme
+                for selector in review_selectors:
+                    try:
+                        elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                        print(f"🔍 SELLER DEBUG: Review selector ({selector}) - {len(elements)} element bulundu")
+                        
+                        for element in elements:
+                            text = element.text.strip()
+                            print(f"🔍 SELLER DEBUG: Review element text ({selector}): '{text}'")
+                            
+                            if text and 'değerlendirme' in text.lower():
+                                number_match = re.search(r'(\d+(?:[.,]\d+)*)', text)
+                                if number_match:
+                                    result['total_reviews'] = int(number_match.group(1).replace(',', '').replace('.', ''))
+                                    print(f"✅ SELLER DEBUG: Total reviews bulundu (selector): {result['total_reviews']}")
+                                    break
+                        
+                        if result.get('total_reviews'):
+                            break
+                    except Exception as e:
+                        print(f"⚠️ SELLER DEBUG: Review selector hatası ({selector}): {str(e)}")
+                
+                # Comments için selector deneme 
+                for selector in comment_selectors:
+                    try:
+                        elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                        print(f"🔍 SELLER DEBUG: Comment selector ({selector}) - {len(elements)} element bulundu")
+                        
+                        for element in elements:
+                            text = element.text.strip()
+                            print(f"🔍 SELLER DEBUG: Comment element text ({selector}): '{text}'")
+                            
+                            if text and 'yorum' in text.lower() and 'yayınlama' not in text.lower():
+                                number_match = re.search(r'(\d+(?:[.,]\d+)*)', text)
+                                if number_match:
+                                    result['total_comments'] = int(number_match.group(1).replace(',', '').replace('.', ''))
+                                    print(f"✅ SELLER DEBUG: Total comments bulundu (selector): {result['total_comments']}")
+                                    break
+                        
+                        if result.get('total_comments'):
+                            break
+                    except Exception as e:
+                        print(f"⚠️ SELLER DEBUG: Comment selector hatası ({selector}): {str(e)}")
+            
+            # 4) Son olarak JavaScript çalıştırıp tekrar dene
+            if not result.get('total_reviews') or not result.get('total_comments'):
+                print(f"🔍 SELLER DEBUG: JavaScript ile sayfa yeniden yükleniyor...")
                 try:
-                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                    for element in elements:
-                        text = element.text.strip()
-                        print(f"🔍 SELLER DEBUG: Review element text ({selector}): '{text}'")
-                        
-                        # "664 Değerlendirme" formatını ara
-                        if 'değerlendirme' in text.lower():
-                            number_match = re.search(r'(\d+(?:[.,]\d+)*)', text)
-                            if number_match:
-                                result['total_reviews'] = int(number_match.group(1).replace(',', '').replace('.', ''))
-                                print(f"✅ SELLER DEBUG: Total reviews bulundu: {result['total_reviews']}")
-                        
-                        # "426 Yorum" formatını ara  
-                        elif 'yorum' in text.lower() and 'yayınlama' not in text.lower():
-                            number_match = re.search(r'(\d+(?:[.,]\d+)*)', text)
-                            if number_match:
-                                result['total_comments'] = int(number_match.group(1).replace(',', '').replace('.', ''))
-                                print(f"✅ SELLER DEBUG: Total comments bulundu: {result['total_comments']}")
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    time.sleep(3)
+                    driver.execute_script("window.scrollTo(0, 0);")
+                    time.sleep(2)
                     
-                    if result.get('total_reviews') and result.get('total_comments'):
-                        break
-                except Exception as e:
-                    print(f"⚠️ SELLER DEBUG: Selector hatası ({selector}): {str(e)}")
-                    continue
+                    # Tekrar pattern matching dene
+                    page_source = driver.page_source
                     
+                    if not result.get('total_reviews'):
+                        match = re.search(r'(\d+(?:[.,]\d+)*)\s*[Dd]eğerlendirme', page_source)
+                        if match:
+                            result['total_reviews'] = int(match.group(1).replace(',', '').replace('.', ''))
+                            print(f"✅ SELLER DEBUG: Total reviews bulundu (JS scroll sonrası): {result['total_reviews']}")
+                    
+                    if not result.get('total_comments'):
+                        match = re.search(r'(\d+(?:[.,]\d+)*)\s*[Yy]orum', page_source)
+                        if match:
+                            result['total_comments'] = int(match.group(1).replace(',', '').replace('.', ''))
+                            print(f"✅ SELLER DEBUG: Total comments bulundu (JS scroll sonrası): {result['total_comments']}")
+                            
+                except Exception as js_error:
+                    print(f"⚠️ SELLER DEBUG: JavaScript scroll hatası: {str(js_error)}")
+            
+            # 5) Eğer hâlâ bulunamadıysa varsayılan değerleri set et
+            if not result.get('total_reviews'):
+                result['total_reviews'] = 0
+                print(f"❌ SELLER DEBUG: Total reviews bulunamadı, varsayılan değer: 0")
+            
+            if not result.get('total_comments'):
+                result['total_comments'] = 0
+                print(f"❌ SELLER DEBUG: Total comments bulunamadı, varsayılan değer: 0")
+            
+            print(f"📊 SELLER DEBUG: Final reviews/comments: Reviews={result.get('total_reviews')}, Comments={result.get('total_comments')}")
+                
         except Exception as e:
-            print(f"⚠️ SELLER DEBUG: Reviews/Comments arama hatası: {str(e)}")
-
+            print(f"⚠️ SELLER DEBUG: Reviews/Comments arama genel hatası: {str(e)}")
+            result['total_reviews'] = 0
+            result['total_comments'] = 0
 
         print(f"📊 SELLER DEBUG: Profil sayfası sonucu: {result}")
         return result
@@ -970,7 +1113,7 @@ def check_chrome_driver():
         print(f"❌ SELLER DEBUG: Chrome driver test başarısız: {str(e)}")
         return False
 
-def scrape_all_sellers(specific_seller_id=None):
+def scrape_all_sellers(specific_seller_id=None, username="scrape_all_sellers"):
     """
     Tüm aktif satıcıları scraping yapar
     specific_seller_id: Sadece belirli bir satıcı için scraping yapmak için
@@ -1020,7 +1163,7 @@ def scrape_all_sellers(specific_seller_id=None):
                     seller_link_id=seller_id,
                     all_products_url=all_products_url,
                     seller_profile_url=seller_profile_url,
-                    scraped_by="scrape_all_sellers"
+                    scraped_by=username
                 )
                 
                 if success:
