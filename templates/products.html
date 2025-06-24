@@ -1049,6 +1049,10 @@ let lastUpdateCompletionTime = null; // YENİ: Son güncelleme tamamlanma zaman�
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
+    // DÜZELTME: İlk yüklemede güncelleme durumunu kontrol et, ama sürekli yenilemeye izin verme
+    updateJustCompleted = false;
+    lastUpdateCompletionTime = Date.now(); // İlk yüklemede timestamp ver ki hemen yenilenmesin
+    
     // Her 5 saniyede bir güncelleme durumunu kontrol et
     updateStatusInterval = setInterval(checkUpdateStatus, 5000);
 
@@ -1063,8 +1067,10 @@ document.addEventListener('DOMContentLoaded', function() {
         updateBtn.style.opacity = '0.7';
     }
     
-    // YENİ: Sayfa yüklendiğinde güncelleme durumunu hemen kontrol et
-    checkUpdateStatus();
+    // DÜZELTME: İlk kontrol sadece çalışan bir güncelleme varsa progress göstersin
+    setTimeout(() => {
+        checkUpdateStatus();
+    }, 1000);
     
     // Tarih input formatını ayarla
     const dateInput = document.getElementById('firstCommentDate');
@@ -1181,7 +1187,7 @@ function clearAllFilters() {
     filterTable();
 }
 
-// Modal durum yönetimi - GELİŞTİRİLDİ
+// Modal durum yönetimi - SORUN DÜZELTİLDİ
 function setModalState(isOpen) {
     const wasModalOpen = isModalOpen;
     isModalOpen = isOpen;
@@ -1192,11 +1198,16 @@ function setModalState(isOpen) {
     } else {
         document.body.classList.remove('modal-open');
         
-        // YENİ: Modal kapandığında güncelleme tamamlandıysa sayfayı yenile
-        if (!wasModalOpen) return; // Modal zaten kapalıydı
-        
-        if (updateJustCompleted) {
+        // DÜZELTME: Modal kapandığında sadece gerekiyorsa yenile
+        if (wasModalOpen && updateJustCompleted) {
             console.log('📱 Modal kapandı ve güncelleme tamamlanmış, sayfa yenileniyor...');
+            
+            // DÜZELTME: Interval'ı durdur
+            if (updateStatusInterval) {
+                clearInterval(updateStatusInterval);
+                updateStatusInterval = null;
+            }
+            
             showAlert('🔄 Güncelleme tamamlandı, veriler yenileniyor...', 'success');
             setTimeout(() => {
                 window.location.reload(true);
@@ -1232,7 +1243,7 @@ function showAlert(message, type = 'success') {
     }, autoRemoveTime);
 }
 
-// Güncelleme durumunu kontrol et - TAMAMEN YENİLENDİ
+// Güncelleme durumunu kontrol et - SORUN DÜZELTİLDİ
 async function checkUpdateStatus() {
     try {
         const response = await fetch('/products/update/status');
@@ -1257,16 +1268,22 @@ async function checkUpdateStatus() {
                 // Güncelleme durdu
                 hideProgressInfo();
                 
-                // YENİ: Güncelleme az önce tamamlandı mı kontrol et
-                if (status.current_progress > 0 && !updateJustCompleted) {
+                // DÜZELTME: Sadece gerçek bir güncelleme varsa ve henüz işlenmemişse yenile
+                if (status.current_progress > 0 && !updateJustCompleted && !status.is_running) {
                     const currentTime = Date.now();
                     
-                    // İlk tamamlanma veya son tamamlanmadan 30 saniye geçti mi?
-                    if (!lastUpdateCompletionTime || (currentTime - lastUpdateCompletionTime) > 30000) {
+                    // DÜZELTME: Bu oturumda hiç yenileme yapılmamışsa VEYA 5 dakika geçmişse
+                    if (!lastUpdateCompletionTime || (currentTime - lastUpdateCompletionTime) > 300000) { // 5 dakika = 300000ms
                         updateJustCompleted = true;
                         lastUpdateCompletionTime = currentTime;
                         
                         console.log('✅ Güncelleme tamamlandı, sayfa yenileniyor...');
+                        
+                        // DÜZELTME: Interval'ı durdur ki tekrar çalışmasın
+                        if (updateStatusInterval) {
+                            clearInterval(updateStatusInterval);
+                            updateStatusInterval = null;
+                        }
                         
                         // Modal açık değilse hemen yenile
                         if (!isModalOpen) {
@@ -1642,7 +1659,7 @@ async function saveSettings() {
     }
 }
 
-// Manuel güncelleme başlat - GELİŞTİRİLDİ
+// Manuel güncelleme başlat - SORUN DÜZELTİLDİ
 async function startManualUpdate() {
     // Admin kontrolü
     const userRole = '{{ session.role }}';
@@ -1654,9 +1671,15 @@ async function startManualUpdate() {
     const btn = document.getElementById('manualUpdateBtn');
     
     try {
-        // YENİ: Güncelleme durumunu sıfırla
+        // DÜZELTME: Güncelleme durumunu tamamen sıfırla
         updateJustCompleted = false;
         lastUpdateCompletionTime = null;
+        
+        // DÜZELTME: Mevcut interval'ı durdur ve yeniden başlat
+        if (updateStatusInterval) {
+            clearInterval(updateStatusInterval);
+        }
+        updateStatusInterval = setInterval(checkUpdateStatus, 5000);
         
         btn.disabled = true;
         btn.textContent = 'Başlatılıyor...';
