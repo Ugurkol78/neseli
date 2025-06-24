@@ -1191,6 +1191,7 @@ function clearAllFilters() {
 
 // Modal durum yönetimi
 function setModalState(isOpen) {
+    console.log('🔍 DEBUG: setModalState() çağrıldı - isOpen:', isOpen, '- Stack:', new Error().stack);
     isModalOpen = isOpen;
     
     if (isOpen) {
@@ -1370,6 +1371,7 @@ function openAddSellerModal() {
 
 // Satıcı ekleme modal kapatma
 function closeAddSellerModal() {
+    console.log('🔍 DEBUG: closeAddSellerModal() çağrıldı - Stack:', new Error().stack);
     setModalState(false);
     document.getElementById('addSellerModal').style.display = 'none';
     
