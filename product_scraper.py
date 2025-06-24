@@ -143,15 +143,15 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         # Fiyat - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
-            '.price-view-discounted',                    # ✅ YENİ
-            'span.price-view-discounted',               # ✅ YENİ
-            '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
-            '.campaign-price-content .new-price',  # YENİ: Campaign price format
-            '.campaign-price-content p.new-price', # YENİ: Daha spesifik selector
-            '[data-testid="price-current-price"]',
-            '.prc-dsc',
-            '.prc-slg', 
-            '.product-price .prc-dsc',
+           'span.price-view-discounted',                    # "2.789,07 TL" - Ana selector
+           '.price-view-price-view span.price-view-discounted',  # Daha spesifik
+           '[data-testid="price"] .price-view-discounted',  # Data-testid ile
+           '.campaign-price-content .new-price',            # YENİ: Campaign price format
+           '.campaign-price-content p.new-price',           # YENİ: Daha spesifik selector
+           '[data-testid="price-current-price"]',
+           '.prc-dsc',
+           '.prc-slg', 
+           '.product-price .prc-dsc',
         ]
         for selector in price_selectors:
             element = soup.select_one(selector)
@@ -433,12 +433,12 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         
         # Price çek - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
-            '.price-view-discounted',                    # ✅ YENİ
-            'span.price-view-discounted',               # ✅ YENİ
-            '[data-testid="price"] .price-view-discounted',  # ✅ YENİ
-            '.campaign-price-content .new-price',    # YENİ: Campaign price format
-            '.campaign-price-content p.new-price',   # YENİ: Daha spesifik selector
-            'div.campaign-price-content p.new-price' # YENİ: En spesifik selector
+            'span.price-view-discounted',                    # "2.789,07 TL" - Ana selector
+            '.price-view-price-view span.price-view-discounted',  # Daha spesifik
+            '[data-testid="price"] .price-view-discounted',  # Data-testid ile
+            '.campaign-price-content .new-price',            # YENİ: Campaign price format
+            '.campaign-price-content p.new-price',           # YENİ: Daha spesifik selector
+            'div.campaign-price-content p.new-price',        # ← VİRGÜL EKLENDİ!
             '[data-testid="price-current-price"]',
             '.price-current',
             'span[class*="price"]',
