@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8" />
-    <title>Ürün İzleme ve Analiz - Stok Yönetimi</title>
+    <title>Satıcı İzleme ve Analiz - Stok Yönetimi</title>
     
     <!-- Cache önleyici meta tag'ler -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,7 +29,7 @@
         }
         
         .container {
-            max-width: 1800px; /* Genişletildi */
+            max-width: 1800px;
             margin: 0 auto;
             padding: 16px;
         }
@@ -275,12 +275,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1500px; /* Daha da genişletildi */
-            table-layout: fixed; /* Sabit kolon genişlikleri için */
+            min-width: 1400px;
+            table-layout: fixed;
         }
         
         th, td {
-            padding: 10px 12px; /* Padding artırıldı */
+            padding: 10px 12px;
             text-align: center;
             vertical-align: middle;
             border-bottom: 1px solid #e2e8f0;
@@ -290,7 +290,7 @@
         }
         
         th {
-            background: #48bb78;
+            background: #9f7aea;
             color: white;
             font-weight: 600;
             font-size: 11px;
@@ -313,7 +313,7 @@
         /* Filtre input stilleri */
         .filter-input {
             width: 100%;
-            max-width: 150px;
+            max-width: 120px;
             padding: 6px 10px;
             border: 1.5px solid #e2e8f0;
             border-radius: 6px;
@@ -327,8 +327,8 @@
 
         .filter-input:focus {
             outline: none;
-            border-color: #48bb78;
-            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.1);
+            border-color: #9f7aea;
+            box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.1);
         }
 
         .filter-input::placeholder {
@@ -360,7 +360,7 @@
         }
         
         tbody tr:hover {
-            background: rgba(72, 187, 120, 0.04);
+            background: rgba(159, 122, 234, 0.04);
         }
         
         tbody tr:nth-child(even) {
@@ -368,83 +368,67 @@
         }
         
         tbody tr:nth-child(even):hover {
-            background: rgba(72, 187, 120, 0.06);
+            background: rgba(159, 122, 234, 0.06);
         }
 
-        .product-image {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .product-image:hover {
-            transform: scale(1.05);
-        }
-
-        .product-title {
-            max-width: 250px; /* Genişletildi */
+        .seller-name {
+            max-width: 200px;
             cursor: pointer;
             color: #2d3748;
             font-weight: 500;
             text-align: left;
             padding-left: 12px;
-            width: 250px; /* Sabit genişlik */
+            width: 200px;
         }
 
-        .seller-name {
+        .seller-name:hover {
+            color: #9f7aea;
+            text-decoration: underline;
+        }
+
+        .location-cell {
             color: #4a5568;
             font-weight: 500;
-            min-width: 120px;
-            width: 120px; /* Sabit genişlik */
+            min-width: 100px;
+            width: 100px;
         }
 
         .data-cell {
             cursor: pointer;
-            color: #48bb78;
+            color: #9f7aea;
             font-weight: 600;
             transition: color 0.2s ease;
             min-width: 80px;
         }
 
         .data-cell:hover {
-            color: #38a169;
+            color: #805ad5;
+            text-decoration: underline;
+        }
+
+        .score-cell {
+            cursor: pointer;
+            color: #38b2ac;
+            font-weight: 600;
+            transition: color 0.2s ease;
+            min-width: 80px;
+        }
+
+        .score-cell:hover {
+            color: #319795;
             text-decoration: underline;
         }
 
         .rating-cell {
+            cursor: pointer;
             color: #f6ad55;
             font-weight: 600;
-        }
-
-        /* YENİ: Price cell özel stil */
-        .price-cell {
-            cursor: pointer;
-            color: #805ad5;
-            font-weight: 600;
             transition: color 0.2s ease;
-            min-width: 100px;
+            min-width: 80px;
         }
 
-        .price-cell:hover {
-            color: #6b46c1;
-            text-decoration: underline;
-        }
-
-        /* YENİ: Seller rating cell özel stil */
-        .seller-rating-cell {
-            cursor: pointer;
+        .rating-cell:hover {
             color: #ed8936;
-            font-weight: 600;
-            transition: color 0.2s ease;
-            min-width: 90px;
-        }
-
-        .seller-rating-cell:hover {
-            color: #dd6b20;
             text-decoration: underline;
         }
 
@@ -493,7 +477,7 @@
             margin: 5% auto;
             padding: 24px;
             border-radius: 12px;
-            width: 600px;
+            width: 700px;
             max-width: 90%;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             position: relative;
@@ -550,13 +534,34 @@
 
         .form-group input:focus {
             outline: none;
-            border-color: #48bb78;
-            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.1);
+            border-color: #9f7aea;
+            box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.1);
         }
 
         .form-group input.error {
             border-color: #e53e3e;
             background: #fef5f5;
+        }
+
+        .form-group input.success {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .validation-message {
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .validation-message.error {
+            color: #e53e3e;
+            display: block;
+        }
+
+        .validation-message.success {
+            color: #48bb78;
+            display: block;
         }
 
         .modal-actions {
@@ -569,7 +574,7 @@
         }
 
         .btn-save {
-            background: #48bb78;
+            background: #9f7aea;
             color: white;
         }
 
@@ -588,7 +593,7 @@
             max-width: 95%;
             height: 600px;
             overflow: hidden;
-            z-index: 20001; /* YENİ: EN ÜSTE ÇIKARILDI */
+            z-index: 20001;
         }
 
         .chart-container {
@@ -607,7 +612,7 @@
             width: 40px;
             height: 40px;
             border: 4px solid #e2e8f0;
-            border-top: 4px solid #48bb78;
+            border-top: 4px solid #9f7aea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto;
@@ -650,7 +655,6 @@
             animation: slideIn 0.3s ease-out;
         }
 
-        /* YENİ: Modal açıkken alert gizleme */
         .modal-open .alert {
             display: none !important;
         }
@@ -706,7 +710,7 @@
             }
             
             table {
-                min-width: 1000px;
+                min-width: 1200px;
             }
 
             .filter-status {
@@ -755,7 +759,7 @@
         <a href="{{ url_for('profile') }}">Profil</a>
         <div style="margin-left: auto; display: flex; align-items: center; gap: 15px;">
             <span style="color: #4a5568; font-size: 14px;">Hoş geldin, {{ session.username }}! 
-                {% if session.role == 'admin' %}<span style="background: #48bb78; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
+                {% if session.role == 'admin' %}<span style="background: #9f7aea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px;">ADMIN</span>{% endif %}
             </span>
             <a href="{{ url_for('logout') }}" style="background: #e53e3e; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; transition: all 0.2s ease;">Çıkış</a>
         </div>
@@ -763,17 +767,17 @@
 
     <div class="header">
         <div class="header-left">
-            <h1>📊 Ürün İzleme ve Analiz</h1>
+            <h1>🏪 Satıcı İzleme ve Analiz</h1>
             <p class="last-updated">
                 {% if last_update %}
                     Son güncelleme: {{ last_update[:19].replace('T', ' ') }}
                 {% else %}
-                    Henüz ürün verisi yok
+                    Henüz satıcı verisi yok
                 {% endif %}
             </p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-primary" onclick="openAddProductModal()">➕ Ürün Ekle</button>
+            <button class="btn btn-primary" onclick="openAddSellerModal()">➕ Satıcı Ekle</button>
             <button class="btn btn-secondary" onclick="openSettingsModal()">⚙️ Ayarlar</button>
             <button class="btn btn-primary" id="manualUpdateBtn" onclick="startManualUpdate()">🔄 Güncelle</button>
         </div>
@@ -791,63 +795,62 @@
         <div style="font-size: 12px; color: #718096; margin-top: 4px;" id="progressDetail"></div>
     </div>
 
-    <!-- Tek ürün ekleme ilerleme göstergesi -->
-    <div class="progress-info" id="singleProductProgress" style="display: none;">
+    <!-- Tek satıcı ekleme ilerleme göstergesi -->
+    <div class="progress-info" id="singleSellerProgress" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span id="singleProgressText">Ürün kaydediliyor...</span>
+            <span id="singleProgressText">Satıcı kaydediliyor...</span>
             <span id="singleProgressStatus">●</span>
         </div>
         <div class="progress-bar">
             <div class="progress-fill" id="singleProgressFill" style="width: 0%;"></div>
         </div>
         <div style="font-size: 12px; color: #718096; margin-top: 4px;" id="singleProgressDetail">
-            Yeni ürün sisteme ekleniyor...
+            Yeni satıcı sisteme ekleniyor...
         </div>
     </div>
 
-    {% if not products %}
+    {% if not sellers %}
     <div class="no-data-message">
-        <h3>📊 Henüz ürün eklenmedi</h3>
-        <p>İzlemek istediğiniz Trendyol ürünlerini eklemek için "Ürün Ekle" butonuna tıklayın.</p>
-        <button class="btn btn-primary" onclick="openAddProductModal()">➕ İlk Ürünü Ekle</button>
+        <h3>🏪 Henüz satıcı eklenmedi</h3>
+        <p>İzlemek istediğiniz Trendyol satıcılarını eklemek için "Satıcı Ekle" butonuna tıklayın.</p>
+        <button class="btn btn-primary" onclick="openAddSellerModal()">➕ İlk Satıcıyı Ekle</button>
     </div>
     {% else %}
 
     <!-- Filtre durumu göstergesi -->
     <div class="filter-status">
         <div class="filter-info">
-            <span class="visible-count" id="visibleCount">{{ products|length }}</span>
+            <span class="visible-count" id="visibleCount">{{ sellers|length }}</span>
             <span>/</span>
-            <span class="total-count" id="totalCount">{{ products|length }} ürün gösteriliyor</span>
+            <span class="total-count" id="totalCount">{{ sellers|length }} satıcı gösteriliyor</span>
             <span class="filter-indicator" id="filterIndicator">🔍 Filtre aktif</span>
         </div>
         <button class="clear-all-filters" id="clearAllFilters">✕ Filtreleri Temizle</button>
     </div>
 
     <div class="table-wrapper">
-        <table id="productsTable">
+        <table id="sellersTable">
             <thead>
                 <tr>
-                    <th style="width: 80px;">Resim</th>
-                    <th style="width: 250px;">Ürün Adı</th>
-                    <th style="width: 120px;">Satıcı</th>
-                    <th style="width: 110px;">💰 Fiyat</th>
-                    <th style="width: 110px;">İlk Yorum Tarihi</th>
-                    <th style="width: 90px;">Yorum Sayısı</th>
-                    <th style="width: 70px;">Puanı</th>
-                    <th style="width: 80px;">Soru Adedi</th>
-                    <th style="width: 90px;">⭐ Satıcı Puanı</th>
-                    <th style="width: 120px;">Günlük Tahmini Satış</th>
+                    <th style="width: 200px;">Satıcı Adı</th>
+                    <th style="width: 100px;">Konum</th>
+                    <th style="width: 80px;">Mağaza Yaşı</th>
+                    <th style="width: 90px;">💎 Satıcı Puanı</th>
+                    <th style="width: 100px;">👥 Takipçi Sayısı</th>
+                    <th style="width: 90px;">📦 Ürün Sayısı</th>
+                    <th style="width: 90px;">⭐ Genel Rating</th>
+                    <th style="width: 110px;">📊 Toplam Değerlendirme</th>
+                    <th style="width: 100px;">💬 Toplam Yorum</th>
                     <th style="width: 130px;">Son Güncelleme</th>
                     <th style="width: 60px;">İşlemler</th>
                 </tr>
                 <!-- Filtre satırı -->
                 <tr class="filter-row">
                     <th>
-                        <button class="clear-filter-btn" id="clearFilterBtn">Filtreleri Temizle</button>
+                        <input type="text" id="nameFilter" class="filter-input" placeholder="Satıcı adında ara..." />
                     </th>
                     <th>
-                        <input type="text" id="titleFilter" class="filter-input" placeholder="Ürün adında ara..." />
+                        <input type="text" id="locationFilter" class="filter-input" placeholder="Konum ara..." />
                     </th>
                     <th></th>
                     <th></th>
@@ -857,48 +860,70 @@
                     <th></th>
                     <th></th>
                     <th></th>
-                    <th></th>
-                    <th></th>
+                    <th>
+                        <button class="clear-filter-btn" id="clearFilterBtn">Temizle</button>
+                    </th>
                 </tr>
             </thead>
             <tbody>
-                {% for product in products %}
-                <tr data-link-id="{{ product.link_id }}">
-                    <td>
-                        {% if product.product_image_url %}
-                            <img src="{{ product.product_image_url }}" alt="Ürün Resmi" class="product-image" onclick="openProductUrl('{{ product.product_url }}')" />
-                        {% else %}
-                            <div style="width: 60px; height: 60px; background: #f7fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #a0aec0; cursor: pointer;" onclick="openProductUrl('{{ product.product_url }}')">📷</div>
-                        {% endif %}
+                {% for seller in sellers %}
+                <tr data-link-id="{{ seller.link_id }}">
+                    <td class="seller-name" onclick="openSellerUrl('{{ seller.all_products_url }}')">
+                        {{ seller.seller_name[:25] }}{% if seller.seller_name|length > 25 %}...{% endif %}
                     </td>
-                    <td class="product-title" onclick="openProductUrl('{{ product.product_url }}')">
-                        {{ product.product_title[:35] }}{% if product.product_title|length > 35 %}...{% endif %}
-                    </td>
-                    <td class="seller-name">{{ product.seller_name }}</td>
-                    <!-- YENİ: Price kolonu - satıcı sonrasına taşındı -->
-                    <td class="price-cell" onclick="openChartModal({{ product.link_id }}, 'price')">
-                        {% if product.price and product.price > 0 %}
-                            {{ "%.2f"|format(product.price) }}₺
+                    <td class="location-cell">{{ seller.location }}</td>
+                    <td class="data-cell">
+                        {% if seller.store_age and seller.store_age > 0 %}
+                            {{ seller.store_age }} Yıl
                         {% else %}
                             -
                         {% endif %}
                     </td>
-                    <td class="date-cell">{{ product.first_comment_date }}</td>
-                    <td class="data-cell" onclick="openChartModal({{ product.link_id }}, 'comment_count')">{{ product.comment_count }}</td>
-                    <td class="data-cell rating-cell" onclick="openChartModal({{ product.link_id }}, 'rating')">{{ "%.1f"|format(product.rating) }}</td>
-                    <td class="data-cell" onclick="openChartModal({{ product.link_id }}, 'question_count')">{{ product.question_count }}</td>
-                    <!-- Seller Rating kolonu -->
-                    <td class="seller-rating-cell" onclick="openChartModal({{ product.link_id }}, 'seller_rating')">
-                        {% if product.seller_rating and product.seller_rating > 0 %}
-                            {{ "%.1f"|format(product.seller_rating) }}
+                    <td class="score-cell" onclick="openChartModal({{ seller.link_id }}, 'seller_score')">
+                        {% if seller.seller_score and seller.seller_score > 0 %}
+                            {{ "%.1f"|format(seller.seller_score) }}
                         {% else %}
                             -
                         {% endif %}
                     </td>
-                    <td class="data-cell" onclick="openChartModal({{ product.link_id }}, 'daily_estimated_sales')">{{ "%.1f"|format(product.daily_estimated_sales) }}</td>
-                    <td class="date-cell">{{ product.last_update }}</td>
+                    <td class="data-cell" onclick="openChartModal({{ seller.link_id }}, 'follower_count')">
+                        {% if seller.follower_count and seller.follower_count > 0 %}
+                            {{ seller.follower_count|format_follower_count }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="data-cell" onclick="openChartModal({{ seller.link_id }}, 'product_count')">
+                        {% if seller.product_count and seller.product_count > 0 %}
+                            {{ seller.product_count }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="rating-cell" onclick="openChartModal({{ seller.link_id }}, 'overall_rating')">
+                        {% if seller.overall_rating and seller.overall_rating > 0 %}
+                            {{ "%.1f"|format(seller.overall_rating) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="data-cell" onclick="openChartModal({{ seller.link_id }}, 'total_reviews')">
+                        {% if seller.total_reviews and seller.total_reviews > 0 %}
+                            {{ seller.total_reviews }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="data-cell" onclick="openChartModal({{ seller.link_id }}, 'total_comments')">
+                        {% if seller.total_comments and seller.total_comments > 0 %}
+                            {{ seller.total_comments }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="date-cell">{{ seller.last_update }}</td>
                     <td>
-                        <button class="delete-btn" onclick="confirmDeleteProduct({{ product.link_id }})" title="Ürünü Sil">✕</button>
+                        <button class="delete-btn" onclick="confirmDeleteSeller({{ seller.link_id }})" title="Satıcıyı Sil">✕</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -908,35 +933,37 @@
     {% endif %}
 </div>
 
-<!-- Ürün Ekleme Modal -->
-<div id="addProductModal" class="modal">
+<!-- Satıcı Ekleme Modal -->
+<div id="addSellerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Yeni Ürün Ekle</h3>
-            <button class="close-btn" onclick="closeAddProductModal()">&times;</button>
+            <h3 class="modal-title">Yeni Satıcı Ekle</h3>
+            <button class="close-btn" onclick="closeAddSellerModal()">&times;</button>
         </div>
         
         <div class="form-group">
-            <label for="productUrl">Ürün Linki *</label>
-            <input type="url" id="productUrl" placeholder="https://www.trendyol.com/..." required />
+            <label for="allProductsUrl">Tüm Ürünler Sayfası Linki *</label>
+            <input type="url" id="allProductsUrl" placeholder="https://www.trendyol.com/sr?sid=..." required />
+            <div class="validation-message" id="allProductsValidation"></div>
             <small style="color: #718096; font-size: 12px; margin-top: 4px; display: block;">
-                Geçerli bir Trendyol ürün linki giriniz
+                Satıcının tüm ürünlerini gösteren sayfa linki (/sr veya /butik içermeli)
             </small>
         </div>
         
         <div class="form-group">
-            <label for="firstCommentDate">İlk Yorum Tarihi *</label>
-            <input type="text" id="firstCommentDate" placeholder="DD/MM/YYYY" required pattern="\d{2}/\d{2}/\d{4}" />
+            <label for="sellerProfileUrl">Satıcı Profili Linki *</label>
+            <input type="url" id="sellerProfileUrl" placeholder="https://www.trendyol.com/satici-profili/..." required />
+            <div class="validation-message" id="profileValidation"></div>
             <small style="color: #718096; font-size: 12px; margin-top: 4px; display: block;">
-                Gün/Ay/Yıl formatında giriniz (örn: 15/03/2024)
+                Satıcının profil sayfası linki (satici-profili içermeli)
             </small>
         </div>
         
         <div class="modal-actions">
             <div></div>
             <div>
-                <button class="btn btn-cancel" onclick="closeAddProductModal()">İptal</button>
-                <button class="btn btn-save" onclick="saveProduct()">Kaydet ve Veri Çek</button>
+                <button class="btn btn-cancel" onclick="closeAddSellerModal()">İptal</button>
+                <button class="btn btn-save" onclick="saveSeller()" id="saveSellerBtn">Kaydet ve Veri Çek</button>
             </div>
         </div>
     </div>
@@ -946,7 +973,7 @@
 <div id="settingsModal" class="modal settings-modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 class="modal-title">Ürün İzleme Ayarları</h3>
+            <h3 class="modal-title">Satıcı İzleme Ayarları</h3>
             <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
         </div>
         
@@ -954,7 +981,7 @@
             <label for="scheduleTime">Otomatik Güncelleme Saati (HH:MM)</label>
             <input type="time" id="scheduleTime" />
             <small style="color: #718096; font-size: 12px; margin-top: 4px; display: block;">
-                Türkiye saatiyle günlük otomatik veri çekme saati
+                Türkiye saatiyle günlük otomatik veri çekme saati (Varsayılan: 12:00)
             </small>
         </div>
         
@@ -972,19 +999,19 @@
 <div id="deleteConfirmModal" class="modal">
     <div class="modal-content" style="width: 400px;">
         <div class="modal-header">
-            <h3 class="modal-title">Ürünü Sil</h3>
+            <h3 class="modal-title">Satıcıyı Sil</h3>
             <button class="close-btn" onclick="closeDeleteConfirmModal()">&times;</button>
         </div>
         
         <div style="padding: 20px 0; text-align: center;">
             <div style="font-size: 48px; color: #e53e3e; margin-bottom: 16px;">⚠️</div>
-            <p style="font-size: 16px; color: #2d3748; margin-bottom: 8px;">Bu ürünü silmek istediğinize emin misiniz?</p>
+            <p style="font-size: 16px; color: #2d3748; margin-bottom: 8px;">Bu satıcıyı silmek istediğinize emin misiniz?</p>
             <p style="font-size: 14px; color: #718096;">Bu işlem geri alınamaz ve tüm geçmiş veriler silinir.</p>
         </div>
         
         <div class="modal-actions">
             <button class="btn btn-cancel" onclick="closeDeleteConfirmModal()">Hayır, İptal Et</button>
-            <button class="btn btn-danger" onclick="executeDeleteProduct()">Evet, Sil</button>
+            <button class="btn btn-danger" onclick="executeDeleteSeller()">Evet, Sil</button>
         </div>
     </div>
 </div>
@@ -1030,25 +1057,9 @@
 let updateStatusInterval = null;
 let currentChart = null;
 let currentDeleteId = null;
-let singleProductProgressInterval = null;
-let currentSingleProductId = null;
-let isModalOpen = false; // YENİ: Modal durum takibi
-
-// CSS animasyonu ekle
-const style = document.createElement('style');
-style.textContent = `
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-`;
-document.head.appendChild(style);
+let singleSellerProgressInterval = null;
+let currentSingleSellerId = null;
+let isModalOpen = false;
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
@@ -1065,17 +1076,24 @@ document.addEventListener('DOMContentLoaded', function() {
         updateBtn.title = 'Sadece Admin Yetkili Kullanıcılar Kullanabilir';
         updateBtn.style.opacity = '0.7';
     }
+
+    // URL validasyonu için event listener'lar
+    setupUrlValidation();
 });
 
 // Filtreleme sistemini başlat
 function initializeFiltering() {
-    const titleFilter = document.getElementById('titleFilter');
+    const nameFilter = document.getElementById('nameFilter');
+    const locationFilter = document.getElementById('locationFilter');
     const clearFilterBtn = document.getElementById('clearFilterBtn');
     const clearAllBtn = document.getElementById('clearAllFilters');
 
-    // Başlık filtresi event listener
-    if (titleFilter) {
-        titleFilter.addEventListener('input', filterTable);
+    // Filtre event listener'ları
+    if (nameFilter) {
+        nameFilter.addEventListener('input', filterTable);
+    }
+    if (locationFilter) {
+        locationFilter.addEventListener('input', filterTable);
     }
 
     // Filtre temizleme butonları
@@ -1092,22 +1110,28 @@ function initializeFiltering() {
 
 // Tabloyu filtrele
 function filterTable() {
-    const titleFilter = document.getElementById('titleFilter');
-    const titleVal = titleFilter.value.trim().toLowerCase();
-    const tableBody = document.querySelector('#productsTable tbody');
+    const nameFilter = document.getElementById('nameFilter');
+    const locationFilter = document.getElementById('locationFilter');
+    const nameVal = nameFilter.value.trim().toLowerCase();
+    const locationVal = locationFilter.value.trim().toLowerCase();
+    const tableBody = document.querySelector('#sellersTable tbody');
 
     if (!tableBody) return;
 
     for (const row of tableBody.rows) {
-        const titleCell = row.querySelector('.product-title');
-        if (!titleCell) continue;
-
-        const title = titleCell.innerText.toLowerCase();
+        const nameCell = row.querySelector('.seller-name');
+        const locationCell = row.querySelector('.location-cell');
         
-        // Başlık filtreleme: Substring arama (her yerde ara)
-        const titleMatch = title.includes(titleVal);
+        if (!nameCell || !locationCell) continue;
 
-        if (titleMatch) {
+        const name = nameCell.innerText.toLowerCase();
+        const location = locationCell.innerText.toLowerCase();
+        
+        // Filtreleme: Her iki kriterin de eşleşmesi
+        const nameMatch = name.includes(nameVal);
+        const locationMatch = location.includes(locationVal);
+
+        if (nameMatch && locationMatch) {
             row.style.display = '';
         } else {
             row.style.display = 'none';
@@ -1120,9 +1144,9 @@ function filterTable() {
 
 // Filtre sayacını güncelle
 function updateFilterCount() {
-    const totalRows = document.querySelectorAll('#productsTable tbody tr').length;
-    const visibleRows = document.querySelectorAll('#productsTable tbody tr').length - 
-                       document.querySelectorAll('#productsTable tbody tr[style*="display: none"]').length;
+    const totalRows = document.querySelectorAll('#sellersTable tbody tr').length;
+    const visibleRows = document.querySelectorAll('#sellersTable tbody tr').length - 
+                       document.querySelectorAll('#sellersTable tbody tr[style*="display: none"]').length;
     
     const visibleCountEl = document.getElementById('visibleCount');
     const totalCountEl = document.getElementById('totalCount');
@@ -1133,40 +1157,42 @@ function updateFilterCount() {
 
     // Sayaçları güncelle
     visibleCountEl.textContent = visibleRows;
-    totalCountEl.textContent = `${totalRows} ürün`;
+    totalCountEl.textContent = `${totalRows} satıcı`;
     
     // Filtre durumunu kontrol et
-    const titleFilter = document.getElementById('titleFilter');
-    const hasActiveFilter = visibleRows < totalRows || (titleFilter && titleFilter.value.trim() !== '');
+    const nameFilter = document.getElementById('nameFilter');
+    const locationFilter = document.getElementById('locationFilter');
+    const hasActiveFilter = visibleRows < totalRows || 
+                           (nameFilter && nameFilter.value.trim() !== '') ||
+                           (locationFilter && locationFilter.value.trim() !== '');
     
     if (hasActiveFilter) {
         if (filterIndicator) filterIndicator.classList.add('active');
         if (clearAllBtn) clearAllBtn.classList.add('active');
-        totalCountEl.textContent = `${totalRows} üründen ${visibleRows} tanesi gösteriliyor`;
+        totalCountEl.textContent = `${totalRows} satıcıdan ${visibleRows} tanesi gösteriliyor`;
     } else {
         if (filterIndicator) filterIndicator.classList.remove('active');
         if (clearAllBtn) clearAllBtn.classList.remove('active');
-        totalCountEl.textContent = `${totalRows} ürün gösteriliyor`;
+        totalCountEl.textContent = `${totalRows} satıcı gösteriliyor`;
     }
 }
 
 // Tüm filtreleri temizle
 function clearAllFilters() {
-    const titleFilter = document.getElementById('titleFilter');
+    const nameFilter = document.getElementById('nameFilter');
+    const locationFilter = document.getElementById('locationFilter');
     
-    if (titleFilter) {
-        titleFilter.value = '';
-    }
+    if (nameFilter) nameFilter.value = '';
+    if (locationFilter) locationFilter.value = '';
     
     // Tabloyu yeniden filtrele
     filterTable();
 }
 
-// YENİ: Modal durum yönetimi
+// Modal durum yönetimi
 function setModalState(isOpen) {
     isModalOpen = isOpen;
     
-    // Body'ye class ekle/çıkar
     if (isOpen) {
         document.body.classList.add('modal-open');
     } else {
@@ -1174,11 +1200,11 @@ function setModalState(isOpen) {
     }
 }
 
-// Alert gösterme fonksiyonu - GELİŞTİRİLDİ
+// Alert gösterme fonksiyonu
 function showAlert(message, type = 'success') {
-    // Modal açıkken alert gösterme (önemli hata mesajları hariç)
-    if (isModalOpen && type !== 'error') {
-        console.log('📢 Alert blocked (modal open):', message, type);
+    const chartModal = document.getElementById('chartModal');
+    if (isModalOpen && chartModal && chartModal.style.display === 'block') {
+        console.log('📢 Alert blocked (chart modal open):', message, type);
         return;
     }
     
@@ -1190,7 +1216,6 @@ function showAlert(message, type = 'success') {
     alert.textContent = message;
     document.body.appendChild(alert);
     
-    // KISA SÜRE: 3 saniye (5 saniye yerine)
     const autoRemoveTime = type === 'error' ? 6000 : 3000;
     
     setTimeout(() => {
@@ -1201,65 +1226,193 @@ function showAlert(message, type = 'success') {
     }, autoRemoveTime);
 }
 
-// Ürün ekleme modal açma
-function openAddProductModal() {
-    document.getElementById('addProductModal').style.display = 'block';
-    document.getElementById('productUrl').focus();
-    setModalState(true); // YENİ
+// URL validasyonu kurulumu
+function setupUrlValidation() {
+    const allProductsInput = document.getElementById('allProductsUrl');
+    const profileInput = document.getElementById('sellerProfileUrl');
+    
+    if (allProductsInput) {
+        allProductsInput.addEventListener('input', debounce(validateUrls, 500));
+        allProductsInput.addEventListener('blur', validateUrls);
+    }
+    
+    if (profileInput) {
+        profileInput.addEventListener('input', debounce(validateUrls, 500));
+        profileInput.addEventListener('blur', validateUrls);
+    }
 }
 
-// Ürün ekleme modal kapatma
-function closeAddProductModal() {
-    document.getElementById('addProductModal').style.display = 'none';
-    
-    // Input'ları temizle
-    document.getElementById('productUrl').value = '';
-    document.getElementById('firstCommentDate').value = '';
-    
-    // Hata sınıflarını temizle
-    document.querySelectorAll('.form-group input').forEach(input => {
-        input.classList.remove('error');
-    });
+// Debounce fonksiyonu
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
-// Ürün kaydetme - AJAX ile dinamik güncelleme
-// saveProduct fonksiyonunu güncelle - MEVCUT FONKSİYONU DEĞIŞTIR:
-async function saveProduct() {
-    const productUrl = document.getElementById('productUrl').value.trim();
-    const firstCommentDate = document.getElementById('firstCommentDate').value.trim();
+// URL'leri validate et
+async function validateUrls() {
+    const allProductsInput = document.getElementById('allProductsUrl');
+    const profileInput = document.getElementById('sellerProfileUrl');
+    const saveBtn = document.getElementById('saveSellerBtn');
+    
+    const allProductsUrl = allProductsInput.value.trim();
+    const sellerProfileUrl = profileInput.value.trim();
+    
+    if (!allProductsUrl && !sellerProfileUrl) {
+        resetValidationStates();
+        return;
+    }
+    
+    try {
+        const response = await fetch('/sellers/validate-urls', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                all_products_url: allProductsUrl,
+                seller_profile_url: sellerProfileUrl
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const validation = data.validation;
+            
+            // Tüm ürünler URL validasyonu
+            updateValidationState(
+                allProductsInput, 
+                'allProductsValidation',
+                validation.all_products_valid,
+                validation.all_products_message || 'Geçerli tüm ürünler sayfası linki ✓'
+            );
+            
+            // Profil URL validasyonu
+            updateValidationState(
+                profileInput,
+                'profileValidation', 
+                validation.profile_valid,
+                validation.profile_message || 'Geçerli satıcı profil linki ✓'
+            );
+            
+            // Kaydet butonunu aktif/pasif yap
+            if (saveBtn) {
+                saveBtn.disabled = !(validation.all_products_valid && validation.profile_valid && allProductsUrl && sellerProfileUrl);
+            }
+        }
+        
+    } catch (error) {
+        console.error('URL validasyon hatası:', error);
+    }
+}
+
+// Validasyon durumunu güncelle
+function updateValidationState(input, messageId, isValid, message) {
+    const messageEl = document.getElementById(messageId);
+    
+    if (!input || !messageEl) return;
+    
+    // Input stilini güncelle
+    input.classList.remove('error', 'success');
+    if (input.value.trim()) {
+        input.classList.add(isValid ? 'success' : 'error');
+    }
+    
+    // Mesajı güncelle
+    messageEl.classList.remove('error', 'success');
+    if (input.value.trim()) {
+        messageEl.classList.add(isValid ? 'success' : 'error');
+        messageEl.textContent = message;
+    } else {
+        messageEl.textContent = '';
+    }
+}
+
+// Validasyon durumlarını sıfırla
+function resetValidationStates() {
+    const inputs = ['allProductsUrl', 'sellerProfileUrl'];
+    const messages = ['allProductsValidation', 'profileValidation'];
+    
+    inputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.classList.remove('error', 'success');
+        }
+    });
+    
+    messages.forEach(messageId => {
+        const messageEl = document.getElementById(messageId);
+        if (messageEl) {
+            messageEl.classList.remove('error', 'success');
+            messageEl.textContent = '';
+        }
+    });
+    
+    const saveBtn = document.getElementById('saveSellerBtn');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+    }
+}
+
+// Satıcı ekleme modal açma
+function openAddSellerModal() {
+    document.getElementById('addSellerModal').style.display = 'block';
+    document.getElementById('allProductsUrl').focus();
+    setModalState(true);
+}
+
+// Satıcı ekleme modal kapatma
+function closeAddSellerModal() {
+    setModalState(false);
+    document.getElementById('addSellerModal').style.display = 'none';
     
     // Input'ları temizle
-    document.querySelectorAll('.form-group input').forEach(input => {
-        input.classList.remove('error');
-    });
+    document.getElementById('allProductsUrl').value = '';
+    document.getElementById('sellerProfileUrl').value = '';
+    
+    // Validasyon durumlarını sıfırla
+    resetValidationStates();
+}
+
+// Satıcı kaydetme
+async function saveSeller() {
+    const allProductsUrl = document.getElementById('allProductsUrl').value.trim();
+    const sellerProfileUrl = document.getElementById('sellerProfileUrl').value.trim();
     
     // Validation
-    if (!productUrl) {
-        document.getElementById('productUrl').classList.add('error');
-        showAlert('Ürün linki boş olamaz!', 'error');
+    if (!allProductsUrl) {
+        updateValidationState(
+            document.getElementById('allProductsUrl'),
+            'allProductsValidation',
+            false,
+            'Tüm ürünler sayfası linki boş olamaz!'
+        );
         return;
     }
     
-    if (!firstCommentDate) {
-        document.getElementById('firstCommentDate').classList.add('error');
-        showAlert('İlk yorum tarihi boş olamaz!', 'error');
-        return;
-    }
-    
-    // Tarih formatını kontrol et
-    const dateValidation = validateDateFormat(firstCommentDate);
-    if (!dateValidation.valid) {
-        document.getElementById('firstCommentDate').classList.add('error');
-        showAlert(dateValidation.message, 'error');
+    if (!sellerProfileUrl) {
+        updateValidationState(
+            document.getElementById('sellerProfileUrl'),
+            'profileValidation',
+            false,
+            'Satıcı profili linki boş olamaz!'
+        );
         return;
     }
     
     // İlerleme göstergesini başlat
-    showSingleProductProgress();
-    updateSingleProductProgress(25, "Ürün sisteme kaydediliyor...", "Kaydediliyor...");
+    showSingleSellerProgress();
+    updateSingleSellerProgress(25, "Satıcı sisteme kaydediliyor...", "Kaydediliyor...");
     
     try {
-        const response = await fetch('/products/add', {
+        const response = await fetch('/sellers/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1268,167 +1421,54 @@ async function saveProduct() {
                 'Expires': '0'
             },
             body: JSON.stringify({
-                product_url: productUrl,
-                first_comment_date: firstCommentDate
+                all_products_url: allProductsUrl,
+                seller_profile_url: sellerProfileUrl
             })
         });
         
         const data = await response.json();
         
         if (data.success) {
-            currentSingleProductId = data.product_link_id;
+            currentSingleSellerId = data.seller_link_id;
             
-            updateSingleProductProgress(50, "Ürün kaydedildi! Veri çekiliyor...", "Scraping başladı...");
-            closeAddProductModal();
+            updateSingleSellerProgress(50, "Satıcı kaydedildi! Veri çekiliyor...", "Scraping başladı...");
+            closeAddSellerModal();
             
             // Scraping tamamlanana kadar izle
-            startSingleProductMonitoring();
+            startSingleSellerMonitoring();
             
         } else {
-            hideSingleProductProgress();
+            hideSingleSellerProgress();
             showAlert('Hata: ' + data.error, 'error');
-            
-            // Hatalı alanı işaretle
-            if (data.error.includes('link')) {
-                document.getElementById('productUrl').classList.add('error');
-            }
-            if (data.error.includes('tarih')) {
-                document.getElementById('firstCommentDate').classList.add('error');
-            }
         }
         
     } catch (error) {
-        hideSingleProductProgress();
+        hideSingleSellerProgress();
         showAlert('Ağ hatası: ' + error.message, 'error');
     }
-}
-
-// YENİ: Tablo verilerini AJAX ile yenile
-async function refreshTableData() {
-    try {
-        console.log('🔄 Tablo verileri yenileniyor...');
-        showAlert('📊 Veriler güncelleniyor...', 'info');
-        
-        const timestamp = new Date().getTime();
-        const response = await fetch(`/products/refresh-data?t=${timestamp}`, {
-            method: 'GET',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
-        
-        console.log('📡 API Response Status:', response.status);
-        const data = await response.json();
-        console.log('📦 API Response Data:', data);
-        
-        if (data.success && data.products) {
-            console.log(`✅ ${data.products.length} ürün verisi alındı`);
-            
-            // Tabloyu yeniden oluştur
-            updateProductTable(data.products);
-            
-            // Filtre sayacını güncelle
-            updateFilterCount();
-            
-            showAlert('✅ Veriler başarıyla güncellendi!', 'success');
-        } else {
-            throw new Error('Veri yenileme hatası: ' + (data.error || 'Bilinmeyen hata'));
-        }
-        
-    } catch (error) {
-        console.error('❌ Veri yenileme hatası:', error);
-        showAlert('⚠️ Veriler güncellenmedi, sayfa yenileniyor...', 'info');
-        
-        // AJAX başarısız olursa hard refresh
-        setTimeout(() => {
-            window.location.reload(true);
-        }, 1500);
-    }
-}
-
-// YENİ: Tablo HTML'ini dinamik olarak güncelle
-function updateProductTable(products) {
-    console.log('🔧 Tablo güncelleniyor, ürün sayısı:', products.length);
-    
-    const tbody = document.querySelector('#productsTable tbody');
-    if (!tbody) {
-        console.error('❌ Tablo tbody elementi bulunamadı!');
-        return;
-    }
-    
-    // Mevcut satırları temizle
-    tbody.innerHTML = '';
-    console.log('🧹 Mevcut satırlar temizlendi');
-    
-    // Yeni satırları ekle
-    products.forEach((product, index) => {
-        const row = createProductRow(product);
-        tbody.appendChild(row);
-        console.log(`➕ Satır ${index + 1} eklendi: ${product.product_title.substring(0, 30)}...`);
-    });
-    
-    console.log('✅ Tablo güncelleme tamamlandı');
-}
-
-// YENİ: Ürün satırı HTML oluştur
-function createProductRow(product) {
-    const row = document.createElement('tr');
-    row.setAttribute('data-link-id', product.link_id);
-    
-    row.innerHTML = `
-        <td>
-            ${product.product_image_url ? 
-                `<img src="${product.product_image_url}" alt="Ürün Resmi" class="product-image" onclick="openProductUrl('${product.product_url}')" />` :
-                `<div style="width: 60px; height: 60px; background: #f7fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #a0aec0; cursor: pointer;" onclick="openProductUrl('${product.product_url}')">📷</div>`
-            }
-        </td>
-        <td class="product-title" onclick="openProductUrl('${product.product_url}')">
-            ${product.product_title.length > 35 ? product.product_title.substring(0, 35) + '...' : product.product_title}
-        </td>
-        <td class="seller-name">${product.seller_name}</td>
-        <td class="price-cell" onclick="openChartModal(${product.link_id}, 'price')">
-            ${product.price && product.price > 0 ? parseFloat(product.price).toFixed(2) + '₺' : '-'}
-        </td>
-        <td class="date-cell">${product.first_comment_date}</td>
-        <td class="data-cell" onclick="openChartModal(${product.link_id}, 'comment_count')">${product.comment_count}</td>
-        <td class="data-cell rating-cell" onclick="openChartModal(${product.link_id}, 'rating')">${parseFloat(product.rating).toFixed(1)}</td>
-        <td class="data-cell" onclick="openChartModal(${product.link_id}, 'question_count')">${product.question_count}</td>
-        <td class="seller-rating-cell" onclick="openChartModal(${product.link_id}, 'seller_rating')">
-            ${product.seller_rating && product.seller_rating > 0 ? parseFloat(product.seller_rating).toFixed(1) : '-'}
-        </td>
-        <td class="data-cell" onclick="openChartModal(${product.link_id}, 'daily_estimated_sales')">${parseFloat(product.daily_estimated_sales).toFixed(1)}</td>
-        <td class="date-cell">${product.last_update}</td>
-        <td>
-            <button class="delete-btn" onclick="confirmDeleteProduct(${product.link_id})" title="Ürünü Sil">✕</button>
-        </td>
-    `;
-    
-    return row;
 }
 
 // Ayarlar modal açma
 async function openSettingsModal() {
     await loadSettings();
     document.getElementById('settingsModal').style.display = 'block';
-    setModalState(true); // YENİ
+    setModalState(true);
 }
 
 // Ayarlar modal kapatma
 function closeSettingsModal() {
-    setModalState(false); // YENİ
+    setModalState(false);
     document.getElementById('settingsModal').style.display = 'none';
 }
 
 // Ayarları yükle
 async function loadSettings() {
     try {
-        const response = await fetch('/products/settings');
+        const response = await fetch('/sellers/settings');
         const data = await response.json();
         
         if (data.success) {
-            const scheduleTime = data.settings.schedule_time || '10:00';
+            const scheduleTime = data.settings.schedule_time || '12:00';
             document.getElementById('scheduleTime').value = scheduleTime;
         }
         
@@ -1447,7 +1487,7 @@ async function saveSettings() {
     }
     
     try {
-        const response = await fetch('/products/settings', {
+        const response = await fetch('/sellers/settings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1471,7 +1511,6 @@ async function saveSettings() {
 
 // Manuel güncelleme başlat
 async function startManualUpdate() {
-    // Admin kontrolü
     const userRole = '{{ session.role }}';
     if (userRole !== 'admin') {
         showAlert('❌ Sadece Admin Yetkili Kullanıcılar Bu Özelliği Kullanabilir', 'error');
@@ -1484,7 +1523,7 @@ async function startManualUpdate() {
         btn.disabled = true;
         btn.textContent = 'Başlatılıyor...';
         
-        const response = await fetch('/products/update/manual', {
+        const response = await fetch('/sellers/update/manual', {
             method: 'POST'
         });
         
@@ -1506,12 +1545,11 @@ async function startManualUpdate() {
     }
 }
 
-// İlerleme bilgisini göster
+// İlerleme bilgisini göster/gizle
 function showProgressInfo() {
     document.getElementById('progressInfo').style.display = 'block';
 }
 
-// İlerleme bilgisini gizle
 function hideProgressInfo() {
     document.getElementById('progressInfo').style.display = 'none';
     
@@ -1523,7 +1561,7 @@ function hideProgressInfo() {
 // Güncelleme durumunu kontrol et
 async function checkUpdateStatus() {
     try {
-        const response = await fetch('/products/update/status');
+        const response = await fetch('/sellers/update/status');
         const data = await response.json();
         
         if (data.success) {
@@ -1532,55 +1570,55 @@ async function checkUpdateStatus() {
             if (status.is_running) {
                 showProgressInfo();
                 
-                // İlerleme çubuğunu güncelle
                 const progress = status.total_items > 0 ? (status.current_progress / status.total_items) * 100 : 0;
                 document.getElementById('progressFill').style.width = progress + '%';
                 document.getElementById('progressCounter').textContent = `${status.current_progress}/${status.total_items}`;
-                document.getElementById('progressText').textContent = 'Ürün verileri güncelleniyor...';
+                document.getElementById('progressText').textContent = 'Satıcı verileri güncelleniyor...';
                 document.getElementById('progressDetail').textContent = status.current_item || '';
                 
             } else {
                 hideProgressInfo();
                 
-                // Eğer az önce işlem bitmiş ve sayfa henüz yenilenmemişse, sayfayı yenile
                 if (status.current_progress > 0) {
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
+                    const chartModal = document.getElementById('chartModal');
+                    if (!chartModal || chartModal.style.display !== 'block') {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
                 }
             }
         }
         
     } catch (error) {
-        // Silent error - normal durum
+        // Silent error
     }
 }
 
-// Ürün URL'ini yeni sekmede aç
-function openProductUrl(url) {
+// Satıcı URL'ini aç
+function openSellerUrl(url) {
     window.open(url, '_blank');
 }
 
 // Silme onayı modal
-function confirmDeleteProduct(productLinkId) {
-    currentDeleteId = productLinkId;
+function confirmDeleteSeller(sellerLinkId) {
+    currentDeleteId = sellerLinkId;
     document.getElementById('deleteConfirmModal').style.display = 'block';
-    setModalState(true); // YENİ
+    setModalState(true);
 }
 
-// Silme onay modal kapatma
 function closeDeleteConfirmModal() {
-    setModalState(false); // YENİ
+    setModalState(false);
     document.getElementById('deleteConfirmModal').style.display = 'none';
     currentDeleteId = null;
 }
 
-// Ürün silme işlemini gerçekleştir
-async function executeDeleteProduct() {
+// Satıcı silme işlemi
+async function executeDeleteSeller() {
     if (!currentDeleteId) return;
     
     try {
-        const response = await fetch(`/products/delete/${currentDeleteId}`, {
+        const response = await fetch(`/sellers/delete/${currentDeleteId}`, {
             method: 'POST'
         });
         
@@ -1590,7 +1628,6 @@ async function executeDeleteProduct() {
             showAlert(data.message, 'success');
             closeDeleteConfirmModal();
             
-            // Sayfayı yenile
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -1603,49 +1640,40 @@ async function executeDeleteProduct() {
     }
 }
 
-// Grafik modal açma - YENİ ALANLAR EKLENDİ
-async function openChartModal(productLinkId, dataType) {
+// Grafik modal açma
+async function openChartModal(sellerLinkId, dataType) {
     try {
-        // Modal'ı göster ve loading state'i başlat
         document.getElementById('chartModal').style.display = 'block';
-        setModalState(true); // YENİ: Modal açık olduğunu kaydet
+        setModalState(true);
         document.getElementById('chartLoading').style.display = 'block';
         document.getElementById('dataChart').style.display = 'none';
         document.getElementById('chartNoData').style.display = 'none';
         
-        // Veri tipine göre başlık belirle - YENİ ALANLAR EKLENDİ
+        // Veri tipine göre başlık belirle
         const dataTypeNames = {
-            'comment_count': 'Yorum Sayısı',
-            'rating': 'Ürün Puanı', 
-            'question_count': 'Soru Sayısı',
-            'daily_estimated_sales': 'Günlük Tahmini Satış',
-            'price': '💰 Fiyat Trendi',              // YENİ
-            'seller_rating': '⭐ Satıcı Puanı'       // YENİ
+            'seller_score': '💎 Satıcı Puanı',
+            'product_count': '📦 Ürün Sayısı',
+            'follower_count': '👥 Takipçi Sayısı', 
+            'total_reviews': '📊 Toplam Değerlendirme',
+            'total_comments': '💬 Toplam Yorum',
+            'overall_rating': '⭐ Genel Rating'
         };
         
         document.getElementById('chartModalTitle').textContent = `📈 ${dataTypeNames[dataType]} Geçmişi`;
         
         // API'den veri çek
-        const response = await fetch(`/products/history/${productLinkId}/${dataType}`);
+        const response = await fetch(`/sellers/history/${sellerLinkId}/${dataType}`);
         const data = await response.json();
         
         if (data.success) {
             if (data.history && data.history.length > 0) {
-                // Grafik oluştur
                 await createDataChart(data);
-                
-                // Loading'i gizle, grafiği göster
                 document.getElementById('chartLoading').style.display = 'none';
                 document.getElementById('dataChart').style.display = 'block';
-                
-                // İstatistikleri güncelle
                 updateChartStats(data);
             } else {
-                // Veri yoksa mesaj göster
                 document.getElementById('chartLoading').style.display = 'none';
                 document.getElementById('chartNoData').style.display = 'block';
-                
-                // Bilgi güncelle
                 document.getElementById('chartInfo').textContent = 'Bu veri için henüz geçmiş yok';
                 document.getElementById('chartStats').textContent = '';
             }
@@ -1660,16 +1688,14 @@ async function openChartModal(productLinkId, dataType) {
     }
 }
 
-// Chart.js ile grafik oluşturma - YENİ VERİ TİPLERİ DESTEKLENDİ
+// Chart.js ile grafik oluşturma
 async function createDataChart(data) {
     const ctx = document.getElementById('dataChart').getContext('2d');
     
-    // Mevcut grafiği temizle
     if (currentChart) {
         currentChart.destroy();
     }
     
-    // Veriyi hazırla
     const labels = [];
     const values = [];
     
@@ -1680,22 +1706,21 @@ async function createDataChart(data) {
         values.push(item.value);
     });
     
-    // Veri tipine göre renk belirleme - YENİ RENKLER EKLENDİ
-    let borderColor = '#48bb78';
-    let backgroundColor = 'rgba(72, 187, 120, 0.1)';
+    // Veri tipine göre renk belirleme
+    let borderColor = '#9f7aea';
+    let backgroundColor = 'rgba(159, 122, 234, 0.1)';
     
-    if (data.data_type === 'price') {
-        borderColor = '#805ad5';
-        backgroundColor = 'rgba(128, 90, 213, 0.1)';
-    } else if (data.data_type === 'seller_rating') {
-        borderColor = '#ed8936';
-        backgroundColor = 'rgba(237, 137, 54, 0.1)';
-    } else if (data.data_type === 'rating') {
+    if (data.data_type === 'seller_score') {
+        borderColor = '#38b2ac';
+        backgroundColor = 'rgba(56, 178, 172, 0.1)';
+    } else if (data.data_type === 'overall_rating') {
         borderColor = '#f6ad55';
         backgroundColor = 'rgba(246, 173, 85, 0.1)';
+    } else if (data.data_type === 'follower_count') {
+        borderColor = '#4299e1';
+        backgroundColor = 'rgba(66, 153, 225, 0.1)';
     }
     
-    // Chart.js konfigürasyonu
     const config = {
         type: 'line',
         data: {
@@ -1722,15 +1747,10 @@ async function createDataChart(data) {
                 title: {
                     display: true,
                     text: `${data.data_info.title} (Son ${data.total_days} Gün)`,
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    },
+                    font: { size: 16, weight: 'bold' },
                     color: '#2d3748'
                 },
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
                     mode: 'index',
                     intersect: false,
@@ -1742,12 +1762,10 @@ async function createDataChart(data) {
                     cornerRadius: 8,
                     callbacks: {
                         title: function(context) {
-                            const date = context[0].label;
-                            return `📅 ${date}`;
+                            return `📅 ${context[0].label}`;
                         },
                         label: function(context) {
-                            const value = context.raw;
-                            return `${data.data_info.title}: ${value} ${data.data_info.unit}`;
+                            return `${data.data_info.title}: ${context.raw} ${data.data_info.unit}`;
                         }
                     }
                 }
@@ -1755,40 +1773,19 @@ async function createDataChart(data) {
             scales: {
                 x: {
                     display: true,
-                    title: {
-                        display: true,
-                        text: 'Tarih',
-                        font: {
-                            weight: 'bold'
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(160, 174, 192, 0.2)'
-                    }
+                    title: { display: true, text: 'Tarih', font: { weight: 'bold' } },
+                    grid: { color: 'rgba(160, 174, 192, 0.2)' }
                 },
                 y: {
                     display: true,
-                    title: {
-                        display: true,
-                        text: `${data.data_info.title} (${data.data_info.unit})`,
-                        font: {
-                            weight: 'bold'
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(160, 174, 192, 0.2)'
-                    }
+                    title: { display: true, text: `${data.data_info.title} (${data.data_info.unit})`, font: { weight: 'bold' } },
+                    grid: { color: 'rgba(160, 174, 192, 0.2)' }
                 }
             },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
-            }
+            interaction: { mode: 'nearest', axis: 'x', intersect: false }
         }
     };
     
-    // Grafiği oluştur
     currentChart = new Chart(ctx, config);
 }
 
@@ -1801,27 +1798,22 @@ function updateChartStats(data) {
         return;
     }
     
-    // İstatistikleri hesapla
     const values = history.map(item => item.value).filter(value => value !== null);
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
     const avgValue = values.reduce((sum, value) => sum + value, 0) / values.length;
     const latestValue = history[history.length - 1].value;
     
-    // Değişim hesapla
     const firstValue = history[0].value;
     const change = latestValue - firstValue;
     const changePercent = firstValue > 0 ? ((change / firstValue) * 100) : 0;
     
-    // Değişim yönü emojisi
     const changeEmoji = change > 0 ? '📈' : change < 0 ? '📉' : '➡️';
     const changeColor = change > 0 ? '#48bb78' : change < 0 ? '#e53e3e' : '#718096';
     
-    // Sayı formatını veri tipine göre ayarla
     let formatFunction = (val) => val.toFixed(1);
-    if (data.data_type === 'price') {
-        formatFunction = (val) => val.toFixed(2) + '₺';
-    } else if (data.data_type === 'comment_count' || data.data_type === 'question_count') {
+    if (data.data_type === 'product_count' || data.data_type === 'follower_count' || 
+        data.data_type === 'total_reviews' || data.data_type === 'total_comments') {
         formatFunction = (val) => Math.round(val);
     }
     
@@ -1838,25 +1830,145 @@ function updateChartStats(data) {
 
 // Grafik modal kapatma
 function closeChartModal() {
-    setModalState(false); // YENİ
+    setModalState(false);
     document.getElementById('chartModal').style.display = 'none';
     
-    // Grafiği temizle
     if (currentChart) {
         currentChart.destroy();
         currentChart = null;
     }
 }
 
+// Tek satıcı ilerleme fonksiyonları
+function showSingleSellerProgress() {
+    document.getElementById('singleSellerProgress').style.display = 'block';
+}
+
+function hideSingleSellerProgress() {
+    document.getElementById('singleSellerProgress').style.display = 'none';
+    if (singleSellerProgressInterval) {
+        clearInterval(singleSellerProgressInterval);
+        singleSellerProgressInterval = null;
+    }
+    currentSingleSellerId = null;
+}
+
+function updateSingleSellerProgress(percentage, text, status) {
+    document.getElementById('singleProgressFill').style.width = percentage + '%';
+    document.getElementById('singleProgressText').textContent = text;
+    document.getElementById('singleProgressStatus').textContent = status;
+}
+
+function startSingleSellerMonitoring() {
+    let progressPercentage = 50;
+    let checkCount = 0;
+    const maxChecks = 240; // 4 dakika maksimum
+    
+    singleSellerProgressInterval = setInterval(async () => {
+        checkCount++;
+        
+        try {
+            // Scraping durumunu da kontrol et
+            const statusResponse = await fetch('/sellers/update/status');
+            const statusData = await statusResponse.json();
+            
+            if (statusData.success && statusData.status) {
+                const scrapingStatus = statusData.status;
+                
+                // Eğer scraping çalışıyorsa durum bilgisini göster
+                if (scrapingStatus.is_running) {
+                    progressPercentage = Math.min(95, 50 + (scrapingStatus.current_progress || 0) * 40);
+                    updateSingleSellerProgress(
+                        progressPercentage, 
+                        scrapingStatus.current_item || "Satıcı verileri çekiliyor...", 
+                        "Aktif"
+                    );
+                }
+            }
+            
+            // Sayfa verilerini kontrol et
+            const response = await fetch(`/sellers/refresh-data?t=${new Date().getTime()}`);
+            const data = await response.json();
+            
+            if (data.success && data.sellers) {
+                const newSeller = data.sellers.find(s => s.link_id === currentSingleSellerId);
+                
+                // Yeni verinin gelip gelmediğini kontrol et
+                if (newSeller && 
+                    newSeller.seller_name && 
+                    newSeller.seller_name !== 'Satıcı adı yükleniyor...' &&
+                    (newSeller.seller_score > 0 || newSeller.product_count > 0)) {
+                    
+                    updateSingleSellerProgress(100, "✅ Tamamlandı! Sayfa yenileniyor...", "Başarılı!");
+                    
+                    setTimeout(() => {
+                        hideSingleSellerProgress();
+                        showAlert('✅ Satıcı başarıyla eklendi ve veriler çekildi!', 'success');
+                        
+                        // Sayfayı yenile
+                        setTimeout(() => {
+                            window.location.reload(true);
+                        }, 1500);
+                    }, 2000);
+                    
+                    return; // Interval'ı durdur
+                }
+            }
+            
+            // İlerleme mesajları
+            if (checkCount <= maxChecks) {
+                const progressMessages = [
+                    "Satıcı sayfaları analiz ediliyor...",
+                    "Tüm ürünler sayfası çekiliyor...", 
+                    "Profil sayfası çekiliyor...",
+                    "Satıcı bilgileri parse ediliyor...",
+                    "Takipçi sayısı hesaplanıyor...",
+                    "Veriler kaydediliyor...",
+                    "Son kontroller yapılıyor...",
+                    "İşlem tamamlanıyor..."
+                ];
+                
+                const messageIndex = Math.min(Math.floor(checkCount / 15), progressMessages.length - 1);
+                
+                // Scraping çalışmıyorsa genel mesaj göster
+                if (!statusData.success || !statusData.status || !statusData.status.is_running) {
+                    progressPercentage = Math.min(95, 50 + (checkCount * 1.5));
+                    updateSingleSellerProgress(progressPercentage, progressMessages[messageIndex], "Çekiliyor...");
+                }
+            }
+            
+            // Maksimum süre aşıldıysa
+            if (checkCount >= maxChecks) {
+                updateSingleSellerProgress(95, "⚠️ İşlem uzun sürüyor, arka planda devam ediyor...", "Bekliyor");
+                
+                setTimeout(() => {
+                    hideSingleSellerProgress();
+                    showAlert('⚠️ Veri çekme işlemi arka planda devam ediyor. Sayfayı yenileyerek kontrol edebilirsiniz.', 'info');
+                }, 3000);
+            }
+            
+        } catch (error) {
+            console.error('Single seller monitoring error:', error);
+            
+            // Hata durumunda da devam et, belki sonraki check'te çalışır
+            if (checkCount >= maxChecks) {
+                hideSingleSellerProgress();
+                showAlert('⚠️ Veri takibinde sorun oluştu. Sayfayı yenileyin.', 'error');
+            }
+        }
+        
+    }, 2000); // 2 saniyede bir kontrol et
+}
+
 // Modal dışına tıklanırsa kapat
 window.onclick = function(event) {
-    const addProductModal = document.getElementById('addProductModal');
+    const addSellerModal = document.getElementById('addSellerModal');
     const settingsModal = document.getElementById('settingsModal');
     const deleteConfirmModal = document.getElementById('deleteConfirmModal');
     const chartModal = document.getElementById('chartModal');
     
-    if (event.target === addProductModal) {
-        closeAddProductModal();
+    if (event.target === addSellerModal) {
+        closeAddSellerModal();
     }
     if (event.target === settingsModal) {
         closeSettingsModal();
@@ -1869,203 +1981,13 @@ window.onclick = function(event) {
     }
 }
 
-// Tek ürün ilerleme fonksiyonları:
-function showSingleProductProgress() {
-    document.getElementById('singleProductProgress').style.display = 'block';
-}
-
-function hideSingleProductProgress() {
-    document.getElementById('singleProductProgress').style.display = 'none';
-    if (singleProductProgressInterval) {
-        clearInterval(singleProductProgressInterval);
-        singleProductProgressInterval = null;
-    }
-    currentSingleProductId = null;
-}
-
-function updateSingleProductProgress(percentage, text, status) {
-    document.getElementById('singleProgressFill').style.width = percentage + '%';
-    document.getElementById('singleProgressText').textContent = text;
-    document.getElementById('singleProgressStatus').textContent = status;
-}
-
-function startSingleProductMonitoring() {
-    let progressPercentage = 50;
-    let checkCount = 0;
-    const maxChecks = 300; // 5 dakika maksimum bekleme (gerçekte scraping 2-3 dakika sürebiliyor)
-    
-    singleProductProgressInterval = setInterval(async () => {
-        checkCount++;
-        
-        try {
-            // Veritabanında bu ürün için veri var mı kontrol et
-            const response = await fetch(`/products/refresh-data?t=${new Date().getTime()}`);
-            const data = await response.json();
-            
-            if (data.success && data.products) {
-                // Yeni eklenen ürünü bul
-                const newProduct = data.products.find(p => p.link_id === currentSingleProductId);
-                
-                if (newProduct && 
-                    newProduct.product_title && 
-                    newProduct.product_title !== 'Başlık yükleniyor...' &&
-                    newProduct.price && 
-                    newProduct.rating &&
-                    newProduct.product_image_url &&
-                    newProduct.seller_name) {
-                    // Scraping tamamlandı!
-                    updateSingleProductProgress(100, "✅ Tamamlandı! Sayfa yenileniyor...", "Başarılı!");
-                    
-                    setTimeout(() => {
-                        hideSingleProductProgress();
-                        showAlert('✅ Ürün başarıyla eklendi ve veriler çekildi!', 'success');
-                        
-                        // Sayfayı yenile
-                        setTimeout(() => {
-                            window.location.reload(true);
-                        }, 1500);
-                    }, 2000);
-                    
-                } else {
-                    // Hala devam ediyor, ilerleme artır
-                    progressPercentage = Math.min(95, 50 + (checkCount * 2));
-                    
-                    const progressMessages = [
-                        "Ürün sayfası analiz ediliyor...",
-                        "Ürün bilgileri çekiliyor...",
-                        "Resim URL'si bulunuyor...",
-                        "Yorum ve puan bilgileri alınıyor...",
-                        "Satış verileri hesaplanıyor...",
-                        "Veriler kaydediliyor...",
-                        "Son kontroller yapılıyor...",
-                        "İşlem tamamlanıyor..."
-                    ];
-                    
-                    const messageIndex = Math.min(Math.floor(checkCount / 8), progressMessages.length - 1);
-                    updateSingleProductProgress(progressPercentage, progressMessages[messageIndex], "Çekiliyor...");
-                }
-            }
-            
-            // Maksimum bekleme süresini aştıysa
-            if (checkCount >= maxChecks) {
-                updateSingleProductProgress(95, "⚠️ İşlem uzun sürüyor, arka planda devam ediyor...", "Bekliyor");
-                
-                setTimeout(() => {
-                    hideSingleProductProgress();
-                    showAlert('⚠️ Veri çekme işlemi arka planda devam ediyor. Sayfayı yenileyerek kontrol edebilirsiniz.', 'info');
-                }, 3000);
-            }
-            
-        } catch (error) {
-            console.error('Single product monitoring error:', error);
-        }
-        
-    }, 1000); // Her saniye kontrol et
-}
-
-// Modal kapatma fonksiyonlarını güncelle - MEVCUT FUNKTIONLARA EKLE:
-function closeAddProductModal() {
-    setModalState(false); // YENİ - BURAYA EKLE
-    document.getElementById('addProductModal').style.display = 'none';
-    
-    // Input'ları temizle
-    document.getElementById('productUrl').value = '';
-    document.getElementById('firstCommentDate').value = '';
-    
-    // Hata sınıflarını temizle
-    document.querySelectorAll('.form-group input').forEach(input => {
-        input.classList.remove('error');
-    });
-    
-    // NOT: İlerleme çubuğunu kapatma - çünkü scraping devam ediyor
-}
-
-// Otomatik tarih formatı
-function formatDateInput(input) {
-    // Sadece rakamları al
-    let value = input.value.replace(/\D/g, '');
-    
-    // Maksimum 8 rakam (DDMMYYYY)
-    if (value.length > 8) {
-        value = value.substring(0, 8);
-    }
-    
-    // Otomatik formatla
-    if (value.length >= 2) {
-        value = value.substring(0, 2) + '/' + value.substring(2);
-    }
-    if (value.length >= 5) {
-        value = value.substring(0, 5) + '/' + value.substring(5);
-    }
-    
-    input.value = value;
-}
-
-
-// Gelişmiş tarih validasyonu
-function validateDateFormat(dateString) {
-    // DD/MM/YYYY formatını kontrol et
-    const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    const match = dateString.match(datePattern);
-    
-    if (!match) {
-        return { valid: false, message: 'Tarih formatı DD/MM/YYYY olmalıdır!' };
-    }
-    
-    const day = parseInt(match[1]);
-    const month = parseInt(match[2]);
-    const year = parseInt(match[3]);
-    
-    // Temel tarih kontrolü
-    if (day < 1 || day > 31) {
-        return { valid: false, message: 'Gün 1-31 arasında olmalıdır!' };
-    }
-    
-    if (month < 1 || month > 12) {
-        return { valid: false, message: 'Ay 1-12 arasında olmalıdır!' };
-    }
-    
-    if (year < 2000 || year > new Date().getFullYear()) {
-        return { valid: false, message: 'Yıl 2000-' + new Date().getFullYear() + ' arasında olmalıdır!' };
-    }
-    
-    return { valid: true };
-}
-
-// Sayfa yüklendiğinde tarih input'unu hazırla
-document.addEventListener('DOMContentLoaded', function() {
-    const dateInput = document.getElementById('firstCommentDate');
-    
-    if (dateInput) {
-        // Kullanıcı yazarken otomatik formatla
-        dateInput.addEventListener('input', function(e) {
-            formatDateInput(e.target);
-        });
-        
-        // Placeholder'ı güncelle
-        dateInput.placeholder = 'Örnek: 15012024 → 15/01/2024';
-        
-        // Focus olduğunda ipucu göster
-        dateInput.addEventListener('focus', function() {
-            if (!this.value) {
-                showAlert('💡 İpucu: Sadece rakamları yazın, "/" otomatik eklenecek (örn: 15012024)', 'info');
-            }
-        });
-    }
-});
-
-console.log("✅ Ürün izleme sayfası JavaScript yüklendi - Price ve Seller Rating desteği eklendi");
-
 // ESC tuşu ile modal kapatma
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape' && isModalOpen) {
-        console.log('⌨️ ESC tuşu ile modal kapatılıyor...');
-        
-        // Hangi modal açıksa onu kapat
         if (document.getElementById('chartModal').style.display === 'block') {
             closeChartModal();
-        } else if (document.getElementById('addProductModal').style.display === 'block') {
-            closeAddProductModal();
+        } else if (document.getElementById('addSellerModal').style.display === 'block') {
+            closeAddSellerModal();
         } else if (document.getElementById('settingsModal').style.display === 'block') {
             closeSettingsModal();
         } else if (document.getElementById('deleteConfirmModal').style.display === 'block') {
@@ -2074,12 +1996,17 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Sayfa yüklendiğinde interval'ları temizle - MEVCUT KODA EKLE:
+// Sayfa kapatılırken interval'ları temizle
 window.addEventListener('beforeunload', function() {
-    if (singleProductProgressInterval) {
-        clearInterval(singleProductProgressInterval);
+    if (singleSellerProgressInterval) {
+        clearInterval(singleSellerProgressInterval);
+    }
+    if (updateStatusInterval) {
+        clearInterval(updateStatusInterval);
     }
 });
+
+console.log("✅ Satıcı izleme sayfası JavaScript yüklendi - Trendyol satıcı verisi takibi");
 
 </script>
 

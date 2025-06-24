@@ -15,7 +15,6 @@ import logging
 import pytz
 import traceback
 # app.py dosyasının en üstündeki import'lara eklenecek
-from competitor_routes import competitor_bp
 from competitor_scheduler import init_scheduler, cleanup_scheduler
 import atexit
 
@@ -52,7 +51,8 @@ except ImportError as e:
 # Import bölümüne eklenecek (diğer import'lardan sonra)
 try:
     from competitor_routes import competitor_bp
-    from product_routes import product_bp  # YENİ: Product blueprint import
+    from product_routes import product_bp
+    from seller_routes import seller_bp  # YENİ: Seller blueprint import
     MODULES_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Modül import hatası: {e}")
@@ -81,6 +81,13 @@ if MODULES_AVAILABLE:
         logging.info("Product blueprint başarıyla kaydedildi")
     except Exception as e:
         logging.error(f"Product blueprint kayıt hatası: {e}")
+
+    try:
+        # YENİ: Seller blueprint'i kaydet
+        app.register_blueprint(seller_bp)
+        logging.info("Seller blueprint başarıyla kaydedildi")
+    except Exception as e:
+        logging.error(f"Seller blueprint kayıt hatası: {e}")
 
 MATCHES_FILE = 'match.json'
 USERS_FILE = 'users.json'
@@ -1704,6 +1711,13 @@ def init_all_schedulers():
         except Exception as e:
             logging.error(f"Product scheduler hatası: {e}")
 
+        try:
+            from seller_scheduler import init_seller_scheduler
+            init_seller_scheduler()
+            print("✅ Seller scheduler başlatıldı")
+        except ImportError as e:
+            print(f"⚠️ Seller scheduler başlatılamadı: {str(e)}")
+
 
 if __name__ == "__main__":
     import sys
@@ -1719,6 +1733,7 @@ if __name__ == "__main__":
         logging.info(f"Trendyol-HB Stok Yönetimi başlatılıyor...")
         logging.info(f"🎯 Rakip Takip: http://localhost:{port}/competitors")
         logging.info(f"📊 Ürün İzleme: http://localhost:{port}/products")  # YENİ
+        logging.info(f"🏪 Satıcı İzleme: http://localhost:{port}/sellers")  # YENİ EKLENEN
         logging.info(f"Tarayıcınızda şu adresi açın: http://localhost:{port}")
         
         app.run(debug=debug_mode, host='0.0.0.0', port=port)
