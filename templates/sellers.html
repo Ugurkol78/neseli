@@ -725,6 +725,48 @@
             }
         }
 
+        /* Sıralama ok stilleri */
+        .sortable {
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .sortable:hover {
+            background: #805ad5 !important;
+        }
+
+        .sortable .sort-arrows {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 10px;
+            line-height: 1;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
+        }
+
+        .sortable:hover .sort-arrows {
+            opacity: 0.8;
+        }
+
+        .sortable.sort-asc .sort-arrows::before {
+            content: "▲";
+            color: #48bb78;
+            opacity: 1;
+        }
+
+        .sortable.sort-desc .sort-arrows::before {
+            content: "▼";
+            color: #48bb78;
+            opacity: 1;
+        }
+
+        .sortable:not(.sort-asc):not(.sort-desc) .sort-arrows::before {
+            content: "▲▼";
+            opacity: 0.5;
+        }
+
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 6px;
@@ -835,12 +877,12 @@
                     <th style="width: 200px;">Satıcı Adı</th>
                     <th style="width: 100px;">Konum</th>
                     <th style="width: 80px;">Mağaza Yaşı</th>
-                    <th style="width: 90px;">💎 Satıcı Puanı</th>
-                    <th style="width: 100px;">👥 Takipçi Sayısı</th>
-                    <th style="width: 90px;">📦 Ürün Sayısı</th>
-                    <th style="width: 90px;">⭐ Genel Rating</th>
-                    <th style="width: 110px;">📊 Toplam Değerlendirme</th>
-                    <th style="width: 100px;">💬 Toplam Yorum</th>
+                    <th class="sortable" data-column="seller_score" style="width: 90px;">💎 Satıcı Puanı<span class="sort-arrows"></span></th>
+                    <th class="sortable" data-column="follower_count" style="width: 100px;">👥 Takipçi Sayısı<span class="sort-arrows"></span></th>
+                    <th class="sortable" data-column="product_count" style="width: 90px;">📦 Ürün Sayısı<span class="sort-arrows"></span></th>
+                    <th class="sortable" data-column="overall_rating" style="width: 90px;">⭐ Genel Rating<span class="sort-arrows"></span></th>
+                    <th class="sortable" data-column="total_reviews" style="width: 110px;">📊 Toplam Değerlendirme<span class="sort-arrows"></span></th>
+                    <th class="sortable" data-column="total_comments" style="width: 100px;">💬 Toplam Yorum<span class="sort-arrows"></span></th>
                     <th style="width: 130px;">Son Güncelleme</th>
                     <th style="width: 60px;">İşlemler</th>
                 </tr>
@@ -1106,6 +1148,135 @@ function initializeFiltering() {
 
     // İlk sayaç güncellemesi
     updateFilterCount();
+    // Sıralama sistemini başlat
+    initializeSorting();
+}
+
+// Sıralama sistemini başlat
+function initializeSorting() {
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const column = this.getAttribute('data-column');
+            handleSort(column, this);
+        });
+    });
+}
+
+// Sıralama işlemini yönet
+function handleSort(column, headerElement) {
+    const currentSort = headerElement.classList.contains('sort-asc') ? 'asc' : 
+                       headerElement.classList.contains('sort-desc') ? 'desc' : 'none';
+    
+    // Tüm başlıkların sıralama class'larını temizle
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.classList.remove('sort-asc', 'sort-desc');
+    });
+    
+    let newSort;
+    if (currentSort === 'none') {
+        newSort = 'desc'; // İlk tıklama: büyükten küçüğe
+        headerElement.classList.add('sort-desc');
+    } else if (currentSort === 'desc') {
+        newSort = 'asc'; // İkinci tıklama: küçükten büyüğe
+        headerElement.classList.add('sort-asc');
+    } else {
+        newSort = 'none'; // Üçüncü tıklama: default sıralama
+        // Class eklenmez, default sıralama
+    }
+    
+    sortTable(column, newSort);
+}
+
+// Tabloyu sırala
+function sortTable(column, sortOrder) {
+    const tableBody = document.querySelector('#sellersTable tbody');
+    if (!tableBody) return;
+    
+    const rows = Array.from(tableBody.rows);
+    
+    if (sortOrder === 'none') {
+        // Default sıralama: data-link-id sırasına göre (ekleme sırasına göre)
+        rows.sort((a, b) => {
+            const aId = parseInt(a.getAttribute('data-link-id')) || 0;
+            const bId = parseInt(b.getAttribute('data-link-id')) || 0;
+            return bId - aId; // En yeni eklenen üstte
+        });
+    } else {
+        // Değer sıralaması
+        rows.sort((a, b) => {
+            const aValue = extractSortValue(a, column);
+            const bValue = extractSortValue(b, column);
+            
+            // Null/undefined değerleri en sona koy
+            if (aValue === null && bValue === null) return 0;
+            if (aValue === null) return 1;
+            if (bValue === null) return -1;
+            
+            if (sortOrder === 'desc') {
+                return bValue - aValue; // Büyükten küçüğe
+            } else {
+                return aValue - bValue; // Küçükten büyüğe
+            }
+        });
+    }
+    
+    // Sıralanmış satırları tabloya ekle
+    rows.forEach(row => tableBody.appendChild(row));
+}
+
+// Satırdan sıralama değerini çıkar
+function extractSortValue(row, column) {
+    const columnMap = {
+        'seller_score': 3,      // 4. sütun (0-indexed)
+        'follower_count': 4,    // 5. sütun
+        'product_count': 5,     // 6. sütun
+        'overall_rating': 6,    // 7. sütun
+        'total_reviews': 7,     // 8. sütun
+        'total_comments': 8     // 9. sütun
+    };
+    
+    const cellIndex = columnMap[column];
+    if (cellIndex === undefined) return null;
+    
+    const cell = row.cells[cellIndex];
+    if (!cell) return null;
+    
+    const text = cell.textContent.trim();
+    
+    // "-" değeri varsa null döndür
+    if (text === '-' || text === '') return null;
+    
+    // Takipçi sayısı için özel parsing (14,6B gibi)
+    if (column === 'follower_count') {
+        return parseFollowerCount(text);
+    }
+    
+    // Diğer değerler için sayısal parsing
+    const numericValue = parseFloat(text.replace(/[^\d.,]/g, '').replace(',', '.'));
+    return isNaN(numericValue) ? null : numericValue;
+}
+
+// Takipçi sayısını parse et (14,6B -> 14600)
+function parseFollowerCount(text) {
+    if (!text || text === '-') return null;
+    
+    const cleanText = text.toUpperCase().trim();
+    
+    if (cleanText.includes('B')) {
+        const number = parseFloat(cleanText.replace('B', '').replace(',', '.'));
+        return isNaN(number) ? null : number * 1000; // B = Bin = 1000
+    } else if (cleanText.includes('K')) {
+        const number = parseFloat(cleanText.replace('K', '').replace(',', '.'));
+        return isNaN(number) ? null : number * 1000;
+    } else if (cleanText.includes('M')) {
+        const number = parseFloat(cleanText.replace('M', '').replace(',', '.'));
+        return isNaN(number) ? null : number * 1000000;
+    } else {
+        const number = parseFloat(cleanText.replace(/[^\d.,]/g, '').replace(',', '.'));
+        return isNaN(number) ? null : number;
+    }
 }
 
 // Tabloyu filtrele
