@@ -1689,7 +1689,6 @@ async function startManualUpdate() {
         showAlert('❌ Sadece Admin Yetkili Kullanıcılar Bu Özelliği Kullanabilir', 'error');
         return;
     }
-
     const btn = document.getElementById('manualUpdateBtn');
     
     try {
@@ -1705,6 +1704,11 @@ async function startManualUpdate() {
         if (data.success) {
             showAlert(data.message, 'success');
             showProgressInfo();
+            
+            // 🔥 YENİ EKLENEN: Interval başlat
+            if (!updateStatusInterval) {
+                updateStatusInterval = setInterval(checkUpdateStatus, 2000);
+            }
         } else {
             showAlert('Hata: ' + data.error, 'error');
             btn.disabled = false;
@@ -1717,7 +1721,6 @@ async function startManualUpdate() {
         btn.textContent = '🔄 Güncelle';
     }
 }
-
 // İlerleme bilgisini göster/gizle
 function showProgressInfo() {
     document.getElementById('progressInfo').style.display = 'block';
@@ -1749,18 +1752,19 @@ async function checkUpdateStatus() {
                 document.getElementById('progressText').textContent = 'Satıcı verileri güncelleniyor...';
                 document.getElementById('progressDetail').textContent = status.current_item || '';
                 
-                // Interval başlat (eğer yoksa)
-                if (!updateStatusInterval) {
-                    updateStatusInterval = setInterval(checkUpdateStatus, 2000); // 2 saniyeye düşür
-                }
+                // ❌ KALDIRILDI: Burada interval başlatma
+                // if (!updateStatusInterval) {
+                //     updateStatusInterval = setInterval(checkUpdateStatus, 2000);
+                // }
             } else {
                 // 🔥 ÖNEMLİ: İşlem bitince ilerleme çubuğunu kapat
                 hideProgressInfo();
                 
-                // Interval'ı durdur
+                // 🔥 ÖNEMLİ: Interval'ı DURDUR
                 if (updateStatusInterval) {
                     clearInterval(updateStatusInterval);
                     updateStatusInterval = null;
+                    console.log('🔍 DEBUG: Interval durduruldu - işlem bitti');
                 }
                 
                 // Başarı mesajı
@@ -1773,6 +1777,7 @@ async function checkUpdateStatus() {
             if (updateStatusInterval) {
                 clearInterval(updateStatusInterval);
                 updateStatusInterval = null;
+                console.log('🔍 DEBUG: Interval durduruldu - hata');
             }
         }
         
@@ -1781,10 +1786,10 @@ async function checkUpdateStatus() {
         if (updateStatusInterval) {
             clearInterval(updateStatusInterval);
             updateStatusInterval = null;
+            console.log('🔍 DEBUG: Interval durduruldu - exception');
         }
     }
 }
-
 // Satıcı URL'ini aç
 function openSellerUrl(url) {
     window.open(url, '_blank');
