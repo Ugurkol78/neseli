@@ -525,6 +525,7 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                 print(f"🔍 SELENIUM DEBUG: Price selector hatası ({selector}): {str(e)}")
                 continue
 
+
         # Sayfa kaynağında fiyat arama kısmını BU ile değiştirin:
 
         if not result.get('price'):
@@ -536,9 +537,9 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             
             # ÖNCELİKLE İNDİRİMLİ FİYAT PATTERN'LERİNİ ARA
             discounted_patterns = [
-                r'prc-dsc[^>]*>([^<]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)[^<]*)',  # .prc-dsc class'ı
-                r'price-view-discounted[^>]*>([^<]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)[^<]*)',  # discounted class
-                r'campaign-price[^>]*>([^<]*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)[^<]*)',  # campaign price
+                r'prc-dsc[^>]*>([^<]*)',  # .prc-dsc class'ının içeriği
+                r'price-view-discounted[^>]*>([^<]*)',  # discounted class
+                r'campaign-price[^>]*>([^<]*)',  # campaign price
             ]
             
             # İndirimli fiyat ara
@@ -549,25 +550,34 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                     
                     for match in matches:
                         try:
-                            # match[1] sayısal kısmı içerir
-                            price_text = match[1] if isinstance(match, tuple) else match
-                            clean_match = re.sub(r'[^\d,.]', '', price_text)
+                            # match içinden sayısal değeri çıkar
+                            price_numbers = re.findall(r'(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)', match)
+                            print(f"🔍 SELENIUM DEBUG: Match içinden sayılar: {price_numbers}")
                             
-                            if clean_match:
-                                if ',' in clean_match and '.' not in clean_match:
-                                    test_price = float(clean_match.replace(',', '.'))
-                                elif '.' in clean_match and ',' not in clean_match:
-                                    test_price = float(clean_match)
-                                elif ',' in clean_match and '.' in clean_match:
-                                    # Virgül decimal, nokta binlik varsayımı
-                                    test_price = float(clean_match.replace('.', '').replace(',', '.'))
-                                else:
-                                    test_price = float(clean_match)
+                            if price_numbers:
+                                # İlk geçerli sayıyı al
+                                for price_text in price_numbers:
+                                    clean_match = re.sub(r'[^\d,.]', '', price_text)
+                                    
+                                    if clean_match and len(clean_match) >= 2:  # En az 2 karakter olmalı
+                                        if ',' in clean_match and '.' not in clean_match:
+                                            test_price = float(clean_match.replace(',', '.'))
+                                        elif '.' in clean_match and ',' not in clean_match:
+                                            test_price = float(clean_match)
+                                        elif ',' in clean_match and '.' in clean_match:
+                                            # Virgül decimal, nokta binlik varsayımı
+                                            test_price = float(clean_match.replace('.', '').replace(',', '.'))
+                                        else:
+                                            test_price = float(clean_match)
+                                        
+                                        if 10 <= test_price <= 1000000:  # Makul fiyat aralığı
+                                            result['price'] = test_price
+                                            print(f"🔍 SELENIUM DEBUG: İndirimli fiyat bulundu: {result['price']}")
+                                            break
                                 
-                                if 10 <= test_price <= 1000000:  # Makul fiyat aralığı
-                                    result['price'] = test_price
-                                    print(f"🔍 SELENIUM DEBUG: İndirimli fiyat bulundu: {result['price']}")
+                                if result.get('price'):
                                     break
+                                    
                         except Exception as e:
                             print(f"🔍 SELENIUM DEBUG: İndirimli fiyat parse hatası: {e}")
                             continue
@@ -611,8 +621,6 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                             result['price'] = min(valid_prices)
                             print(f"🔍 SELENIUM DEBUG: En düşük geçerli fiyat seçildi: {result['price']} (Tüm fiyatlar: {valid_prices})")
                             break
-
-        print(f"🔍 SELENIUM DEBUG: Final price result: {result.get('price', 'NONE')}")
 
         print(f"🔍 SELENIUM DEBUG: Final price result: {result.get('price', 'NONE')}")
         
