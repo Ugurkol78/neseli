@@ -452,6 +452,23 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             'span[data-testid*="price"]',
         ]
 
+        # ✅ BURAYA EKLEYİN - Fiyat alanının yüklenmesini bekle
+        try:
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            from selenium.webdriver.common.by import By
+            import time
+            
+            wait = WebDriverWait(driver, 10)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="price"]')))
+            time.sleep(2)  # Ekstra güvenlik
+            print("🔍 SELENIUM DEBUG: Fiyat alanı yüklendi, devam ediliyor...")
+        except Exception as e:
+            print(f"🔍 SELENIUM DEBUG: Wait hatası: {e}")
+            pass
+
+        print(f"🔍 SELENIUM DEBUG: Price element HTML: {price_element.get_attribute('outerHTML')}")
+
         for selector in price_selectors:
             try:
                 price_element = driver.find_element(By.CSS_SELECTOR, selector)
