@@ -116,18 +116,6 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         # DEBUG: Sayfa içeriğini kontrol et
         print(f"🔍 DEBUG: Sayfa başlığı: {soup.title.string if soup.title else 'Başlık yok'}")
         print(f"🔍 DEBUG: Sayfa uzunluğu: {len(response.text)} karakter")
-        
-        # DEBUG: Belirli elementleri ara
-        rating_element = soup.select_one('.reviews-summary-average-rating')
-        print(f"🔍 DEBUG: Rating element bulundu mu? {rating_element is not None}")
-        if rating_element:
-            print(f"🔍 DEBUG: Rating değeri: {rating_element.get_text(strip=True)}")
-        
-        comment_element = soup.select_one('.reviews-summary-reviews-summary a span')
-        print(f"🔍 DEBUG: Comment element bulundu mu? {comment_element is not None}")
-        if comment_element:
-            print(f"🔍 DEBUG: Comment değeri: {comment_element.get_text(strip=True)}")
-
 
         result = {
             'title': None,
@@ -153,23 +141,46 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
                 result['title'] = element.get_text(separator=' ', strip=True)
                 break
         
-        # Fiyat
+        # Fiyat - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
             '.prc-dsc',
             '.prc-slg', 
             '.product-price .prc-dsc',
-            '[data-testid="price-current-price"]'
+            '[data-testid="price-current-price"]',
+            '.campaign-price-content .new-price',  # YENİ: Campaign price format
+            '.campaign-price-content p.new-price', # YENİ: Daha spesifik selector
         ]
         for selector in price_selectors:
             element = soup.select_one(selector)
             if element:
                 price_text = element.get_text(strip=True)
-                price_clean = ''.join(filter(lambda x: x.isdigit() or x == ',', price_text))
+                print(f"🔍 DEBUG: Price element text ({selector}): '{price_text}'")
+                
+                # Fiyat temizleme - TL, ₺ sembollerini kaldır ve noktaları temizle
+                price_clean = re.sub(r'[^\d,]', '', price_text)  # Sadece rakam ve virgülü bırak
                 if price_clean:
                     try:
-                        result['price'] = float(price_clean.replace(',', '.'))
+                        # Binlik ayırıcı noktaları kaldır, virgülü nokta yap
+                        if ',' in price_clean:
+                            # Eğer virgül varsa, en son virgülü decimal ayırıcı olarak kabul et
+                            if price_clean.count(',') == 1:
+                                result['price'] = float(price_clean.replace(',', '.'))
+                            else:
+                                # Birden fazla virgül varsa, sonuncusu hariç hepsini binlik ayırıcı kabul et
+                                parts = price_clean.split(',')
+                                if len(parts[-1]) == 2:  # Son kısım 2 haneliyse decimal
+                                    integer_part = ''.join(parts[:-1])
+                                    decimal_part = parts[-1]
+                                    result['price'] = float(f"{integer_part}.{decimal_part}")
+                                else:  # Decimal değilse tüm virgülleri kaldır
+                                    result['price'] = float(price_clean.replace(',', ''))
+                        else:
+                            result['price'] = float(price_clean)
+                        
+                        print(f"🔍 DEBUG: Price bulundu ({selector}): {result['price']}")
                         break
                     except ValueError:
+                        print(f"🔍 DEBUG: Price parse hatası ({selector}): {price_clean}")
                         continue
         
         # Satıcı adı
@@ -184,7 +195,6 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
             if element and element.get_text(strip=True):
                 result['seller'] = element.get_text(strip=True)
                 break
-        
         
         # Puan
         rating_selectors = [
@@ -389,13 +399,13 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         
         # Question count çek
         question_selectors = [
-            'a[data-testid="questions-summary-link"] span',  # YENİ: En doğru selector
-            '.questions-summary-questions-summary span',     # YENİ: Class selector
-            'a[class*="questions-summary"] span',            # YENİ: Partial class
-            'a[href*="saticiya-sor"] span',                  # YENİ: URL-based
-            'a[data-testid="questions-summary-link"] span:last-child',  # YENİ: Son span
-            '.questions-summary-questions-summary span b',   # YENİ: Bold içindeki sayı
-            'a[data-testid="questions-summary-link"] b',     # YENİ: Bold tag
+            'a[data-testid="questions-summary-link"] span',
+            '.questions-summary-questions-summary span',
+            'a[class*="questions-summary"] span',
+            'a[href*="saticiya-sor"] span',
+            'a[data-testid="questions-summary-link"] span:last-child',
+            '.questions-summary-questions-summary span b',
+            'a[data-testid="questions-summary-link"] b',
             'a[data-testid="questions-summary-link"] span:last-child',
             '.questions-count',
             '.qa-count',
@@ -418,7 +428,7 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             except:
                 continue
         
-        # Price çek - Gelişmiş selector'lar
+        # Price çek - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
             '.prc-dsc',
             '.prc-slg', 
@@ -426,11 +436,14 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             '[data-testid="price-current-price"]',
             '.price-current',
             'span[class*="price"]',
-            '.prc-cntr .prc-dsc',  # Yeni
-            '.price-container span',  # Yeni
-            'div[class*="price"] span',  # Yeni
-            '.product-price span:last-child',  # Yeni
-            'span[data-testid*="price"]'  # Yeni
+            '.prc-cntr .prc-dsc',
+            '.price-container span',
+            'div[class*="price"] span',
+            '.product-price span:last-child',
+            'span[data-testid*="price"]',
+            '.campaign-price-content .new-price',    # YENİ: Campaign price format
+            '.campaign-price-content p.new-price',   # YENİ: Daha spesifik selector
+            'div.campaign-price-content p.new-price' # YENİ: En spesifik selector
         ]
 
         for selector in price_selectors:
@@ -439,12 +452,56 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                 price_text = price_element.text.strip()
                 print(f"🔍 SELENIUM DEBUG: Price element text ({selector}): '{price_text}'")
                 
-                # Fiyat temizleme - TL, ₺ sembollerini kaldır
-                price_clean = re.sub(r'[^\d,.]', '', price_text)
-                if price_clean:
-                    result['price'] = float(price_clean.replace(',', '.'))
-                    print(f"🔍 SELENIUM DEBUG: Price bulundu ({selector}): {result['price']}")
-                    break
+                # Fiyat temizleme - TL, ₺ sembollerini kaldır ve gelişmiş parsing
+                if price_text:
+                    # "2.959 TL" formatını handle et
+                    price_clean = re.sub(r'[^\d,.]', '', price_text)  # Sadece rakam, virgül ve nokta bırak
+                    
+                    if price_clean:
+                        try:
+                            # Binlik ayırıcı ve decimal ayırıcı mantığı
+                            if '.' in price_clean and ',' in price_clean:
+                                # Hem nokta hem virgül varsa, hangisi sonuncu onu decimal kabul et
+                                last_dot = price_clean.rfind('.')
+                                last_comma = price_clean.rfind(',')
+                                
+                                if last_dot > last_comma:
+                                    # Nokta decimal ayırıcı, virgül binlik
+                                    price_clean = price_clean.replace(',', '')
+                                    result['price'] = float(price_clean)
+                                else:
+                                    # Virgül decimal ayırıcı, nokta binlik
+                                    price_clean = price_clean.replace('.', '').replace(',', '.')
+                                    result['price'] = float(price_clean)
+                            elif '.' in price_clean:
+                                # Sadece nokta var
+                                parts = price_clean.split('.')
+                                if len(parts) > 1 and len(parts[-1]) <= 2:
+                                    # Son kısım 2 hane veya daha azsa decimal
+                                    result['price'] = float(price_clean)
+                                else:
+                                    # Binlik ayırıcı olarak kullanılmış
+                                    result['price'] = float(price_clean.replace('.', ''))
+                            elif ',' in price_clean:
+                                # Sadece virgül var
+                                parts = price_clean.split(',')
+                                if len(parts) == 2 and len(parts[-1]) <= 2:
+                                    # Decimal ayırıcı
+                                    result['price'] = float(price_clean.replace(',', '.'))
+                                else:
+                                    # Binlik ayırıcı
+                                    result['price'] = float(price_clean.replace(',', ''))
+                            else:
+                                # Sadece rakam var
+                                result['price'] = float(price_clean)
+                            
+                            print(f"🔍 SELENIUM DEBUG: Price bulundu ({selector}): {result['price']}")
+                            break
+                            
+                        except ValueError as ve:
+                            print(f"🔍 SELENIUM DEBUG: Price parse hatası ({selector}): {price_clean} - {ve}")
+                            continue
+                            
             except Exception as e:
                 print(f"🔍 SELENIUM DEBUG: Price hatası ({selector}): {str(e)}")
                 continue
@@ -467,20 +524,20 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             except:
                 continue
         
-        # Seller rating çek - GÜNCELLENMİŞ SELECTOR'LAR
+        # Seller rating çek
         seller_rating_selectors = [
-            '.score-badge',                              # Ana selector
-            '._body_03c70b5',                           # YENİ: Spesifik class
-            'div[class*="_body_03c70b5"]',              # YENİ: Partial class match
-            'div.score-badge',                          # YENİ: Div ile score-badge
-            '[class*="score-badge"]',                   # YENİ: Partial score-badge
-            'div[style*="background-color: rgb(4, 155, 36)"]',  # YENİ: Yeşil background
-            'div[style*="background-color: rgb"]',      # YENİ: Herhangi bir background color
-            '.merchant-rating',                         # Eski selector
-            '.seller-score',                           # Eski selector
-            '[data-testid="seller-rating"]',           # Eski selector
-            'span[class*="rating"]',                   # Eski selector
-            'div[class*="rating"]'                     # Eski selector
+            '.score-badge',
+            '._body_03c70b5',
+            'div[class*="_body_03c70b5"]',
+            'div.score-badge',
+            '[class*="score-badge"]',
+            'div[style*="background-color: rgb(4, 155, 36)"]',
+            'div[style*="background-color: rgb"]',
+            '.merchant-rating',
+            '.seller-score',
+            '[data-testid="seller-rating"]',
+            'span[class*="rating"]',
+            'div[class*="rating"]'
         ]
 
         for selector in seller_rating_selectors:
@@ -504,18 +561,6 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
 
         if not result['seller_rating']:
             print("🔍 SELENIUM DEBUG: Seller rating bulunamadı - tüm selector'lar denendi")
-            
-            # DEBUG: Sayfada score-badge ile ilgili tüm elementleri bul
-            try:
-                all_score_elements = driver.find_elements(By.CSS_SELECTOR, '*[class*="score"]')
-                print(f"🔍 SELENIUM DEBUG: Score içeren {len(all_score_elements)} element bulundu:")
-                for i, elem in enumerate(all_score_elements[:5]):  # İlk 5 tanesini göster
-                    try:
-                        print(f"  {i+1}. {elem.tag_name} - class='{elem.get_attribute('class')}' - text='{elem.text.strip()}'")
-                    except:
-                        pass
-            except:
-                print("🔍 SELENIUM DEBUG: Score element araması başarısız")
         
         # Image URL çek
         image_selectors = [
@@ -549,24 +594,6 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         if not result.get('image_url'):
             print(f"❌ PROD DEBUG: Hiçbir image selector çalışmadı! Tüm selector'lar denendi.")
             logging.warning(f"PROD DEBUG: Image URL bulunamadı - URL: {url}")
-            
-            # DEBUG: Sayfada img elementlerini ara
-            try:
-                all_images = driver.find_elements(By.TAG_NAME, 'img')
-                print(f"🔍 PROD DEBUG: Sayfada toplam {len(all_images)} img elementi bulundu")
-                
-                # İlk 3 img elementinin src'sini göster
-                for i, img in enumerate(all_images[:3]):
-                    try:
-                        src = img.get_attribute('src')
-                        print(f"🔍 PROD DEBUG: Img {i+1} src: {src[:100] if src else 'None'}...")
-                    except:
-                        print(f"🔍 PROD DEBUG: Img {i+1} src okunamadı")
-                        
-            except Exception as img_debug_error:
-                print(f"❌ PROD DEBUG: Img elementleri debug hatası: {str(img_debug_error)}")
-
-        print(f"🔍 PROD DEBUG: Image URL final result: {result.get('image_url', 'None')}")
         
         # Sales data çek (sepet işlemi)
         if not result.get('sales_3day'):
@@ -594,7 +621,6 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                 driver.quit()
             except:
                 pass
-
 
 def scrape_cart_sales_data(url: str, max_retries: int = 2) -> Optional[int]:
     """
