@@ -1582,12 +1582,19 @@ async function checkUpdateStatus() {
                 hideProgressInfo();
                 
                 if (status.current_progress > 0) {
-                    const chartModal = document.getElementById('chartModal');
-                    if (!chartModal || chartModal.style.display !== 'block') {
+                    // Herhangi bir modal açıksa sayfa yenileme
+                    if (!isModalOpen) {
                         setTimeout(() => {
                             window.location.reload();
                         }, 2000);
                     }
+                }
+                
+                // Scraping çalışmıyorsa interval'ı durdur
+                if (updateStatusInterval) {
+                    clearInterval(updateStatusInterval);
+                    updateStatusInterval = null;
+                    console.log('🔍 DEBUG: Update status interval durduruldu - scraping bitti');
                 }
             }
         }
