@@ -2068,6 +2068,8 @@ function startSingleSellerMonitoring() {
     let checkCount = 0;
     const maxChecks = 240; // 4 dakika maksimum
     
+    console.log('🔍 DEBUG: Single seller monitoring interval başlatıldı');
+    
     singleSellerProgressInterval = setInterval(async () => {
         checkCount++;
         
@@ -2105,6 +2107,11 @@ function startSingleSellerMonitoring() {
                     
                     updateSingleSellerProgress(100, "✅ Tamamlandı! Sayfa yenileniyor...", "Başarılı!");
                     
+                    // INTERVAL'I DURDUR!
+                    clearInterval(singleSellerProgressInterval);
+                    singleSellerProgressInterval = null;
+                    console.log('🔍 DEBUG: Single seller monitoring interval durduruldu - başarılı');
+                    
                     setTimeout(() => {
                         hideSingleSellerProgress();
                         showAlert('✅ Satıcı başarıyla eklendi ve veriler çekildi!', 'success');
@@ -2117,7 +2124,7 @@ function startSingleSellerMonitoring() {
                         }
                     }, 2000);
                     
-                    return; // Interval'ı durdur
+                    return; // Fonksiyondan çık
                 }
             }
             
@@ -2147,6 +2154,11 @@ function startSingleSellerMonitoring() {
             if (checkCount >= maxChecks) {
                 updateSingleSellerProgress(95, "⚠️ İşlem uzun sürüyor, arka planda devam ediyor...", "Bekliyor");
                 
+                // INTERVAL'I DURDUR!
+                clearInterval(singleSellerProgressInterval);
+                singleSellerProgressInterval = null;
+                console.log('🔍 DEBUG: Single seller monitoring interval durduruldu - timeout');
+                
                 setTimeout(() => {
                     hideSingleSellerProgress();
                     showAlert('⚠️ Veri çekme işlemi arka planda devam ediyor. Sayfayı yenileyerek kontrol edebilirsiniz.', 'info');
@@ -2158,6 +2170,11 @@ function startSingleSellerMonitoring() {
             
             // Hata durumunda da devam et, belki sonraki check'te çalışır
             if (checkCount >= maxChecks) {
+                // INTERVAL'I DURDUR!
+                clearInterval(singleSellerProgressInterval);
+                singleSellerProgressInterval = null;
+                console.log('🔍 DEBUG: Single seller monitoring interval durduruldu - hata');
+                
                 hideSingleSellerProgress();
                 showAlert('⚠️ Veri takibinde sorun oluştu. Sayfayı yenileyin.', 'error');
             }
