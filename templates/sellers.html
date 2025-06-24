@@ -1751,9 +1751,10 @@ async function checkUpdateStatus() {
                 
                 // Interval başlat (eğer yoksa)
                 if (!updateStatusInterval) {
-                    updateStatusInterval = setInterval(checkUpdateStatus, 5000);
+                    updateStatusInterval = setInterval(checkUpdateStatus, 2000); // 2 saniyeye düşür
                 }
             } else {
+                // 🔥 ÖNEMLİ: İşlem bitince ilerleme çubuğunu kapat
                 hideProgressInfo();
                 
                 // Interval'ı durdur
@@ -1762,12 +1763,13 @@ async function checkUpdateStatus() {
                     updateStatusInterval = null;
                 }
                 
-                // SAYFA YENİLEME KALDIRILDI - Sadece bilgi mesajı
+                // Başarı mesajı
                 if (status.current_progress > 0) {
                     showAlert('✅ Veri güncelleme tamamlandı!', 'success');
                 }
             }
         } else {
+            // Hata durumunda da interval'ı durdur
             if (updateStatusInterval) {
                 clearInterval(updateStatusInterval);
                 updateStatusInterval = null;
@@ -1775,6 +1777,7 @@ async function checkUpdateStatus() {
         }
         
     } catch (error) {
+        // Hata durumunda interval'ı durdur
         if (updateStatusInterval) {
             clearInterval(updateStatusInterval);
             updateStatusInterval = null;
