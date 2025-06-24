@@ -448,9 +448,9 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             '.price-container span',
             '.product-price span:last-child',
             'span[data-testid*="price"]',
-            # ❌ BUNLARI EN SONA TAŞIYIN:
-            'span[class*="price"]',        # ← ESKİ FİYAT ALIYOR
-            'div[class*="price"] span',    # ← ESKİ FİYAT ALIYOR
+            # ❌ BU SATIRLARI SİLİN VEYA EN SONA TAŞIYIN:
+            # 'span[class*="price"]',        
+            # 'div[class*="price"] span',    
         ]
 
         for selector in price_selectors:
