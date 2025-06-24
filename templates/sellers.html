@@ -1106,7 +1106,7 @@ let isModalOpen = false;
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
     // Her 5 saniyede bir güncelleme durumunu kontrol et
-    // checkUpdateStatus();
+    checkUpdateStatus();
 
     // Filtreleme işlemlerini başlat
     initializeFiltering();  
@@ -1608,7 +1608,7 @@ async function saveSeller() {
             closeAddSellerModal();
             
             // Scraping tamamlanana kadar izle
-            // startSingleSellerMonitoring(); // GEÇİCİ OLARAK KAPALI
+            startSingleSellerMonitoring(); // GEÇİCİ OLARAK KAPALI
             
         } else {
             hideSingleSellerProgress();
@@ -2099,12 +2099,27 @@ function startSingleSellerMonitoring() {
             if (data.success && data.sellers) {
                 const newSeller = data.sellers.find(s => s.link_id === currentSingleSellerId);
                 
+                // DEBUG EKLE
+                if (newSeller) {
+                    console.log('🔍 DEBUG: Satıcı bulundu:', {
+                        seller_name: newSeller.seller_name,
+                        seller_score: newSeller.seller_score,
+                        product_count: newSeller.product_count,
+                        link_id: newSeller.link_id,
+                        currentSingleSellerId: currentSingleSellerId
+                    });
+                } else {
+                    console.log('🔍 DEBUG: Satıcı bulunamadı, currentSingleSellerId:', currentSingleSellerId);
+                    console.log('🔍 DEBUG: Mevcut seller link_id\'ler:', data.sellers.map(s => s.link_id));
+                }
+                
                 // Yeni verinin gelip gelmediğini kontrol et
                 if (newSeller && 
                     newSeller.seller_name && 
                     newSeller.seller_name !== 'Satıcı adı yükleniyor...' &&
                     (newSeller.seller_score > 0 || newSeller.product_count > 0)) {
                     
+                    console.log('🔍 DEBUG: Başarı koşulu sağlandı, interval durduruluyor');
                     updateSingleSellerProgress(100, "✅ Tamamlandı! Sayfa yenileniyor...", "Başarılı!");
                     
                     // INTERVAL'I DURDUR!
@@ -2125,6 +2140,13 @@ function startSingleSellerMonitoring() {
                     }, 2000);
                     
                     return; // Fonksiyondan çık
+                } else if (newSeller) {
+                    console.log('🔍 DEBUG: Satıcı bulundu ama koşul sağlanmadı:', {
+                        hasSellerName: !!newSeller.seller_name,
+                        sellerNameValid: newSeller.seller_name !== 'Satıcı adı yükleniyor...',
+                        hasScore: newSeller.seller_score > 0,
+                        hasProducts: newSeller.product_count > 0
+                    });
                 }
             }
             
