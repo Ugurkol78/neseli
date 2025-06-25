@@ -53,39 +53,6 @@ scraping_status = {
 
 scraping_lock = threading.Lock()
 
-def parse_turkish_price(price_text: str) -> float:
-    """
-    Türkçe fiyat formatını parse eder
-    "2.959 TL" -> 2959.0
-    "2.959,50 TL" -> 2959.5
-    "59,90 TL" -> 59.9
-    """
-    # Sadece rakam, nokta ve virgül bırak
-    price_clean = re.sub(r'[^\d,.]', '', price_text).strip()
-    
-    if not price_clean:
-        return 0.0
-    
-    # Türkçe format kontrolü
-    if '.' in price_clean and ',' in price_clean:
-        # "2.959,50" formatı - nokta bin ayracı, virgül ondalık
-        price_clean = price_clean.replace('.', '').replace(',', '.')
-    elif '.' in price_clean:
-        # Sadece nokta var - bin ayracı mı ondalık mı?
-        parts = price_clean.split('.')
-        if len(parts) == 2 and len(parts[1]) == 3:
-            # "2.959" - bin ayracı (3 haneli)
-            price_clean = price_clean.replace('.', '')
-        # Aksi halde ondalık ayracı olarak bırak
-    elif ',' in price_clean:
-        # Sadece virgül var - ondalık ayracı
-        price_clean = price_clean.replace(',', '.')
-    
-    try:
-        return float(price_clean)
-    except ValueError:
-        return 0.0
-
 def get_random_headers() -> Dict[str, str]:
     """Rastgele User-Agent ile header oluşturur"""
     return {
@@ -188,57 +155,22 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         # Fiyat
         price_selectors = [
-            '.campaign-price-container.default',  # YENİ: Campaign container
             '.prc-dsc',
             '.prc-slg', 
             '.product-price .prc-dsc',
-            '[data-testid="price-current-price"]',
-            '.price-current',
-            'span[class*="price"]',
-            '.prc-cntr .prc-dsc',  # Yeni
-            '.price-container span',  # Yeni
-            'div[class*="price"] span',  # Yeni
-            '.product-price span:last-child',  # Yeni
-            'span[data-testid*="price"]'  # Yeni
+            '[data-testid="price-current-price"]'
         ]
         for selector in price_selectors:
             element = soup.select_one(selector)
             if element:
                 price_text = element.get_text(strip=True)
-                
-                # Campaign container için özel parsing
-                if selector == '.campaign-price-container.default' and '\n' in price_text:
-                    print(f"🔍 DEBUG: Campaign container parsing: '{price_text}'")
-                    
-                    # Sadece gerçek fiyat satırlarını al
-                    lines = [line.strip() for line in price_text.split('\n') if line.strip()]
-                    valid_prices = []
-                    
-                    for line in lines:
-                        if 'TL' in line and any(char.isdigit() for char in line):
-                            line_lower = line.lower()
-                            # Kampanya açıklaması değilse
-                            if 'indirim' not in line_lower and 'ye' not in line_lower and 'sepette' not in line_lower:
-                                test_price = parse_turkish_price(line)  # YENİ: Turkish price parser
-                                if test_price > 0:  # YENİ: 0'dan büyük kontrolü
-                                    if 1 <= test_price <= 1000000:  # YENİ: Range düzeltildi
-                                        valid_prices.append(test_price)
-                    
-                    if valid_prices:
-                        result['price'] = min(valid_prices)  # En küçük (indirimli) fiyat
-                        print(f"🔍 DEBUG: Campaign price selected: {result['price']} from {valid_prices}")
+                price_clean = ''.join(filter(lambda x: x.isdigit() or x == ',', price_text))
+                if price_clean:
+                    try:
+                        result['price'] = float(price_clean.replace(',', '.'))
                         break
-                
-                # Diğer selector'lar için eski parsing
-                else:
-                    price_clean = ''.join(filter(lambda x: x.isdigit() or x == ',', price_text))
-                    if price_clean:
-                        try:
-                            result['price'] = float(price_clean.replace(',', '.'))
-                            break
-                        except ValueError:
-                            continue
-
+                    except ValueError:
+                        continue
         
         # Satıcı adı
         seller_selectors = [
@@ -486,9 +418,8 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             except:
                 continue
         
-       # Price çek - Gelişmiş selector'lar - DETAYLI DEBUG
+        # Price çek - Gelişmiş selector'lar
         price_selectors = [
-            '.campaign-price-container.default',  # YENİ: Campaign container
             '.prc-dsc',
             '.prc-slg', 
             '.product-price .prc-dsc',
@@ -502,123 +433,21 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             'span[data-testid*="price"]'  # Yeni
         ]
 
-        print(f"🔍 PRICE DEBUG: Price selector araması başlıyor...")
-        print(f"🔍 PRICE DEBUG: Toplam {len(price_selectors)} selector denenecek")
-
-        for i, selector in enumerate(price_selectors):
-            print(f"🔍 PRICE DEBUG: Selector {i+1}/{len(price_selectors)} deneniyor: {selector}")
+        for selector in price_selectors:
             try:
                 price_element = driver.find_element(By.CSS_SELECTOR, selector)
                 price_text = price_element.text.strip()
-                print(f"🔍 PRICE DEBUG: Element bulundu! Text: '{price_text}'")
-                print(f"🔍 PRICE DEBUG: Text uzunluğu: {len(price_text)} karakter")
-                print(f"🔍 PRICE DEBUG: Boş mu? {not price_text}")
+                print(f"🔍 SELENIUM DEBUG: Price element text ({selector}): '{price_text}'")
                 
-                if not price_text:
-                    print(f"⚠️ PRICE DEBUG: Element text boş, devam ediliyor...")
-                    continue
-                
-                # Campaign container için özel parsing - DETAYLI DEBUG
-                if selector == '.campaign-price-container.default' and '\n' in price_text:
-                    print(f"🔍 PRICE DEBUG: *** CAMPAIGN CONTAINER PARSING BAŞLIYOR ***")
-                    print(f"🔍 PRICE DEBUG: Çok satırlı text var: {price_text.count(chr(10))} satır")
-                    
-                    # Sadece gerçek fiyat satırlarını al
-                    lines = [line.strip() for line in price_text.split('\n') if line.strip()]
-                    valid_prices = []
-                    
-                    print(f"🔍 PRICE DEBUG: Campaign lines ({len(lines)} adet): {lines}")
-                    
-                    for j, line in enumerate(lines):
-                        print(f"🔍 PRICE DEBUG: --- Line {j+1}/{len(lines)}: '{line}' ---")
-                        
-                        if 'TL' in line and any(char.isdigit() for char in line):
-                            line_lower = line.lower()
-                            print(f"🔍 PRICE DEBUG: Line geçerli (TL ve digit var)")
-                            print(f"🔍 PRICE DEBUG: Lowercase: '{line_lower}'")
-                            
-                            # Filtering kontrolü
-                            has_indirim = 'indirim' in line_lower
-                            has_ye = 'ye' in line_lower
-                            print(f"🔍 PRICE DEBUG: Has 'indirim': {has_indirim}")
-                            print(f"🔍 PRICE DEBUG: Has 'ye': {has_ye}")
-                            
-                            if not has_indirim and not has_ye:
-                                print(f"🔍 PRICE DEBUG: Line filter geçti, parsing ediliyor...")
-                                test_price = parse_turkish_price(line)
-                                print(f"🔍 PRICE DEBUG: Parsed price: {test_price} (type: {type(test_price)})")
-                                
-                                if test_price > 0:
-                                    print(f"🔍 PRICE DEBUG: Price > 0 kontrolü geçti")
-                                    if 1 <= test_price <= 1000000:
-                                        valid_prices.append(test_price)
-                                        print(f"✅ PRICE DEBUG: Valid price eklendi: {test_price}")
-                                    else:
-                                        print(f"❌ PRICE DEBUG: Price range dışında: {test_price}")
-                                else:
-                                    print(f"❌ PRICE DEBUG: Price <= 0: {test_price}")
-                            else:
-                                print(f"⚠️ PRICE DEBUG: Line filtrelendi (campaign text)")
-                        else:
-                            print(f"⚠️ PRICE DEBUG: Line geçersiz (TL yok veya digit yok)")
-                    
-                    print(f"🔍 PRICE DEBUG: *** CAMPAIGN PARSING SONUCU ***")
-                    print(f"🔍 PRICE DEBUG: Valid prices: {valid_prices}")
-                    print(f"🔍 PRICE DEBUG: Valid price sayısı: {len(valid_prices)}")
-                    
-                    if valid_prices:
-                        selected_price = min(valid_prices)
-                        result['price'] = selected_price
-                        print(f"✅ PRICE DEBUG: Campaign price seçildi: {selected_price}")
-                        print(f"✅ PRICE DEBUG: BAŞARILI! Price bulundu ve break yapılıyor")
-                        break
-                    else:
-                        print(f"❌ PRICE DEBUG: Valid price bulunamadı, devam ediliyor...")
-
-                # Diğer selector'lar için turkish parser - DETAYLI DEBUG
-                else:
-                    print(f"🔍 PRICE DEBUG: *** NORMAL PARSING BAŞLIYOR ***")
-                    print(f"🔍 PRICE DEBUG: Text: '{price_text}'")
-                    
-                    test_price = parse_turkish_price(price_text)
-                    print(f"🔍 PRICE DEBUG: Turkish parser sonucu: {test_price} (type: {type(test_price)})")
-                    
-                    if test_price > 0:
-                        result['price'] = test_price
-                        print(f"✅ PRICE DEBUG: Normal price kabul edildi: {test_price}")
-                        print(f"✅ PRICE DEBUG: BAŞARILI! Price bulundu ve break yapılıyor")
-                        break
-                    else:
-                        print(f"❌ PRICE DEBUG: Turkish parser başarısız: {test_price}")
-                        
+                # Fiyat temizleme - TL, ₺ sembollerini kaldır
+                price_clean = re.sub(r'[^\d,.]', '', price_text)
+                if price_clean:
+                    result['price'] = float(price_clean.replace(',', '.'))
+                    print(f"🔍 SELENIUM DEBUG: Price bulundu ({selector}): {result['price']}")
+                    break
             except Exception as e:
-                print(f"❌ PRICE DEBUG: Selector hatası ({selector}): {str(e)}")
+                print(f"🔍 SELENIUM DEBUG: Price hatası ({selector}): {str(e)}")
                 continue
-
-        # Final price kontrolü
-        if result.get('price'):
-            print(f"🎉 PRICE DEBUG: *** FINAL SONUÇ: Price bulundu = {result['price']} ***")
-        else:
-            print(f"💀 PRICE DEBUG: *** FINAL SONUÇ: Price bulunamadı! ***")
-            print(f"💀 PRICE DEBUG: Result price değeri: {result.get('price', 'None')}")
-            
-            # Tüm price elementlerini debug et
-            print(f"💀 PRICE DEBUG: Sayfada tüm price elementleri aranıyor...")
-            try:
-                all_price_elements = driver.find_elements(By.CSS_SELECTOR, '*[class*="price"], *[class*="prc"]')
-                print(f"💀 PRICE DEBUG: {len(all_price_elements)} price benzeri element bulundu:")
-                for k, elem in enumerate(all_price_elements[:5]):
-                    try:
-                        elem_text = elem.text.strip()
-                        elem_class = elem.get_attribute('class')
-                        print(f"  {k+1}. class='{elem_class}' text='{elem_text}'")
-                    except:
-                        print(f"  {k+1}. Element okunamadı")
-            except Exception as debug_error:
-                print(f"💀 PRICE DEBUG: Element debug hatası: {str(debug_error)}")
-        
-        print(f"🔍 PRICE DEBUG: Price araması tamamlandı!")
-
         
         # Seller name çek
         seller_selectors = [
