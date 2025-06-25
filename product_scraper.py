@@ -489,11 +489,24 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             except:
                 continue
         
-        # Price çek - Gelişmiş selector'lar
+       # Price çek - Gelişmiş selector'lar VE bekleme stratejisi
         print(f"🔍 SELENIUM DEBUG: Price selector araması başlıyor...")
+        
+        # JavaScript'in yüklenmesi için ekstra bekleme
+        print(f"🔍 SELENIUM DEBUG: JavaScript yüklenmesi için 3 saniye bekleniyor...")
+        time.sleep(3)
+        
+        # Sayfayı yeniden scroll et (lazy loading için)
+        driver.execute_script("window.scrollTo(0, 600);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, 300);")
+        time.sleep(1)
+        
         price_selectors = [
             '.campaign-price .new-price',        # YENİ: Kampanyalı fiyat için
             '.campaign-price-content .new-price', # YENİ: Spesifik kampanya fiyatı
+            'p.new-price',                       # YENİ: p tag ile new-price
+            '.campaign-price p.new-price',       # YENİ: Campaign içi new-price
             '.prc-dsc',                          # Eski ana selector
             '.prc-slg',                          # Eski alternatif
             '.product-price .prc-dsc',           # Eski container içi
@@ -505,17 +518,107 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
             'div[class*="price"] span',          # Price div içi span
             '.product-price span:last-child',    # Son span
             'span[data-testid*="price"]',        # Price test ID'li span
-            'p.new-price',                       # YENİ: p tag ile new-price
-            '.campaign-price p.new-price'        # YENİ: Campaign içi new-price
+            # YENİ: Daha genel selector'lar
+            '*[class*="price"]:not(:empty)',     # Price içeren boş olmayan elementler
+            '*[class*="prc"]:not(:empty)',       # Prc içeren boş olmayan elementler
+            'span:contains("TL")',               # TL içeren span'lar (eğer mümkünse)
+            # YENİ: Sayfa kaynak kodunda arama
+            'body'                               # Fallback: tüm sayfa içeriği
         ]
 
         price_found = False
         for i, selector in enumerate(price_selectors):
             print(f"🔍 SELENIUM DEBUG: Price selector {i+1}/{len(price_selectors)} deneniyor: {selector}")
+            
+            # Son selector (body) için özel işlem
+            if selector == 'body':
+                try:
+                    print(f"🔍 SELENIUM DEBUG: Fallback: Sayfa kaynak kodunda fiyat aranıyor...")
+                    page_source = driver.page_source
+                    
+                    # Sayfa kaynağında fiyat pattern'lerini ara
+                    price_patterns = [
+                        r'([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)\s*TL',  # 2.959 TL, 2.959,50 TL
+                        r'([0-9]{1,3}(?:\.[0-9]{3})*)\s*₺',                 # 2.959 ₺
+                        r'"price"[^0-9]*([0-9]{1,6}(?:\.[0-9]{2})?)',       # JSON price field
+                        r'price[^0-9]*([0-9]{1,6}(?:\.[0-9]{2})?)',         # price: 2959
+                        r'fiyat[^0-9]*([0-9]{1,6}(?:\.[0-9]{2})?)',         # fiyat: 2959
+                    ]
+                    
+                    for pattern in price_patterns:
+                        matches = re.findall(pattern, page_source, re.IGNORECASE)
+                        if matches:
+                            for match in matches:
+                                try:
+                                    # Binlik ayracını kaldır ve float'a çevir
+                                    price_text = match.replace('.', '').replace(',', '.')
+                                    price_value = float(price_text)
+                                    
+                                    # Mantıklı fiyat aralığında mı kontrol et (10-1000000 TL)
+                                    if 10 <= price_value <= 1000000:
+                                        result['price'] = price_value
+                                        print(f"✅ SELENIUM DEBUG: FİYAT SAYFA KAYNAĞINDA BULUNDU!")
+                                        print(f"✅ SELENIUM DEBUG: Pattern: {pattern}")
+                                        print(f"✅ SELENIUM DEBUG: Match: {match} -> {price_value}")
+                                        price_found = True
+                                        break
+                                except ValueError:
+                                    continue
+                            if price_found:
+                                break
+                    
+                    if not price_found:
+                        print(f"❌ SELENIUM DEBUG: Sayfa kaynağında fiyat bulunamadı")
+                        
+                except Exception as e:
+                    print(f"❌ SELENIUM DEBUG: Sayfa kaynağı analiz hatası: {str(e)}")
+                
+                break  # body selector'ı son, döngüyü sonlandır
+            
+            # Normal selector'lar için
             try:
-                price_element = driver.find_element(By.CSS_SELECTOR, selector)
-                price_text = price_element.text.strip()
-                print(f"✅ SELENIUM DEBUG: Element bulundu! Ham text: '{price_text}'")
+                # Element bulana kadar bekle (max 5 saniye)
+                try:
+                    element = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    print(f"✅ SELENIUM DEBUG: Element WebDriverWait ile bulundu!")
+                except:
+                    # WebDriverWait başarısız olursa normal find_element dene
+                    element = driver.find_element(By.CSS_SELECTOR, selector)
+                    print(f"✅ SELENIUM DEBUG: Element find_element ile bulundu!")
+                
+                # Text alma ve boşluk kontrolü
+                price_text = element.text.strip()
+                
+                # Text boşsa alternative attribute'ları dene
+                if not price_text:
+                    alternative_attributes = ['textContent', 'innerText', 'value', 'data-price', 'title']
+                    for attr in alternative_attributes:
+                        try:
+                            attr_value = element.get_attribute(attr)
+                            if attr_value and attr_value.strip():
+                                price_text = attr_value.strip()
+                                print(f"🔍 SELENIUM DEBUG: Text '{attr}' attribute'unda bulundu: '{price_text}'")
+                                break
+                        except:
+                            continue
+                
+                print(f"🔍 SELENIUM DEBUG: Element text: '{price_text}'")
+                
+                if not price_text:
+                    print(f"⚠️ SELENIUM DEBUG: Element boş text döndürdü")
+                    
+                    # Element görünür hale gelene kadar bekle
+                    try:
+                        WebDriverWait(driver, 3).until(
+                            EC.text_to_be_present_in_element((By.CSS_SELECTOR, selector), "")
+                        )
+                        price_text = element.text.strip()
+                        print(f"🔍 SELENIUM DEBUG: Bekleme sonrası text: '{price_text}'")
+                    except:
+                        print(f"⚠️ SELENIUM DEBUG: Bekleme sonrası da text boş")
+                        continue
                 
                 # Gelişmiş fiyat temizleme - TL, ₺ sembollerini kaldır ve nokta/virgül işle
                 if price_text:
@@ -525,10 +628,10 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                     price_clean = re.sub(r'[^\d\s,.]', '', price_text)
                     print(f"🔧 SELENIUM DEBUG: İlk temizlik sonrası: '{price_clean}'")
                     
-                    # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
-                    # Örn: "2.959 TL" -> "2959", "2.959,50 TL" -> "2959.50"
                     original_clean = price_clean
                     
+                    # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
+                    # Örn: "2.959 TL" -> "2959", "2.959,50 TL" -> "2959.50"
                     if ',' in price_clean and '.' in price_clean:
                         # Her ikisi varsa: nokta binlik, virgül ondalık
                         print(f"🔧 SELENIUM DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor")
@@ -561,32 +664,36 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                     if price_clean:
                         try:
                             parsed_price = float(price_clean)
-                            result['price'] = parsed_price
-                            print(f"✅ SELENIUM DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ!")
-                            print(f"✅ SELENIUM DEBUG: Kullanılan selector: '{selector}'")
-                            print(f"✅ SELENIUM DEBUG: Ham text: '{price_text}'")
-                            print(f"✅ SELENIUM DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}'")
-                            print(f"✅ SELENIUM DEBUG: Final fiyat: {parsed_price}")
-                            price_found = True
-                            break
+                            
+                            # Mantıklı fiyat aralığında mı kontrol et
+                            if 10 <= parsed_price <= 1000000:
+                                result['price'] = parsed_price
+                                print(f"✅ SELENIUM DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ!")
+                                print(f"✅ SELENIUM DEBUG: Kullanılan selector: '{selector}'")
+                                print(f"✅ SELENIUM DEBUG: Ham text: '{price_text}'")
+                                print(f"✅ SELENIUM DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}'")
+                                print(f"✅ SELENIUM DEBUG: Final fiyat: {parsed_price}")
+                                price_found = True
+                                break
+                            else:
+                                print(f"⚠️ SELENIUM DEBUG: Fiyat mantıksız aralıkta ({parsed_price}), atlanıyor")
+                                continue
+                                
                         except ValueError as ve:
                             print(f"❌ SELENIUM DEBUG: Float dönüşüm hatası: {str(ve)}")
                             print(f"❌ SELENIUM DEBUG: Text: '{price_text}' -> Clean: '{price_clean}'")
                             continue
-                else:
-                    print(f"⚠️ SELENIUM DEBUG: Element boş text döndürdü")
                 
             except Exception as e:
                 print(f"❌ SELENIUM DEBUG: Selector hatası: {str(e)}")
                 continue
         
         if not price_found:
-            print(f"❌ SELENIUM DEBUG: HİÇBİR SELECTOR'DAN FİYAT ALINAMADI!")
-            print(f"❌ SELENIUM DEBUG: Toplam {len(price_selectors)} selector denendi")
+            print(f"❌ SELENIUM DEBUG: HİÇBİR YÖNTEMİLE FİYAT ALINAMADI!")
+            print(f"❌ SELENIUM DEBUG: Toplam {len(price_selectors)} yöntem denendi")
             print(f"❌ SELENIUM DEBUG: Final result price: {result.get('price', 'None')}")
         else:
             print(f"🎉 SELENIUM DEBUG: FİYAT BAŞARIYLA BELİRLENDİ: {result['price']}")
-
         
         # Seller name çek
         seller_selectors = [
