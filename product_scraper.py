@@ -151,6 +151,9 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         # Fiyat (scrape_product_basic_info fonksiyonunda)
         print(f"🔍 BeautifulSoup DEBUG: Price selector araması başlıyor...")
         price_selectors = [
+            '.price-view-discounted',            # İndirimli fiyat (611 TL)
+            '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
+            '.price-view span:last-child',       # Price-view içindeki son span
             '.campaign-price .new-price',        # YENİ: Kampanyalı fiyat için
             '.campaign-price-content .new-price', # YENİ: Spesifik kampanya fiyatı
             '.prc-dsc',                          # Eski ana selector
@@ -503,6 +506,9 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         time.sleep(1)
         
         price_selectors = [
+            '.price-view-discounted',            # İndirimli fiyat (611 TL)
+            '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
+            '.price-view span:last-child',       # Price-view içindeki son span
             '.campaign-price .new-price',        # YENİ: Kampanyalı fiyat için
             '.campaign-price-content .new-price', # YENİ: Spesifik kampanya fiyatı
             'p.new-price',                       # YENİ: p tag ile new-price
