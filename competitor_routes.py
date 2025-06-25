@@ -590,67 +590,7 @@ def get_price_comparison(barcode):
 
 # YENİ FONKSİYONLAR: Slot 0 desteği için - DÜZELTME
 
-def save_links_with_slots(barcode: str, slot_links: dict, username: str, include_slot_0: bool = False):
-    """
-    Slot numaraları ile linkleri kaydet
-    slot_links: {slot_number: url}
-    DÜZELTME: Doğru fonksiyon çağrısı
-    """
-    try:
-        from competitor_tracking import save_links_by_slots  # DOĞRU İMPORT
-        return save_links_by_slots(barcode, slot_links, username, include_slot_0)
-    except ImportError:
-        # Fallback: Eski save_links fonksiyonunu kullan
-        logging.warning("save_links_by_slots fonksiyonu bulunamadı, eski sistem kullanılıyor")
-        from competitor_tracking import save_links
-        
-        # Slot mapping'i eski format'a çevir
-        links_array = [''] * 6  # 0-5 slots
-        for slot_num, url in slot_links.items():
-            if 0 <= slot_num <= 5:
-                links_array[slot_num] = url
-        
-        # Slot 0'ı skip et eğer include_slot_0 False ise
-        if not include_slot_0:
-            links_array = links_array[1:]  # İlk elementi çıkar
-        
-        return save_links(barcode, links_array, username)
 
-def start_scraping_for_new_links_with_slots(barcode: str, slot_links: dict, username: str):
-    """
-    Yeni kaydedilen linkler için scraping başlat (slot 0 dahil)
-    DÜZELTME: Doğru fonksiyon çağrısı
-    """
-    try:
-        from competitor_scraper import start_scraping_for_new_links_by_slots  # DOĞRU İMPORT
-        return start_scraping_for_new_links_by_slots(barcode, slot_links, username)
-    except ImportError:
-        # Fallback: Eski fonksiyonu kullan ama sadece slot 1-5 için
-        logging.warning("start_scraping_for_new_links_by_slots fonksiyonu bulunamadı")
-        from competitor_scraper import start_scraping_for_new_links
-        
-        # Sadece slot 1-5 linklerini çıkar
-        competitor_links = []
-        for slot_num in range(1, 6):
-            if slot_num in slot_links:
-                competitor_links.append(slot_links[slot_num])
-            else:
-                competitor_links.append('')
-        
-        return start_scraping_for_new_links(barcode, competitor_links, username)
-
-def start_manual_update_with_slot_0(username: str):
-    """
-    Manuel güncelleme başlat (slot 0 dahil)
-    """
-    try:
-        from competitor_scraper import start_manual_update_with_slot_0 as scraper_manual_update
-        return scraper_manual_update(username)
-    except ImportError:
-        # Fallback: Eski fonksiyonu kullan
-        logging.warning("start_manual_update_with_slot_0 fonksiyonu bulunamadı, eski sistem kullanılıyor")
-        from competitor_scraper import start_manual_update
-        return start_manual_update(username)
 
 # Hata yakalama
 @competitor_bp.errorhandler(404)
