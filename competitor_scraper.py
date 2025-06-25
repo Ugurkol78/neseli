@@ -630,10 +630,10 @@ def start_manual_update_with_slot_0(username: str, include_slot_0: bool = True):
     """
     YENİ: Manuel güncelleme başlatır (Slot 0 dahil edilebilir)
     """
+    print(f"🔧 SCRAPER DEBUG: start_manual_update_with_slot_0() başladı - {time.time()}")
+    
     def manual_update_worker():
         try:
-
-
             print(f"🚀 DEBUG: Manuel update worker başladı - {time.time()}")
             
             update_scraping_status(is_running=True, started_by=username, include_slot_0=include_slot_0)
@@ -714,13 +714,17 @@ def start_manual_update_with_slot_0(username: str, include_slot_0: bool = True):
     
     # Eğer başka bir scraping devam ediyorsa başlatma
     if scraping_status['is_running']:
+        print(f"🔧 SCRAPER DEBUG: Scraping zaten çalışıyor - {time.time()}")
         logging.warning("Scraping zaten devam ediyor, yeni işlem başlatılmadı")
         return False
     
+    print(f"🔧 SCRAPER DEBUG: Thread oluşturuluyor - {time.time()}")
     # Arka planda çalıştır
     thread = threading.Thread(target=manual_update_worker)
     thread.daemon = True
+    print(f"🔧 SCRAPER DEBUG: Thread start() çağrılıyor - {time.time()}")
     thread.start()
+    print(f"🔧 SCRAPER DEBUG: Thread start() tamamlandı - {time.time()}")
     
     return True
 

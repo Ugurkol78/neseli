@@ -237,30 +237,38 @@ def manual_update():
     YENİ: Slot 0 (NeşeliÇiçekler) da dahil edilir
     """
     try:
+        print(f"🌟 ROUTE DEBUG: manual_update() başladı - {time.time()}")
         username = session.get('username')
+        print(f"🌟 ROUTE DEBUG: username alındı: {username} - {time.time()}")
         
         # Eğer başka bir scraping devam ediyorsa uyarı ver
         if is_scraping_running():
+            print(f"🌟 ROUTE DEBUG: Scraping zaten çalışıyor kontrolü - {time.time()}")
             return jsonify({
                 'success': False,
                 'error': 'Başka bir güncelleme işlemi devam ediyor. Lütfen bekleyin.'
             }), 400
-        
+
+        print(f"🌟 ROUTE DEBUG: start_manual_update_with_slot_0() çağrılıyor - {time.time()}")
         # Manuel güncelleme başlat (slot 0 dahil)
         success = start_manual_update_with_slot_0(username)
-        
+        print(f"🌟 ROUTE DEBUG: start_manual_update_with_slot_0() döndü: {success} - {time.time()}")
+
         if success:
+            print(f"🌟 ROUTE DEBUG: Başarılı response dönülüyor - {time.time()}")
             return jsonify({
                 'success': True,
                 'message': 'Manuel güncelleme başlatıldı (NeşeliÇiçekler dahil)!'
             })
         else:
+            print(f"🌟 ROUTE DEBUG: Başarısız response dönülüyor - {time.time()}")
             return jsonify({
                 'success': False,
                 'error': 'Güncelleme başlatılamadı!'
             }), 500
         
     except Exception as e:
+        print(f"🌟 ROUTE DEBUG: Exception oluştu: {str(e)} - {time.time()}")
         logging.error(f"Manuel güncelleme hatası: {str(e)}")
         return jsonify({
             'success': False,
