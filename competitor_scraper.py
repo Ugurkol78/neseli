@@ -309,17 +309,23 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
                         print(f"🔧 COMPETITOR DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor (Slot {slot_number})")
                         price_clean = price_clean.replace('.', '').replace(',', '.')
                         print(f"🔧 COMPETITOR DEBUG: Dönüşüm sonrası: '{price_clean}' (Slot {slot_number})")
+                    
+
                     elif '.' in price_clean:
-                        # Sadece nokta varsa: eğer 3 haneli ise binlik, değilse ondalık
+                        # Sadece nokta varsa kontrol et
                         parts = price_clean.split('.')
-                        print(f"🔧 COMPETITOR DEBUG: Sadece nokta var, parçalar: {parts} (Slot {slot_number})")
-                        if len(parts) == 2 and len(parts[1]) == 3:
-                            # 3 haneli son kısım = binlik ayracı
-                            print(f"🔧 COMPETITOR DEBUG: Son kısım 3 haneli ({parts[1]}) - binlik ayracı olarak kabul ediliyor (Slot {slot_number})")
-                            price_clean = price_clean.replace('.', '')
+                        last_part_clean = parts[1].strip() if len(parts) > 1 else ""
+                        print(f"🔧 COMPETITOR DEBUG: Sadece nokta var, parçalar: {parts}, son kısım temiz: '{last_part_clean}' (Slot {slot_number})")
+                        
+                        if len(parts) == 2 and len(last_part_clean) == 3 and last_part_clean.isdigit():
+                            # 3 haneli rakam = binlik ayracı
+                            print(f"🔧 COMPETITOR DEBUG: Son kısım 3 haneli rakam ({last_part_clean}) - binlik ayracı (Slot {slot_number})")
+                            price_clean = price_clean.replace('.', '').replace(' ', '')
                             print(f"🔧 COMPETITOR DEBUG: Binlik ayracı kaldırıldı: '{price_clean}' (Slot {slot_number})")
                         else:
-                            print(f"🔧 COMPETITOR DEBUG: Son kısım {len(parts[1]) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor (Slot {slot_number})")
+                            print(f"🔧 COMPETITOR DEBUG: Son kısım {len(last_part_clean) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor (Slot {slot_number})")
+                    
+
                     elif ',' in price_clean:
                         # Sadece virgül varsa: ondalık ayracı olarak kabul et
                         print(f"🔧 COMPETITOR DEBUG: Sadece virgül var - ondalık ayracı olarak kabul ediliyor (Slot {slot_number})")
