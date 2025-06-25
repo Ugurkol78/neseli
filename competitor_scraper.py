@@ -11,6 +11,7 @@ import time
 import random
 import logging
 import threading
+import re
 from typing import Dict, Optional, List
 from competitor_tracking import (
     save_scraped_price, 
