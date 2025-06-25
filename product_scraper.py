@@ -148,14 +148,20 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
                 result['title'] = element.get_text(separator=' ', strip=True)
                 break
         
-        # Fiyat (scrape_product_basic_info fonksiyonunda)
+        # Fiyat (scrape_product_basic_info fonksiyonunda) - Selenium ile aynı mantık
         print(f"🔍 BeautifulSoup DEBUG: Price selector araması başlıyor...")
+        
         price_selectors = [
+            # YENİ: İndirimli fiyat önceliği (Selenium ile uyumlu)
             '.price-view-discounted',            # İndirimli fiyat (611 TL)
             '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
             '.price-view span:last-child',       # Price-view içindeki son span
-            '.campaign-price .new-price',        # YENİ: Kampanyalı fiyat için
-            '.campaign-price-content .new-price', # YENİ: Spesifik kampanya fiyatı
+            
+            # MEVCUT: Değişmeden kalacak
+            '.campaign-price .new-price',        # Kampanyalı fiyat için
+            '.campaign-price-content .new-price', # Spesifik kampanya fiyatı
+            'p.new-price',                       # p tag ile new-price
+            '.campaign-price p.new-price',       # Campaign içi new-price
             '.prc-dsc',                          # Eski ana selector
             '.prc-slg',                          # Eski alternatif
             '.product-price .prc-dsc',           # Eski container içi
@@ -167,77 +173,108 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
             'div[class*="price"] span',          # Price div içi span
             '.product-price span:last-child',    # Son span
             'span[data-testid*="price"]',        # Price test ID'li span
-            'p.new-price',                       # YENİ: p tag ile new-price
-            '.campaign-price p.new-price'        # YENİ: Campaign içi new-price
+            # YENİ: Daha genel selector'lar (Selenium ile uyumlu)
+            '*[class*="price"]:not(:empty)',     # Price içeren boş olmayan elementler
+            '*[class*="prc"]:not(:empty)',       # Prc içeren boş olmayan elementler
         ]
 
         price_found = False
         for i, selector in enumerate(price_selectors):
             print(f"🔍 BeautifulSoup DEBUG: Price selector {i+1}/{len(price_selectors)} deneniyor: {selector}")
-            element = soup.select_one(selector)
-            if element:
-                price_text = element.get_text(strip=True)
-                print(f"✅ BeautifulSoup DEBUG: Element bulundu! Ham text: '{price_text}'")
-                
-                # Gelişmiş fiyat temizleme
-                if price_text:
-                    print(f"🔧 BeautifulSoup DEBUG: Fiyat temizleme başlıyor...")
+            
+            try:
+                element = soup.select_one(selector)
+                if element:
+                    price_text = element.get_text(strip=True)
+                    print(f"✅ BeautifulSoup DEBUG: Element bulundu! Ham text: '{price_text}'")
                     
-                    # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
-                    price_clean = re.sub(r'[^\d\s,.]', '', price_text)
-                    print(f"🔧 BeautifulSoup DEBUG: İlk temizlik sonrası: '{price_clean}'")
+                    # Text boşsa alternative attribute'ları dene (Selenium benzeri)
+                    if not price_text:
+                        alternative_attributes = ['textContent', 'innerText', 'value', 'data-price', 'title']
+                        for attr in alternative_attributes:
+                            try:
+                                attr_value = element.get(attr) or element.get_attribute(attr)
+                                if attr_value and attr_value.strip():
+                                    price_text = attr_value.strip()
+                                    print(f"🔍 BeautifulSoup DEBUG: Text '{attr}' attribute'unda bulundu: '{price_text}'")
+                                    break
+                            except:
+                                continue
                     
-                    original_clean = price_clean
+                    if not price_text:
+                        print(f"⚠️ BeautifulSoup DEBUG: Element boş text döndürdü")
+                        continue
                     
-                    # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
-                    if ',' in price_clean and '.' in price_clean:
-                        # Her ikisi varsa: nokta binlik, virgül ondalık
-                        print(f"🔧 BeautifulSoup DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor")
-                        price_clean = price_clean.replace('.', '').replace(',', '.')
-                        print(f"🔧 BeautifulSoup DEBUG: Dönüşüm sonrası: '{price_clean}'")
-                    elif '.' in price_clean:
-                        # Sadece nokta varsa: eğer 3 haneli ise binlik, değilse ondalık
-                        parts = price_clean.split('.')
-                        print(f"🔧 BeautifulSoup DEBUG: Sadece nokta var, parçalar: {parts}")
-                        if len(parts) == 2 and len(parts[1]) == 3:
-                            # 3 haneli son kısım = binlik ayracı (örn: 2.959)
-                            print(f"🔧 BeautifulSoup DEBUG: Son kısım 3 haneli ({parts[1]}) - binlik ayracı olarak kabul ediliyor")
-                            price_clean = price_clean.replace('.', '')
-                            print(f"🔧 BeautifulSoup DEBUG: Binlik ayracı kaldırıldı: '{price_clean}'")
+                    # Gelişmiş fiyat temizleme - Selenium ile aynı mantık
+                    if price_text:
+                        print(f"🔧 BeautifulSoup DEBUG: Fiyat temizleme başlıyor...")
+                        
+                        # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
+                        price_clean = re.sub(r'[^\d\s,.]', '', price_text)
+                        print(f"🔧 BeautifulSoup DEBUG: İlk temizlik sonrası: '{price_clean}'")
+                        
+                        original_clean = price_clean
+                        
+                        # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
+                        # Örn: "2.959 TL" -> "2959", "2.959,50 TL" -> "2959.50"
+                        if ',' in price_clean and '.' in price_clean:
+                            # Her ikisi varsa: nokta binlik, virgül ondalık
+                            print(f"🔧 BeautifulSoup DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor")
+                            price_clean = price_clean.replace('.', '').replace(',', '.')
+                            print(f"🔧 BeautifulSoup DEBUG: Dönüşüm sonrası: '{price_clean}'")
+                        elif '.' in price_clean:
+                            # Sadece nokta varsa: eğer 3 haneli ise binlik, değilse ondalık
+                            parts = price_clean.split('.')
+                            print(f"🔧 BeautifulSoup DEBUG: Sadece nokta var, parçalar: {parts}")
+                            if len(parts) == 2 and len(parts[1]) == 3:
+                                # 3 haneli son kısım = binlik ayracı
+                                print(f"🔧 BeautifulSoup DEBUG: Son kısım 3 haneli ({parts[1]}) - binlik ayracı olarak kabul ediliyor")
+                                price_clean = price_clean.replace('.', '')
+                                print(f"🔧 BeautifulSoup DEBUG: Binlik ayracı kaldırıldı: '{price_clean}'")
+                            else:
+                                print(f"🔧 BeautifulSoup DEBUG: Son kısım {len(parts[1]) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor")
+                            # Yoksa ondalık ayracı olarak bırak
+                        elif ',' in price_clean:
+                            # Sadece virgül varsa: ondalık ayracı olarak kabul et
+                            print(f"🔧 BeautifulSoup DEBUG: Sadece virgül var - ondalık ayracı olarak kabul ediliyor")
+                            price_clean = price_clean.replace(',', '.')
+                            print(f"🔧 BeautifulSoup DEBUG: Virgül nokta ile değiştirildi: '{price_clean}'")
                         else:
-                            print(f"🔧 BeautifulSoup DEBUG: Son kısım {len(parts[1]) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor")
-                        # Yoksa ondalık ayracı olarak bırak (örn: 29.50)
-                    elif ',' in price_clean:
-                        # Sadece virgül varsa: ondalık ayracı olarak kabul et
-                        print(f"🔧 BeautifulSoup DEBUG: Sadece virgül var - ondalık ayracı olarak kabul ediliyor")
-                        price_clean = price_clean.replace(',', '.')
-                        print(f"🔧 BeautifulSoup DEBUG: Virgül nokta ile değiştirildi: '{price_clean}'")
-                    else:
-                        print(f"🔧 BeautifulSoup DEBUG: Ayraç yok, olduğu gibi bırakılıyor")
+                            print(f"🔧 BeautifulSoup DEBUG: Ayraç yok, olduğu gibi bırakılıyor")
+                        
+                        # Boşlukları temizle
+                        price_clean = price_clean.replace(' ', '')
+                        print(f"🔧 BeautifulSoup DEBUG: Boşluklar temizlendi: '{price_clean}'")
+                        
+                        if price_clean:
+                            try:
+                                parsed_price = float(price_clean)
+                                
+                                # Mantıklı fiyat aralığında mı kontrol et (Selenium ile aynı)
+                                if 10 <= parsed_price <= 1000000:
+                                    result['price'] = parsed_price
+                                    print(f"✅ BeautifulSoup DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ!")
+                                    print(f"✅ BeautifulSoup DEBUG: Kullanılan selector: '{selector}'")
+                                    print(f"✅ BeautifulSoup DEBUG: Ham text: '{price_text}'")
+                                    print(f"✅ BeautifulSoup DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}'")
+                                    print(f"✅ BeautifulSoup DEBUG: Final fiyat: {parsed_price}")
+                                    price_found = True
+                                    break
+                                else:
+                                    print(f"⚠️ BeautifulSoup DEBUG: Fiyat mantıksız aralıkta ({parsed_price}), atlanıyor")
+                                    continue
+                                    
+                            except ValueError as ve:
+                                print(f"❌ BeautifulSoup DEBUG: Float dönüşüm hatası: {str(ve)}")
+                                print(f"❌ BeautifulSoup DEBUG: Text: '{price_text}' -> Clean: '{price_clean}'")
+                                continue
                     
-                    # Boşlukları temizle
-                    price_clean = price_clean.replace(' ', '')
-                    print(f"🔧 BeautifulSoup DEBUG: Boşluklar temizlendi: '{price_clean}'")
-                    
-                    if price_clean:
-                        try:
-                            parsed_price = float(price_clean)
-                            result['price'] = parsed_price
-                            print(f"✅ BeautifulSoup DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ!")
-                            print(f"✅ BeautifulSoup DEBUG: Kullanılan selector: '{selector}'")
-                            print(f"✅ BeautifulSoup DEBUG: Ham text: '{price_text}'")
-                            print(f"✅ BeautifulSoup DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}'")
-                            print(f"✅ BeautifulSoup DEBUG: Final fiyat: {parsed_price}")
-                            price_found = True
-                            break
-                        except ValueError as ve:
-                            print(f"❌ BeautifulSoup DEBUG: Float dönüşüm hatası: {str(ve)}")
-                            print(f"❌ BeautifulSoup DEBUG: Text: '{price_text}' -> Clean: '{price_clean}'")
-                            continue
                 else:
-                    print(f"⚠️ BeautifulSoup DEBUG: Element boş text döndürdü")
-            else:
-                print(f"❌ BeautifulSoup DEBUG: Selector eleman bulamadı")
+                    print(f"❌ BeautifulSoup DEBUG: Selector eleman bulamadı")
+                    
+            except Exception as e:
+                print(f"❌ BeautifulSoup DEBUG: Selector hatası: {str(e)}")
+                continue
         
         if not price_found:
             print(f"❌ BeautifulSoup DEBUG: HİÇBİR SELECTOR'DAN FİYAT ALINAMADI!")
