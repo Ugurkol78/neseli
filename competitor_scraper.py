@@ -113,35 +113,155 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
                     logging.info(f"Ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
                 break
         
-        # Fiyatı çek
+        # Fiyatı çek - GÜNCELLENMİŞ: product_scraper.py ile aynı mantık
         price = None
+        
+        print(f"🔍 COMPETITOR DEBUG: Price selector araması başlıyor... (Slot {slot_number})")
+        
         price_selectors = [
+            # YENİ: İndirimli fiyat önceliği (product_scraper.py ile uyumlu)
+            '.price-view-discounted',            # İndirimli fiyat (611 TL)
+            '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
+            '.price-view span:last-child',       # Price-view içindeki son span
+            
+            # YENİ: Kampanya fiyatları
+            '.campaign-price .new-price',        # Kampanyalı fiyat için
+            '.campaign-price-content .new-price', # Spesifik kampanya fiyatı
+            'p.new-price',                       # p tag ile new-price
+            '.campaign-price p.new-price',       # Campaign içi new-price
+            
+            # ESKİ: Mevcut selector'lar (korundu)
             '.prc-dsc',
             '.prc-slg',
             '.product-price .prc-dsc',
-            '.price-current',
-            '[data-testid="price-current-price"]',
+            
+            # YENİ: Ek selector'lar
+            '[data-testid="price-current-price"]', # Test ID ile
+            '.price-current',                    # Mevcut fiyat
+            'span[class*="price"]',              # Price içeren span
+            '.prc-cntr .prc-dsc',               # Price container içi
+            '.price-container span',             # Price container span
+            'div[class*="price"] span',          # Price div içi span
+            '.product-price span:last-child',    # Son span
+            'span[data-testid*="price"]',        # Price test ID'li span
+            
+            # YENİ: Genel selector'lar
+            '*[class*="price"]:not(:empty)',     # Price içeren boş olmayan elementler
+            '*[class*="prc"]:not(:empty)',       # Prc içeren boş olmayan elementler
+            
+            # ESKİ: Eski container (korundu)
             '.product-price-container .prc-dsc'
         ]
         
-        for selector in price_selectors:
-            element = soup.select_one(selector)
-            if element:
-                price_text = element.get_text(strip=True)
-                # Fiyat metninden sayısal değeri çıkar
-                price_clean = ''.join(filter(lambda x: x.isdigit() or x == ',', price_text))
-                if price_clean:
-                    try:
-                        price = float(price_clean.replace(',', '.'))
-                        
-                        # YENİ: Slot 0 için özel loglama
-                        if slot_number == 0:
-                            logging.info(f"NeşeliÇiçekler fiyat bulundu: {price}₺")
-                        else:
-                            logging.info(f"Fiyat bulundu: {price}₺")
-                        break
-                    except ValueError:
+        price_found = False
+        for i, selector in enumerate(price_selectors):
+            print(f"🔍 COMPETITOR DEBUG: Price selector {i+1}/{len(price_selectors)} deneniyor: {selector} (Slot {slot_number})")
+            
+            try:
+                element = soup.select_one(selector)
+                if element:
+                    price_text = element.get_text(strip=True)
+                    print(f"✅ COMPETITOR DEBUG: Element bulundu! Ham text: '{price_text}' (Slot {slot_number})")
+                    
+                    # Text boşsa alternative attribute'ları dene
+                    if not price_text:
+                        alternative_attributes = ['textContent', 'innerText', 'value', 'data-price', 'title']
+                        for attr in alternative_attributes:
+                            try:
+                                attr_value = element.get(attr)
+                                if attr_value and attr_value.strip():
+                                    price_text = attr_value.strip()
+                                    print(f"🔍 COMPETITOR DEBUG: Text '{attr}' attribute'unda bulundu: '{price_text}' (Slot {slot_number})")
+                                    break
+                            except:
+                                continue
+                    
+                    if not price_text:
+                        print(f"⚠️ COMPETITOR DEBUG: Element boş text döndürdü (Slot {slot_number})")
                         continue
+                    
+                    # Gelişmiş fiyat temizleme - product_scraper.py ile aynı mantık
+                    if price_text:
+                        print(f"🔧 COMPETITOR DEBUG: Fiyat temizleme başlıyor... (Slot {slot_number})")
+                        
+                        # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
+                        price_clean = re.sub(r'[^\d\s,.]', '', price_text)
+                        print(f"🔧 COMPETITOR DEBUG: İlk temizlik sonrası: '{price_clean}' (Slot {slot_number})")
+                        
+                        original_clean = price_clean
+                        
+                        # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
+                        if ',' in price_clean and '.' in price_clean:
+                            # Her ikisi varsa: nokta binlik, virgül ondalık
+                            print(f"🔧 COMPETITOR DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor (Slot {slot_number})")
+                            price_clean = price_clean.replace('.', '').replace(',', '.')
+                            print(f"🔧 COMPETITOR DEBUG: Dönüşüm sonrası: '{price_clean}' (Slot {slot_number})")
+                        elif '.' in price_clean:
+                            # Sadece nokta varsa: eğer 3 haneli ise binlik, değilse ondalık
+                            parts = price_clean.split('.')
+                            print(f"🔧 COMPETITOR DEBUG: Sadece nokta var, parçalar: {parts} (Slot {slot_number})")
+                            if len(parts) == 2 and len(parts[1]) == 3:
+                                # 3 haneli son kısım = binlik ayracı
+                                print(f"🔧 COMPETITOR DEBUG: Son kısım 3 haneli ({parts[1]}) - binlik ayracı olarak kabul ediliyor (Slot {slot_number})")
+                                price_clean = price_clean.replace('.', '')
+                                print(f"🔧 COMPETITOR DEBUG: Binlik ayracı kaldırıldı: '{price_clean}' (Slot {slot_number})")
+                            else:
+                                print(f"🔧 COMPETITOR DEBUG: Son kısım {len(parts[1]) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor (Slot {slot_number})")
+                        elif ',' in price_clean:
+                            # Sadece virgül varsa: ondalık ayracı olarak kabul et
+                            print(f"🔧 COMPETITOR DEBUG: Sadece virgül var - ondalık ayracı olarak kabul ediliyor (Slot {slot_number})")
+                            price_clean = price_clean.replace(',', '.')
+                            print(f"🔧 COMPETITOR DEBUG: Virgül nokta ile değiştirildi: '{price_clean}' (Slot {slot_number})")
+                        else:
+                            print(f"🔧 COMPETITOR DEBUG: Ayraç yok, olduğu gibi bırakılıyor (Slot {slot_number})")
+                        
+                        # Boşlukları temizle
+                        price_clean = price_clean.replace(' ', '')
+                        print(f"🔧 COMPETITOR DEBUG: Boşluklar temizlendi: '{price_clean}' (Slot {slot_number})")
+                        
+                        if price_clean:
+                            try:
+                                parsed_price = float(price_clean)
+                                
+                                # Mantıklı fiyat aralığında mı kontrol et (YENİ)
+                                if 10 <= parsed_price <= 1000000:
+                                    price = parsed_price
+                                    print(f"✅ COMPETITOR DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ! (Slot {slot_number})")
+                                    print(f"✅ COMPETITOR DEBUG: Kullanılan selector: '{selector}' (Slot {slot_number})")
+                                    print(f"✅ COMPETITOR DEBUG: Ham text: '{price_text}' (Slot {slot_number})")
+                                    print(f"✅ COMPETITOR DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}' (Slot {slot_number})")
+                                    print(f"✅ COMPETITOR DEBUG: Final fiyat: {parsed_price} (Slot {slot_number})")
+                                    
+                                    # YENİ: Slot 0 için özel loglama
+                                    if slot_number == 0:
+                                        logging.info(f"NeşeliÇiçekler fiyat bulundu: {parsed_price}₺")
+                                    else:
+                                        logging.info(f"Fiyat bulundu: {parsed_price}₺")
+                                    
+                                    price_found = True
+                                    break
+                                else:
+                                    print(f"⚠️ COMPETITOR DEBUG: Fiyat mantıksız aralıkta ({parsed_price}), atlanıyor (Slot {slot_number})")
+                                    continue
+                                    
+                            except ValueError as ve:
+                                print(f"❌ COMPETITOR DEBUG: Float dönüşüm hatası: {str(ve)} (Slot {slot_number})")
+                                print(f"❌ COMPETITOR DEBUG: Text: '{price_text}' -> Clean: '{price_clean}' (Slot {slot_number})")
+                                continue
+                
+                else:
+                    print(f"❌ COMPETITOR DEBUG: Selector eleman bulamadı (Slot {slot_number})")
+                    
+            except Exception as e:
+                print(f"❌ COMPETITOR DEBUG: Selector hatası: {str(e)} (Slot {slot_number})")
+                continue
+        
+        if not price_found:
+            print(f"❌ COMPETITOR DEBUG: HİÇBİR SELECTOR'DAN FİYAT ALINAMADI! (Slot {slot_number})")
+            print(f"❌ COMPETITOR DEBUG: Toplam {len(price_selectors)} selector denendi (Slot {slot_number})")
+            print(f"❌ COMPETITOR DEBUG: Final result price: {price} (Slot {slot_number})")
+        else:
+            print(f"🎉 COMPETITOR DEBUG: FİYAT BAŞARIYLA BELİRLENDİ: {price} (Slot {slot_number})")
         
         # Satıcı adını çek - Debug sonuçlarına göre güncellendi
         seller_name = None
