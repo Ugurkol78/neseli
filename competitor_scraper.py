@@ -86,6 +86,11 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
         response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         
+        # DEBUG KODLARI BURAYA EKLE:
+        print(f"DEBUG: HTML içeriği uzunluğu: {len(response.content)}")
+        print(f"DEBUG: İlk 500 karakter:")
+        print(response.text[:500])
+        print(f"DEBUG: 'price' kelimesi var mı: {'price' in response.text.lower()}")
         soup = BeautifulSoup(response.content, 'lxml')
         
         # Ürün adını çek - TAM BAŞLIK
