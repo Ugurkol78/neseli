@@ -53,6 +53,39 @@ scraping_status = {
 
 scraping_lock = threading.Lock()
 
+def parse_turkish_price(price_text: str) -> float:
+    """
+    Türkçe fiyat formatını parse eder
+    "2.959 TL" -> 2959.0
+    "2.959,50 TL" -> 2959.5
+    "59,90 TL" -> 59.9
+    """
+    # Sadece rakam, nokta ve virgül bırak
+    price_clean = re.sub(r'[^\d,.]', '', price_text).strip()
+    
+    if not price_clean:
+        return 0.0
+    
+    # Türkçe format kontrolü
+    if '.' in price_clean and ',' in price_clean:
+        # "2.959,50" formatı - nokta bin ayracı, virgül ondalık
+        price_clean = price_clean.replace('.', '').replace(',', '.')
+    elif '.' in price_clean:
+        # Sadece nokta var - bin ayracı mı ondalık mı?
+        parts = price_clean.split('.')
+        if len(parts) == 2 and len(parts[1]) == 3:
+            # "2.959" - bin ayracı (3 haneli)
+            price_clean = price_clean.replace('.', '')
+        # Aksi halde ondalık ayracı olarak bırak
+    elif ',' in price_clean:
+        # Sadece virgül var - ondalık ayracı
+        price_clean = price_clean.replace(',', '.')
+    
+    try:
+        return float(price_clean)
+    except ValueError:
+        return 0.0
+
 def get_random_headers() -> Dict[str, str]:
     """Rastgele User-Agent ile header oluşturur"""
     return {
@@ -186,14 +219,10 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
                             line_lower = line.lower()
                             # Kampanya açıklaması değilse
                             if 'indirim' not in line_lower and 'ye' not in line_lower and 'sepette' not in line_lower:
-                                price_clean = ''.join(filter(lambda x: x.isdigit() or x == ',', line))
-                                if price_clean:
-                                    try:
-                                        test_price = float(price_clean.replace(',', '.'))
-                                        if 10 <= test_price <= 1000000:
-                                            valid_prices.append(test_price)
-                                    except ValueError:
-                                        continue
+                                test_price = parse_turkish_price(line)  # YENİ: Turkish price parser
+                                if test_price > 0:  # YENİ: 0'dan büyük kontrolü
+                                    if 1 <= test_price <= 1000000:  # YENİ: Range düzeltildi
+                                        valid_prices.append(test_price)
                     
                     if valid_prices:
                         result['price'] = min(valid_prices)  # En küçük (indirimli) fiyat
@@ -490,54 +519,37 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                     print(f"🔍 SELENIUM DEBUG: Campaign lines: {lines}")  # DEBUG: tüm satırları göster
                     
                     for line in lines:
-                        print(f"🔍 SELENIUM DEBUG: Processing line: '{line}'")  # DEBUG: her satırı göster
+                        print(f"🔍 SELENIUM DEBUG: Processing line: '{line}'")
                         
                         if 'TL' in line and any(char.isdigit() for char in line):
                             line_lower = line.lower()
-                            print(f"🔍 SELENIUM DEBUG: Line has TL and digits: '{line}'")  # DEBUG
+                            print(f"🔍 SELENIUM DEBUG: Line has TL and digits: '{line}'")
                             
                             # Kampanya açıklaması değilse - DAHA AZ KISITLAYICI
                             if 'indirim' not in line_lower and 'ye' not in line_lower:  # 'sepette' kaldırdık
-                                price_clean = re.sub(r'[^\d,.]', '', line)
-                                print(f"🔍 SELENIUM DEBUG: Price clean: '{price_clean}' from '{line}'")  # DEBUG
+                                test_price = parse_turkish_price(line)  # YENİ: Turkish price parser
+                                print(f"🔍 SELENIUM DEBUG: Parsed price: {test_price}")
                                 
-                                if price_clean:
-                                    try:
-                                        test_price = float(price_clean.replace(',', '.'))
-                                        print(f"🔍 SELENIUM DEBUG: Parsed price: {test_price}")  # DEBUG
-                                        
-                                        if 10 <= test_price <= 1000000:
-                                            valid_prices.append(test_price)
-                                            print(f"🔍 SELENIUM DEBUG: Valid price added: {test_price}")  # DEBUG
-                                        else:
-                                            print(f"🔍 SELENIUM DEBUG: Price out of range: {test_price}")  # DEBUG
-                                    except ValueError as e:
-                                        print(f"🔍 SELENIUM DEBUG: Price parse error: {e}")  # DEBUG
-                                        continue
+                                if test_price > 0:  # YENİ: 0'dan büyük kontrolü
+                                    if 1 <= test_price <= 1000000:  # YENİ: Range düzeltildi
+                                        valid_prices.append(test_price)
+                                        print(f"🔍 SELENIUM DEBUG: Valid price added: {test_price}")
+                                    else:
+                                        print(f"🔍 SELENIUM DEBUG: Price out of range: {test_price}")
+                                else:
+                                    print(f"🔍 SELENIUM DEBUG: Price parse failed: {test_price}")
                             else:
-                                print(f"🔍 SELENIUM DEBUG: Line filtered out (campaign text): '{line}'")  # DEBUG
+                                print(f"🔍 SELENIUM DEBUG: Line filtered out (campaign text): '{line}'")
                         else:
-                            print(f"🔍 SELENIUM DEBUG: Line has no TL or digits: '{line}'")  # DEBUG
-                    
-                    print(f"🔍 SELENIUM DEBUG: All valid prices: {valid_prices}")  # DEBUG
-                    
-                    if valid_prices:
-                        result['price'] = min(valid_prices)  # En küçük (indirimli) fiyat
-                        print(f"🔍 SELENIUM DEBUG: Campaign price selected: {result['price']} from {valid_prices}")
-                        break
-                    else:
-                        print(f"🔍 SELENIUM DEBUG: No valid prices found in campaign container")  # DEBUG
-                
-                # Diğer selector'lar için eski parsing
+                            print(f"🔍 SELENIUM DEBUG: Line has no TL or digits: '{line}'")
+
+                # Diğer selector'lar için de turkish parser kullan:
                 else:
-                    price_clean = re.sub(r'[^\d,.]', '', price_text)
-                    if price_clean:
-                        result['price'] = float(price_clean.replace(',', '.'))
+                    test_price = parse_turkish_price(price_text)  # YENİ: Turkish price parser
+                    if test_price > 0:  # YENİ: 0'dan büyük kontrolü
+                        result['price'] = test_price
                         print(f"🔍 SELENIUM DEBUG: Price bulundu ({selector}): {result['price']}")
                         break
-            except Exception as e:
-                print(f"🔍 SELENIUM DEBUG: Price hatası ({selector}): {str(e)}")
-                continue
         
         # Seller name çek
         seller_selectors = [
