@@ -351,9 +351,13 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         # Ürün resmi
         image_selectors = [
+            'img[data-testid="image"]',          # ✅ En güvenilir - test ID
+            'img[class*="_carouselImage_"]',     # ✅ Class pattern (dinamik class'lar için)
+            'img[src*="cdn.dsmcdn.com"]',        # ✅ Trendyol CDN'i (fallback)
             '.product-images img',
             '.gallery-modal img',
-            'img[data-testid="product-image"]'
+            'img[data-testid="product-image"]',
+            '.product-image img'
         ]
         for selector in image_selectors:
             element = soup.select_one(selector)
@@ -808,6 +812,9 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         
         # Image URL çek
         image_selectors = [
+            'img[data-testid="image"]',          # ✅ En güvenilir - test ID
+            'img[class*="_carouselImage_"]',     # ✅ Class pattern (dinamik class'lar için)
+            'img[src*="cdn.dsmcdn.com"]',        # ✅ Trendyol CDN'i (fallback)
             '.product-images img',
             '.gallery-modal img',
             'img[data-testid="product-image"]',
