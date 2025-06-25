@@ -19,7 +19,9 @@ from competitor_tracking import (
 )
 from competitor_scraper import (
     start_scraping_for_new_links, start_manual_update,
-    get_update_status, is_scraping_running
+    get_update_status, is_scraping_running,
+    start_scraping_for_new_links_by_slots,  # BU SATIRI EKLE
+    start_manual_update_with_slot_0          # BU SATIRI DA EKLE
 )
 from competitor_scheduler import (
     get_scheduler_status, update_scheduler
@@ -176,7 +178,7 @@ def save_competitor_links(barcode):
             
             # Yeni linkler için scraping başlat (slot 0 dahil)
             try:
-                start_scraping_for_new_links_with_slots(barcode, slot_links, username)
+                start_scraping_for_new_links_by_slots(barcode, slot_links, username)
                 logging.info(f"🔧 DEBUG: Scraping thread başlatıldı!")
             except Exception as scrape_error:
                 logging.error(f"🔧 DEBUG: Scraping başlatma hatası: {str(scrape_error)}")
