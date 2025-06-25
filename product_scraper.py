@@ -543,6 +543,15 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                         else:
                             print(f"🔍 SELENIUM DEBUG: Line has no TL or digits: '{line}'")
 
+                    print(f"🔍 SELENIUM DEBUG: All valid prices: {valid_prices}")  # DEBUG
+                    
+                    if valid_prices:
+                        result['price'] = min(valid_prices)  # En küçük (indirimli) fiyat
+                        print(f"🔍 SELENIUM DEBUG: Campaign price selected: {result['price']} from {valid_prices}")
+                        break
+                    else:
+                        print(f"🔍 SELENIUM DEBUG: No valid prices found in campaign container")  # DEBUG
+
                 # Diğer selector'lar için de turkish parser kullan:
                 else:
                     test_price = parse_turkish_price(price_text)  # YENİ: Turkish price parser
@@ -550,6 +559,10 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                         result['price'] = test_price
                         print(f"🔍 SELENIUM DEBUG: Price bulundu ({selector}): {result['price']}")
                         break
+            except Exception as e:
+                print(f"🔍 SELENIUM DEBUG: Price hatası ({selector}): {str(e)}")
+                continue
+
         
         # Seller name çek
         seller_selectors = [
