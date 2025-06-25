@@ -143,6 +143,7 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         # Fiyat - GÜNCELLENDİ: Yeni campaign price format'ı eklendi
         price_selectors = [
+           '.campaign-price',  # YENİ: Campaign price (en yüksek öncelik)
            '.prc-dsc', 
            'span.price-view-discounted',                    # "2.789,07 TL" - Ana selector
            '.price-view-price-view span.price-view-discounted',  # Daha spesifik
@@ -433,6 +434,7 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         
         # Price çek - FULL DEBUG MODE
         price_selectors = [
+            '.campaign-price',  # YENİ: Campaign price (en yüksek öncelik)
             '.prc-dsc',                                      # ✅ İNDİRİMLİ FİYAT
             'span.price-view-discounted',                    
             '.price-view-price-view span.price-view-discounted',  
