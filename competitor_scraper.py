@@ -535,10 +535,15 @@ def scrape_single_link(barcode: str, slot_number: int, url: str, scraped_by: str
     YENİ: slot_number 0 desteği - DÜZELTME: scrape_source parametresi kaldırıldı
     """
     try:
+        print(f"🔧 DEBUG: scrape_single_link başladı: {barcode}, slot {slot_number} - {time.time()}")
+        
         slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Rakip Slot {slot_number}"
         logging.info(f"Scraping başlatılıyor: {barcode} - {slot_info} - {url}")
         
+        print(f"🔧 DEBUG: scrape_trendyol_product çağrılıyor - {time.time()}")
         product_data = scrape_trendyol_product(url, slot_number)
+        print(f"🔧 DEBUG: scrape_trendyol_product tamamlandı - {time.time()}")
+        
         
         if product_data:
             success = save_scraped_price(
@@ -627,25 +632,41 @@ def start_manual_update_with_slot_0(username: str, include_slot_0: bool = True):
     """
     def manual_update_worker():
         try:
+
+
+            print(f"🚀 DEBUG: Manuel update worker başladı - {time.time()}")
+            
             update_scraping_status(is_running=True, started_by=username, include_slot_0=include_slot_0)
+            print(f"🚀 DEBUG: Scraping status güncellendi - {time.time()}")
             
             # Tüm aktif linkleri al
+            print(f"🚀 DEBUG: Aktif linkler alınıyor - {time.time()}")
             all_links = get_all_active_links(include_slot_0=include_slot_0)
+            print(f"🚀 DEBUG: Aktif linkler alındı: {len(all_links)} adet - {time.time()}")
+            
             total_links = len(all_links)
             
             update_scraping_status(total=total_links, progress=0)
+            print(f"🚀 DEBUG: Status total güncellendi - {time.time()}")
             
             slot_info = "Slot 0-5" if include_slot_0 else "Slot 1-5"
             logging.info(f"Manuel güncelleme başlatıldı: {total_links} link ({slot_info})")
+            print(f"🚀 DEBUG: Logging yazıldı - {time.time()}")
             
             success_count = 0
             slot_0_count = 0
             competitor_count = 0
             
+            print(f"🚀 DEBUG: Link döngüsü başlıyor - {time.time()}")
+            
             for i, link_data in enumerate(all_links):
+                print(f"🚀 DEBUG: Link {i+1}/{total_links} işleniyor - {time.time()}")
+                
                 barcode = link_data['barcode']
                 slot_number = link_data['slot_number']
                 url = link_data['url']
+                
+                print(f"🚀 DEBUG: Link data hazırlandı: {barcode}, slot {slot_number} - {time.time()}")
                 
                 # Durumu güncelle
                 slot_display = "NeşeliÇiçekler" if slot_number == 0 else f"Rakip Slot {slot_number}"
@@ -653,9 +674,12 @@ def start_manual_update_with_slot_0(username: str, include_slot_0: bool = True):
                     progress=i + 1,
                     current_item=f"{barcode} - {slot_display}"
                 )
+                print(f"🚀 DEBUG: Status güncellendi: {slot_display} - {time.time()}")
                 
                 # Scraping yap
+                print(f"🚀 DEBUG: scrape_single_link çağrılıyor - {time.time()}")
                 success = scrape_single_link(barcode, slot_number, url, username)
+                print(f"🚀 DEBUG: scrape_single_link tamamlandı: {success} - {time.time()}")
                 
                 if success:
                     success_count += 1
