@@ -210,7 +210,7 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
                         print(f"🔧 BeautifulSoup DEBUG: Fiyat temizleme başlıyor...")
                         
                         # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
-                        price_clean = re.sub(r'[^\d\s,.]', '', price_text)
+                        price_clean = re.sub(r'[^\d,.]', '', price_text)    # Boşluk hariç
                         print(f"🔧 BeautifulSoup DEBUG: İlk temizlik sonrası: '{price_clean}'")
                         
                         original_clean = price_clean
@@ -668,7 +668,7 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
                     print(f"🔧 SELENIUM DEBUG: Fiyat temizleme başlıyor...")
                     
                     # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
-                    price_clean = re.sub(r'[^\d\s,.]', '', price_text)
+                    price_clean = re.sub(r'[^\d,.]', '', price_text)    # Boşluk hariç
                     print(f"🔧 SELENIUM DEBUG: İlk temizlik sonrası: '{price_clean}'")
                     
                     original_clean = price_clean
