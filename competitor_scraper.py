@@ -1,18 +1,24 @@
 """
 Rakip Fiyat Takip Modülü - Web Scraping
-Trendyol sayfalarından ürün bilgilerini çeker
+Selenium ile Trendyol sayfalarından ürün bilgilerini çeker
 YENİ: Slot 0 (NeşeliÇiçekler) desteği eklendi
-DÜZELTME: Tüm parametre uyumsuzlukları giderildi
+GÜNCELLEME: Selenium ile JavaScript render desteği
 """
 
-import requests
-from bs4 import BeautifulSoup
 import time
 import random
 import logging
 import threading
 import re
 from typing import Dict, Optional, List
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+
 from competitor_tracking import (
     save_scraped_price, 
     get_all_active_links,
@@ -51,28 +57,42 @@ scraping_status = {
 
 scraping_lock = threading.Lock()
 
-def get_random_headers() -> Dict[str, str]:
-    """Rastgele User-Agent ile header oluşturur"""
-    return {
-        'User-Agent': random.choice(USER_AGENTS),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none'
-    }
+def setup_chrome_driver() -> webdriver.Chrome:
+    """Chrome WebDriver'ı headless modda kuruluma hazırlar"""
+    print(f"🔍 COMPETITOR DEBUG: Chrome driver kuruluyor...")
+    
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
+    chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
+    
+    print(f"🔍 COMPETITOR DEBUG: Chrome options ayarlandı (headless mode)")
+    
+    try:
+        # Manuel path kullan
+        service = Service('/usr/bin/chromedriver')
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        print(f"✅ COMPETITOR DEBUG: Chrome driver başarıyla kuruldu")
+        return driver
+    except Exception as e:
+        print(f"❌ COMPETITOR DEBUG: Chrome driver kurulum hatası: {str(e)}")
+        logging.error(f"COMPETITOR DEBUG: Chrome driver hatası: {str(e)}")
+        raise
 
 def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str, str]]:
     """
-    Trendyol ürün sayfasından bilgileri çeker
+    Selenium ile Trendyol ürün sayfasından bilgileri çeker
     YENİ: slot_number parametresi eklendi (slot 0 için özel işlemler)
     Returns: {'product_name': str, 'price': float, 'seller_name': str} or None
     """
+    driver = None
     try:
-        headers = get_random_headers()
+        driver = setup_chrome_driver()
         
         # YENİ: Slot 0 için daha uzun bekleme
         if slot_number == 0:
@@ -83,15 +103,28 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
         
         time.sleep(delay)
         
-        response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
+        print(f"🔍 COMPETITOR DEBUG: Sayfaya gidiliyor: {url}")
+        driver.get(url)
         
-        # DEBUG KODLARI BURAYA EKLE:
-        print(f"DEBUG: HTML içeriği uzunluğu: {len(response.content)}")
-        print(f"DEBUG: İlk 500 karakter:")
-        print(response.text[:500])
-        print(f"DEBUG: 'price' kelimesi var mı: {'price' in response.text.lower()}")
-        soup = BeautifulSoup(response.content, 'lxml')
+        # Sayfa yüklenene kadar bekle
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        
+        # JavaScript'in tam yüklenmesi için bekleme
+        time.sleep(5)
+        
+        # Sayfayı aşağı kaydır (lazy loading için)
+        driver.execute_script("window.scrollTo(0, 1000);")
+        time.sleep(2)
+        driver.execute_script("window.scrollTo(0, 0);")
+        time.sleep(2)
+        
+        result = {
+            'product_name': None,
+            'price': None,
+            'seller_name': None
+        }
         
         # Ürün adını çek - TAM BAŞLIK
         product_name = None
@@ -107,22 +140,36 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
         ]
         
         for selector in name_selectors:
-            element = soup.select_one(selector)
-            if element and element.get_text(strip=True):
-                # HTML tag'larını temizle ve tam metni al
-                product_name = element.get_text(separator=' ', strip=True)
-                
-                # YENİ: Slot 0 için özel loglama
-                if slot_number == 0:
-                    logging.info(f"NeşeliÇiçekler ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
-                else:
-                    logging.info(f"Ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
-                break
+            try:
+                element = driver.find_element(By.CSS_SELECTOR, selector)
+                if element and element.text.strip():
+                    product_name = element.text.strip()
+                    
+                    # YENİ: Slot 0 için özel loglama
+                    if slot_number == 0:
+                        logging.info(f"NeşeliÇiçekler ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
+                    else:
+                        logging.info(f"Ürün adı bulundu - Selector: {selector}, Değer: {product_name[:100]}...")
+                    break
+            except:
+                continue
         
-        # Fiyatı çek - GÜNCELLENMİŞ: product_scraper.py ile aynı mantık
+        result['product_name'] = product_name
+        
+        # Fiyatı çek - Product_scraper.py ile aynı mantık
         price = None
         
         print(f"🔍 COMPETITOR DEBUG: Price selector araması başlıyor... (Slot {slot_number})")
+        
+        # JavaScript'in yüklenmesi için ekstra bekleme
+        print(f"🔍 COMPETITOR DEBUG: JavaScript yüklenmesi için 3 saniye bekleniyor...")
+        time.sleep(3)
+        
+        # Sayfayı yeniden scroll et (lazy loading için)
+        driver.execute_script("window.scrollTo(0, 600);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, 300);")
+        time.sleep(1)
         
         price_selectors = [
             # YENİ: İndirimli fiyat önceliği (product_scraper.py ile uyumlu)
@@ -156,123 +203,181 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
             '*[class*="prc"]:not(:empty)',       # Prc içeren boş olmayan elementler
             
             # ESKİ: Eski container (korundu)
-            '.product-price-container .prc-dsc'
+            '.product-price-container .prc-dsc',
+            
+            # YENİ: Sayfa kaynak kodunda arama (fallback)
+            'body'  # Fallback: tüm sayfa içeriği
         ]
         
         price_found = False
         for i, selector in enumerate(price_selectors):
             print(f"🔍 COMPETITOR DEBUG: Price selector {i+1}/{len(price_selectors)} deneniyor: {selector} (Slot {slot_number})")
             
-            try:
-                element = soup.select_one(selector)
-                if element:
-                    price_text = element.get_text(strip=True)
-                    print(f"✅ COMPETITOR DEBUG: Element bulundu! Ham text: '{price_text}' (Slot {slot_number})")
+            # Son selector (body) için özel işlem - Sayfa kaynağında regex arama
+            if selector == 'body':
+                try:
+                    print(f"🔍 COMPETITOR DEBUG: Fallback: Sayfa kaynak kodunda fiyat aranıyor...")
+                    page_source = driver.page_source
                     
-                    # Text boşsa alternative attribute'ları dene
-                    if not price_text:
-                        alternative_attributes = ['textContent', 'innerText', 'value', 'data-price', 'title']
-                        for attr in alternative_attributes:
-                            try:
-                                attr_value = element.get(attr)
-                                if attr_value and attr_value.strip():
-                                    price_text = attr_value.strip()
-                                    print(f"🔍 COMPETITOR DEBUG: Text '{attr}' attribute'unda bulundu: '{price_text}' (Slot {slot_number})")
-                                    break
-                            except:
-                                continue
+                    # Sayfa kaynağında fiyat pattern'lerini ara
+                    price_patterns = [
+                        r'([0-9]{1,3}(?:\.[0-9]{3})*(?:,[0-9]{2})?)\s*TL',  # 2.959 TL, 2.959,50 TL
+                        r'([0-9]{1,3}(?:\.[0-9]{3})*)\s*₺',                 # 2.959 ₺
+                        r'"price"[^0-9]*([0-9]{1,6}(?:\.[0-9]{2})?)',       # JSON price field
+                        r'price[^0-9]*([0-9]{1,6}(?:\.[0-9]{2})?)',         # price: 2959
+                        r'fiyat[^0-9]*([0-9]{1,6}(?:\.[0-9]{2})?)',         # fiyat: 2959
+                    ]
                     
-                    if not price_text:
-                        print(f"⚠️ COMPETITOR DEBUG: Element boş text döndürdü (Slot {slot_number})")
-                        continue
-                    
-                    # Gelişmiş fiyat temizleme - product_scraper.py ile aynı mantık
-                    if price_text:
-                        print(f"🔧 COMPETITOR DEBUG: Fiyat temizleme başlıyor... (Slot {slot_number})")
-                        
-                        # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
-                        price_clean = re.sub(r'[^\d\s,.]', '', price_text)
-                        print(f"🔧 COMPETITOR DEBUG: İlk temizlik sonrası: '{price_clean}' (Slot {slot_number})")
-                        
-                        original_clean = price_clean
-                        
-                        # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
-                        if ',' in price_clean and '.' in price_clean:
-                            # Her ikisi varsa: nokta binlik, virgül ondalık
-                            print(f"🔧 COMPETITOR DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor (Slot {slot_number})")
-                            price_clean = price_clean.replace('.', '').replace(',', '.')
-                            print(f"🔧 COMPETITOR DEBUG: Dönüşüm sonrası: '{price_clean}' (Slot {slot_number})")
-                        elif '.' in price_clean:
-                            # Sadece nokta varsa: eğer 3 haneli ise binlik, değilse ondalık
-                            parts = price_clean.split('.')
-                            print(f"🔧 COMPETITOR DEBUG: Sadece nokta var, parçalar: {parts} (Slot {slot_number})")
-                            if len(parts) == 2 and len(parts[1]) == 3:
-                                # 3 haneli son kısım = binlik ayracı
-                                print(f"🔧 COMPETITOR DEBUG: Son kısım 3 haneli ({parts[1]}) - binlik ayracı olarak kabul ediliyor (Slot {slot_number})")
-                                price_clean = price_clean.replace('.', '')
-                                print(f"🔧 COMPETITOR DEBUG: Binlik ayracı kaldırıldı: '{price_clean}' (Slot {slot_number})")
-                            else:
-                                print(f"🔧 COMPETITOR DEBUG: Son kısım {len(parts[1]) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor (Slot {slot_number})")
-                        elif ',' in price_clean:
-                            # Sadece virgül varsa: ondalık ayracı olarak kabul et
-                            print(f"🔧 COMPETITOR DEBUG: Sadece virgül var - ondalık ayracı olarak kabul ediliyor (Slot {slot_number})")
-                            price_clean = price_clean.replace(',', '.')
-                            print(f"🔧 COMPETITOR DEBUG: Virgül nokta ile değiştirildi: '{price_clean}' (Slot {slot_number})")
-                        else:
-                            print(f"🔧 COMPETITOR DEBUG: Ayraç yok, olduğu gibi bırakılıyor (Slot {slot_number})")
-                        
-                        # Boşlukları temizle
-                        price_clean = price_clean.replace(' ', '')
-                        print(f"🔧 COMPETITOR DEBUG: Boşluklar temizlendi: '{price_clean}' (Slot {slot_number})")
-                        
-                        if price_clean:
-                            try:
-                                parsed_price = float(price_clean)
-                                
-                                # Mantıklı fiyat aralığında mı kontrol et (YENİ)
-                                if 10 <= parsed_price <= 1000000:
-                                    price = parsed_price
-                                    print(f"✅ COMPETITOR DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ! (Slot {slot_number})")
-                                    print(f"✅ COMPETITOR DEBUG: Kullanılan selector: '{selector}' (Slot {slot_number})")
-                                    print(f"✅ COMPETITOR DEBUG: Ham text: '{price_text}' (Slot {slot_number})")
-                                    print(f"✅ COMPETITOR DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}' (Slot {slot_number})")
-                                    print(f"✅ COMPETITOR DEBUG: Final fiyat: {parsed_price} (Slot {slot_number})")
+                    for pattern in price_patterns:
+                        matches = re.findall(pattern, page_source, re.IGNORECASE)
+                        if matches:
+                            for match in matches:
+                                try:
+                                    # Binlik ayracını kaldır ve float'a çevir
+                                    price_text = match.replace('.', '').replace(',', '.')
+                                    price_value = float(price_text)
                                     
-                                    # YENİ: Slot 0 için özel loglama
-                                    if slot_number == 0:
-                                        logging.info(f"NeşeliÇiçekler fiyat bulundu: {parsed_price}₺")
-                                    else:
-                                        logging.info(f"Fiyat bulundu: {parsed_price}₺")
-                                    
-                                    price_found = True
-                                    break
-                                else:
-                                    print(f"⚠️ COMPETITOR DEBUG: Fiyat mantıksız aralıkta ({parsed_price}), atlanıyor (Slot {slot_number})")
+                                    # Mantıklı fiyat aralığında mı kontrol et (10-1000000 TL)
+                                    if 10 <= price_value <= 1000000:
+                                        price = price_value
+                                        print(f"✅ COMPETITOR DEBUG: FİYAT SAYFA KAYNAĞINDA BULUNDU! (Slot {slot_number})")
+                                        print(f"✅ COMPETITOR DEBUG: Pattern: {pattern}")
+                                        print(f"✅ COMPETITOR DEBUG: Match: {match} -> {price_value}")
+                                        price_found = True
+                                        break
+                                except ValueError:
                                     continue
-                                    
-                            except ValueError as ve:
-                                print(f"❌ COMPETITOR DEBUG: Float dönüşüm hatası: {str(ve)} (Slot {slot_number})")
-                                print(f"❌ COMPETITOR DEBUG: Text: '{price_text}' -> Clean: '{price_clean}' (Slot {slot_number})")
-                                continue
-                
-                else:
-                    print(f"❌ COMPETITOR DEBUG: Selector eleman bulamadı (Slot {slot_number})")
+                            if price_found:
+                                break
                     
+                    if not price_found:
+                        print(f"❌ COMPETITOR DEBUG: Sayfa kaynağında fiyat bulunamadı (Slot {slot_number})")
+                        
+                except Exception as e:
+                    print(f"❌ COMPETITOR DEBUG: Sayfa kaynağı analiz hatası: {str(e)} (Slot {slot_number})")
+                
+                break  # body selector'ı son, döngüyü sonlandır
+            
+            # Normal selector'lar için
+            try:
+                # Element bulana kadar bekle (max 5 saniye)
+                try:
+                    element = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    print(f"✅ COMPETITOR DEBUG: Element WebDriverWait ile bulundu! (Slot {slot_number})")
+                except:
+                    # WebDriverWait başarısız olursa normal find_element dene
+                    element = driver.find_element(By.CSS_SELECTOR, selector)
+                    print(f"✅ COMPETITOR DEBUG: Element find_element ile bulundu! (Slot {slot_number})")
+                
+                # Text alma ve boşluk kontrolü
+                price_text = element.text.strip()
+                
+                # Text boşsa alternative attribute'ları dene
+                if not price_text:
+                    alternative_attributes = ['textContent', 'innerText', 'value', 'data-price', 'title']
+                    for attr in alternative_attributes:
+                        try:
+                            attr_value = element.get_attribute(attr)
+                            if attr_value and attr_value.strip():
+                                price_text = attr_value.strip()
+                                print(f"🔍 COMPETITOR DEBUG: Text '{attr}' attribute'unda bulundu: '{price_text}' (Slot {slot_number})")
+                                break
+                        except:
+                            continue
+                
+                print(f"🔍 COMPETITOR DEBUG: Element text: '{price_text}' (Slot {slot_number})")
+                
+                if not price_text:
+                    print(f"⚠️ COMPETITOR DEBUG: Element boş text döndürdü (Slot {slot_number})")
+                    continue
+                
+                # Gelişmiş fiyat temizleme - product_scraper.py ile aynı mantık
+                if price_text:
+                    print(f"🔧 COMPETITOR DEBUG: Fiyat temizleme başlıyor... (Slot {slot_number})")
+                    
+                    # Sadece rakam, nokta, virgül ve boşluk karakterlerini al
+                    price_clean = re.sub(r'[^\d\s,.]', '', price_text)
+                    print(f"🔧 COMPETITOR DEBUG: İlk temizlik sonrası: '{price_clean}' (Slot {slot_number})")
+                    
+                    original_clean = price_clean
+                    
+                    # Noktayı binlik ayracı olarak kabul et, virgülü ondalık ayracı olarak
+                    if ',' in price_clean and '.' in price_clean:
+                        # Her ikisi varsa: nokta binlik, virgül ondalık
+                        print(f"🔧 COMPETITOR DEBUG: Hem nokta hem virgül var - nokta binlik, virgül ondalık kabul ediliyor (Slot {slot_number})")
+                        price_clean = price_clean.replace('.', '').replace(',', '.')
+                        print(f"🔧 COMPETITOR DEBUG: Dönüşüm sonrası: '{price_clean}' (Slot {slot_number})")
+                    elif '.' in price_clean:
+                        # Sadece nokta varsa: eğer 3 haneli ise binlik, değilse ondalık
+                        parts = price_clean.split('.')
+                        print(f"🔧 COMPETITOR DEBUG: Sadece nokta var, parçalar: {parts} (Slot {slot_number})")
+                        if len(parts) == 2 and len(parts[1]) == 3:
+                            # 3 haneli son kısım = binlik ayracı
+                            print(f"🔧 COMPETITOR DEBUG: Son kısım 3 haneli ({parts[1]}) - binlik ayracı olarak kabul ediliyor (Slot {slot_number})")
+                            price_clean = price_clean.replace('.', '')
+                            print(f"🔧 COMPETITOR DEBUG: Binlik ayracı kaldırıldı: '{price_clean}' (Slot {slot_number})")
+                        else:
+                            print(f"🔧 COMPETITOR DEBUG: Son kısım {len(parts[1]) if len(parts) > 1 else 0} haneli - ondalık ayracı olarak bırakılıyor (Slot {slot_number})")
+                    elif ',' in price_clean:
+                        # Sadece virgül varsa: ondalık ayracı olarak kabul et
+                        print(f"🔧 COMPETITOR DEBUG: Sadece virgül var - ondalık ayracı olarak kabul ediliyor (Slot {slot_number})")
+                        price_clean = price_clean.replace(',', '.')
+                        print(f"🔧 COMPETITOR DEBUG: Virgül nokta ile değiştirildi: '{price_clean}' (Slot {slot_number})")
+                    else:
+                        print(f"🔧 COMPETITOR DEBUG: Ayraç yok, olduğu gibi bırakılıyor (Slot {slot_number})")
+                    
+                    # Boşlukları temizle
+                    price_clean = price_clean.replace(' ', '')
+                    print(f"🔧 COMPETITOR DEBUG: Boşluklar temizlendi: '{price_clean}' (Slot {slot_number})")
+                    
+                    if price_clean:
+                        try:
+                            parsed_price = float(price_clean)
+                            
+                            # Mantıklı fiyat aralığında mı kontrol et
+                            if 10 <= parsed_price <= 1000000:
+                                price = parsed_price
+                                print(f"✅ COMPETITOR DEBUG: FİYAT BAŞARIYLA PARSE EDİLDİ! (Slot {slot_number})")
+                                print(f"✅ COMPETITOR DEBUG: Kullanılan selector: '{selector}' (Slot {slot_number})")
+                                print(f"✅ COMPETITOR DEBUG: Ham text: '{price_text}' (Slot {slot_number})")
+                                print(f"✅ COMPETITOR DEBUG: Temizlenmiş text: '{original_clean}' -> '{price_clean}' (Slot {slot_number})")
+                                print(f"✅ COMPETITOR DEBUG: Final fiyat: {parsed_price} (Slot {slot_number})")
+                                
+                                # YENİ: Slot 0 için özel loglama
+                                if slot_number == 0:
+                                    logging.info(f"NeşeliÇiçekler fiyat bulundu: {parsed_price}₺")
+                                else:
+                                    logging.info(f"Fiyat bulundu: {parsed_price}₺")
+                                
+                                price_found = True
+                                break
+                            else:
+                                print(f"⚠️ COMPETITOR DEBUG: Fiyat mantıksız aralıkta ({parsed_price}), atlanıyor (Slot {slot_number})")
+                                continue
+                                
+                        except ValueError as ve:
+                            print(f"❌ COMPETITOR DEBUG: Float dönüşüm hatası: {str(ve)} (Slot {slot_number})")
+                            print(f"❌ COMPETITOR DEBUG: Text: '{price_text}' -> Clean: '{price_clean}' (Slot {slot_number})")
+                            continue
+                
             except Exception as e:
                 print(f"❌ COMPETITOR DEBUG: Selector hatası: {str(e)} (Slot {slot_number})")
                 continue
         
         if not price_found:
-            print(f"❌ COMPETITOR DEBUG: HİÇBİR SELECTOR'DAN FİYAT ALINAMADI! (Slot {slot_number})")
-            print(f"❌ COMPETITOR DEBUG: Toplam {len(price_selectors)} selector denendi (Slot {slot_number})")
+            print(f"❌ COMPETITOR DEBUG: HİÇBİR YÖNTEMİLE FİYAT ALINAMADI! (Slot {slot_number})")
+            print(f"❌ COMPETITOR DEBUG: Toplam {len(price_selectors)} yöntem denendi (Slot {slot_number})")
             print(f"❌ COMPETITOR DEBUG: Final result price: {price} (Slot {slot_number})")
         else:
             print(f"🎉 COMPETITOR DEBUG: FİYAT BAŞARIYLA BELİRLENDİ: {price} (Slot {slot_number})")
         
-        # Satıcı adını çek - Debug sonuçlarına göre güncellendi
+        result['price'] = price
+        
+        # Satıcı adını çek - Selenium ile
         seller_name = None
         
-        # Öncelikle doğru selector'ı dene
         seller_selectors = [
             '.product-description-market-place',  # Debug'da bulduğumuz doğru selector!
             'span.product-description-market-place',  # Daha spesifik
@@ -287,46 +392,44 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
         ]
         
         for selector in seller_selectors:
-            element = soup.select_one(selector)
-            if element and element.get_text(strip=True):
-                seller_name = element.get_text(strip=True)
-                
-                # YENİ: Slot 0 için özel loglama
-                if slot_number == 0:
-                    logging.info(f"NeşeliÇiçekler satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
-                else:
-                    logging.info(f"Satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
-                break
-        
-        # Dinamik class arama (yedek)
-        if not seller_name:
-            merchant_divs = soup.find_all('div', class_=lambda x: x and 'merchant-name' in str(x))
-            if merchant_divs:
-                seller_name = merchant_divs[0].get_text(strip=True)
-                
-                # YENİ: Slot 0 için özel loglama
-                if slot_number == 0:
-                    logging.info(f"NeşeliÇiçekler dinamik class ile satıcı bulundu: {seller_name}")
-                else:
-                    logging.info(f"Dinamik class ile satıcı bulundu: {seller_name}")
+            try:
+                element = driver.find_element(By.CSS_SELECTOR, selector)
+                if element and element.text.strip():
+                    seller_name = element.text.strip()
+                    
+                    # YENİ: Slot 0 için özel loglama
+                    if slot_number == 0:
+                        logging.info(f"NeşeliÇiçekler satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
+                    else:
+                        logging.info(f"Satıcı bulundu - Selector: {selector}, Değer: {seller_name}")
+                    break
+            except:
+                continue
         
         # YENİ: Slot 0 için NeşeliÇiçekler kontrolü
         if slot_number == 0:
             # NeşeliÇiçekler text'ini direkt ara
-            neseli_spans = soup.find_all('span', string=lambda text: text and 'NeşeliÇiçekler' in text)
-            if neseli_spans:
-                seller_name = neseli_spans[0].get_text(strip=True)
-                logging.info(f"NeşeliÇiçekler direct text search ile bulundu: {seller_name}")
-            elif not seller_name:
-                # Slot 0 ise ve satıcı bulunamazsa NeşeliÇiçekler olarak varsay
-                seller_name = "NeşeliÇiçekler"
-                logging.info(f"Slot 0 için varsayılan satıcı: {seller_name}")
+            try:
+                neseli_elements = driver.find_elements(By.XPATH, "//*[contains(text(), 'NeşeliÇiçekler')]")
+                if neseli_elements:
+                    seller_name = neseli_elements[0].text.strip()
+                    logging.info(f"NeşeliÇiçekler XPath ile bulundu: {seller_name}")
+                elif not seller_name:
+                    # Slot 0 ise ve satıcı bulunamazsa NeşeliÇiçekler olarak varsay
+                    seller_name = "NeşeliÇiçekler"
+                    logging.info(f"Slot 0 için varsayılan satıcı: {seller_name}")
+            except:
+                if not seller_name:
+                    seller_name = "NeşeliÇiçekler"
         else:
             # Rakip ürünler için CenNetHome kontrolü
-            cennet_spans = soup.find_all('span', string=lambda text: text and 'CenNetHome' in text)
-            if cennet_spans:
-                seller_name = cennet_spans[0].get_text(strip=True)
-                logging.info(f"Direct text search ile satıcı bulundu: {seller_name}")
+            try:
+                cennet_elements = driver.find_elements(By.XPATH, "//*[contains(text(), 'CenNetHome')]")
+                if cennet_elements:
+                    seller_name = cennet_elements[0].text.strip()
+                    logging.info(f"CenNetHome XPath ile bulundu: {seller_name}")
+            except:
+                pass
         
         # Eğer satıcı hala bulunamazsa
         if not seller_name:
@@ -337,26 +440,30 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
                 logging.warning(f"Satıcı bulunamadı - URL: {url}")
                 seller_name = "Bilinmiyor"
         
+        result['seller_name'] = seller_name
+        
         # Sonuçları kontrol et
-        if product_name and price is not None:
+        if result['product_name'] and result['price'] is not None:
             return {
-                'product_name': product_name[:200],  # Uzunluk sınırı
-                'price': price,
-                'seller_name': seller_name[:100] if seller_name else ("NeşeliÇiçekler" if slot_number == 0 else "Bilinmiyor")
+                'product_name': result['product_name'][:200],  # Uzunluk sınırı
+                'price': result['price'],
+                'seller_name': result['seller_name'][:100] if result['seller_name'] else ("NeşeliÇiçekler" if slot_number == 0 else "Bilinmiyor")
             }
         else:
             slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Slot {slot_number}"
-            logging.warning(f"Eksik veri - {slot_info} - URL: {url}, Name: {product_name}, Price: {price}, Seller: {seller_name}")
+            logging.warning(f"Eksik veri - {slot_info} - URL: {url}, Name: {result['product_name']}, Price: {result['price']}, Seller: {result['seller_name']}")
             return None
             
-    except requests.exceptions.RequestException as e:
-        slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Slot {slot_number}"
-        logging.error(f"Request hatası - {slot_info} - {url}: {str(e)}")
-        return None
     except Exception as e:
         slot_info = "NeşeliÇiçekler" if slot_number == 0 else f"Slot {slot_number}"
-        logging.error(f"Scraping hatası - {slot_info} - {url}: {str(e)}")
+        logging.error(f"Selenium scraping hatası - {slot_info} - {url}: {str(e)}")
         return None
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
 
 def update_scraping_status(is_running: bool = None, progress: int = None, 
                           total: int = None, current_item: str = None,
@@ -436,7 +543,6 @@ def scrape_single_link(barcode: str, slot_number: int, url: str, scraped_by: str
                 price=product_data['price'],
                 seller_name=product_data['seller_name'],
                 scraped_by=scraped_by
-                # scrape_source kaldırıldı
             )
             
             if success:
@@ -542,7 +648,7 @@ def start_manual_update_with_slot_0(username: str, include_slot_0: bool = True):
                     current_item=f"{barcode} - {slot_display}"
                 )
                 
-                # Scraping yap - DÜZELTME: 4 parametre
+                # Scraping yap
                 success = scrape_single_link(barcode, slot_number, url, username)
                 
                 if success:
@@ -622,7 +728,7 @@ def start_scheduled_update(username: str = "scheduler", include_slot_0: bool = T
                     current_item=f"{barcode} - {slot_display}"
                 )
                 
-                # Scraping yap - DÜZELTME: 4 parametre
+                # Scraping yap
                 success = scrape_single_link(barcode, slot_number, url, username)
                 
                 if success:
@@ -703,7 +809,7 @@ def start_neselicicekler_only_update(username: str):
                     current_item=f"{barcode} - NeşeliÇiçekler"
                 )
                 
-                # Scraping yap - DÜZELTME: 4 parametre
+                # Scraping yap
                 success = scrape_single_link(barcode, 0, url, username)
                 
                 if success:
