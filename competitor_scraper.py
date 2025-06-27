@@ -172,6 +172,7 @@ def scrape_trendyol_product(url: str, slot_number: int = 1) -> Optional[Dict[str
         time.sleep(1)
         
         price_selectors = [
+            '.campaign-price-highlight-container p.campaign-price',  # Sepette fiyatı (öncelikli)
             # YENİ: İndirimli fiyat önceliği (product_scraper.py ile uyumlu)
             '.price-view-discounted',            # İndirimli fiyat (611 TL)
             '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
