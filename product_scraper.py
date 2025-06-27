@@ -152,6 +152,7 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         print(f"🔍 BeautifulSoup DEBUG: Price selector araması başlıyor...")
         
         price_selectors = [
+            '.campaign-price-highlight-container p.campaign-price',  # Sepette fiyatı (öncelikli)
             # YENİ: İndirimli fiyat önceliği (Selenium ile uyumlu)
             'p.campaign-price',                      # Kampanyalı fiyat (2.818,89 TL)
             'p.discounted-price',                    # İndirimli fiyat (2.858,89 TL)
@@ -549,6 +550,7 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         time.sleep(1)
         
         price_selectors = [
+            '.campaign-price-highlight-container p.campaign-price',  # Sepette fiyatı (öncelikli)
             'p.campaign-price',                      # Kampanyalı fiyat (2.818,89 TL)
             'p.discounted-price',                    # İndirimli fiyat (2.858,89 TL)
             '.price-view-discounted',            # İndirimli fiyat (611 TL)
