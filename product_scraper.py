@@ -153,6 +153,8 @@ def scrape_product_basic_info(url: str) -> Optional[Dict[str, any]]:
         
         price_selectors = [
             # YENİ: İndirimli fiyat önceliği (Selenium ile uyumlu)
+            'p.campaign-price',                      # Kampanyalı fiyat (2.818,89 TL)
+            'p.discounted-price',                    # İndirimli fiyat (2.858,89 TL)
             '.price-view-discounted',            # İndirimli fiyat (611 TL)
             '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
             '.price-view span:last-child',       # Price-view içindeki son span
@@ -547,6 +549,8 @@ def scrape_product_with_selenium(url: str) -> Optional[Dict[str, any]]:
         time.sleep(1)
         
         price_selectors = [
+            'p.campaign-price',                      # Kampanyalı fiyat (2.818,89 TL)
+            'p.discounted-price',                    # İndirimli fiyat (2.858,89 TL)
             '.price-view-discounted',            # İndirimli fiyat (611 TL)
             '[data-testid="price"] .price-view-discounted', # Daha spesifik indirimli
             '.price-view span:last-child',       # Price-view içindeki son span
