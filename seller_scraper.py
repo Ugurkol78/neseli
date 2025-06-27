@@ -256,7 +256,10 @@ def scrape_all_products_page_selenium(url: str) -> Optional[Dict[str, any]]:
                 match = re.search(pattern, page_source, re.IGNORECASE)
                 if match:
                     try:
-                        product_count_str = match.group(1).replace(',', '').replace('.', '')
+                        product_count_str = match.group(1)
+                        print(f"🔍 RAW MATCH: '{product_count_str}'")
+                        product_count_str = product_count_str.replace(',', '').replace('.', '')
+                        print(f"🔍 AFTER REPLACE: '{product_count_str}'")
                         result['product_count'] = int(product_count_str)
                         print(f"✅ SELLER DEBUG: Ürün sayısı bulundu (pattern {pattern}): {result['product_count']}")
                         break
