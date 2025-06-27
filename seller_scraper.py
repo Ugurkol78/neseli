@@ -253,8 +253,12 @@ def scrape_all_products_page_selenium(url: str) -> Optional[Dict[str, any]]:
             ]
             
             for pattern in product_patterns:
-                match = re.search(pattern, page_source, re.IGNORECASE)
+                matches = re.findall(pattern, page_source, re.IGNORECASE)  # Tüm eşleşmeleri bul
+                print(f"🔍 PATTERN '{pattern}' TÜM EŞLEŞMELER: {matches}")
+                
+                match = re.search(pattern, page_source, re.IGNORECASE)  # İlk eşleşmeyi bul
                 if match:
+                    print(f"🔍 İLK EŞLEŞME: '{match.group(0)}' - SAYI: '{match.group(1)}'")
                     try:
                         product_count_str = match.group(1)
                         print(f"🔍 RAW MATCH: '{product_count_str}'")
