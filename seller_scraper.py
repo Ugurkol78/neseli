@@ -243,11 +243,11 @@ def scrape_all_products_page_selenium(url: str) -> Optional[Dict[str, any]]:
             page_source = driver.page_source
             
             product_patterns = [
+                r'(\d+(?:[.,]\d+)*)\s*sonuç',
                 r'(\d+(?:[.,]\d+)*)\s*[Üü]r[üu]n',
                 r'(\d+(?:[.,]\d+)*)\s*adet\s*[üu]r[üu]n',
                 r'(\d+(?:[.,]\d+)*)\s*product',
                 r'Toplam\s*(\d+(?:[.,]\d+)*)',
-                r'(\d+(?:[.,]\d+)*)\s*sonuç',
                 r'(\d+(?:[.,]\d+)*)\s*ürün\s*bulundu',
                 r'(\d+(?:[.,]\d+)*)\s*results?'
             ]
