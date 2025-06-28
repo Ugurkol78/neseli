@@ -1059,6 +1059,7 @@ def scrape_cart_sales_data(url: str, max_retries: int = 2) -> Optional[int]:
                 
                 # 3 günlük satış verisini ara
                 sales_selectors = [
+                    'p.order-count-text', 
                     '.order-count-text',  # YENİ: "24 tanesi satıldı" için
                     'p[class*="order-count"]',  # YENİ
                     '.social-proof-label p',  # YENİ
