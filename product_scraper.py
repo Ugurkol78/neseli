@@ -952,25 +952,40 @@ def scrape_cart_sales_data(url: str, max_retries: int = 2) -> Optional[int]:
                 # Sepete ekle butonunu bul ve tıkla
                 cart_button = None
                 
-                # Ana buton selector'ı
-                main_selector = 'button[data-testid="add-to-cart-button"]'
+                # Ana buton selector'ları - YENİ: Çoklu selector desteği
+                main_selectors = [
+                    'button.add-to-basket',                      # YENİ: Gerçek HTML'deki class
+                    'button[data-testid="add-to-cart-button"]', # ESKİ: Fallback
+                    'button[class*="add-to-basket"]',           # YENİ: Partial class
+                    '.add-to-basket'                            # YENİ: Class selector
+                ]
                 
-                try:
-                    # Butonun var olmasını bekle
-                    print(f"🔍 SELENIUM DEBUG: Sepete ekle butonu aranıyor...")
-                    cart_button = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, main_selector))
-                    )
-                    print(f"🔍 SELENIUM DEBUG: Buton bulundu: {main_selector}")
-                    
-                    # Loading'in bitmesini bekle
+                cart_button = None
+                used_selector = None
+                
+                for selector in main_selectors:
                     try:
-                        WebDriverWait(driver, 5).until_not(
-                            EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-testid="add-to-cart-button"] [data-testid="loading"]'))
+                        print(f"🔍 SELENIUM DEBUG: Sepete ekle butonu aranıyor: {selector}")
+                        cart_button = WebDriverWait(driver, 5).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                         )
-                        print(f"🔍 SELENIUM DEBUG: Loading bitti")
+                        used_selector = selector
+                        print(f"🔍 SELENIUM DEBUG: Buton bulundu: {selector}")
+                        break
                     except:
-                        print(f"🔍 SELENIUM DEBUG: Loading timeout - devam ediliyor")
+                        print(f"🔍 SELENIUM DEBUG: Selector başarısız: {selector}")
+                        continue
+                
+                if cart_button:
+                    # Loading'in bitmesini bekle - sadece eski selector için
+                    if used_selector == 'button[data-testid="add-to-cart-button"]':
+                        try:
+                            WebDriverWait(driver, 5).until_not(
+                                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-testid="add-to-cart-button"] [data-testid="loading"]'))
+                            )
+                            print(f"🔍 SELENIUM DEBUG: Loading bitti")
+                        except:
+                            print(f"🔍 SELENIUM DEBUG: Loading timeout - devam ediliyor")
                     
                     # Butonun durumunu kontrol et
                     time.sleep(1)
@@ -983,18 +998,10 @@ def scrape_cart_sales_data(url: str, max_retries: int = 2) -> Optional[int]:
                         driver.refresh()
                         time.sleep(3)
                         
-                        # Yeniden buton ara
+                        # Yeniden aynı selector ile buton ara
                         cart_button = WebDriverWait(driver, 10).until(
-                            EC.presence_of_element_located((By.CSS_SELECTOR, main_selector))
+                            EC.presence_of_element_located((By.CSS_SELECTOR, used_selector))
                         )
-                        
-                        # Loading bekle
-                        try:
-                            WebDriverWait(driver, 5).until_not(
-                                EC.presence_of_element_located((By.CSS_SELECTOR, 'button[data-testid="add-to-cart-button"] [data-testid="loading"]'))
-                            )
-                        except:
-                            pass
                         
                         time.sleep(1)
                         button_text = cart_button.text.strip()
@@ -1006,9 +1013,8 @@ def scrape_cart_sales_data(url: str, max_retries: int = 2) -> Optional[int]:
                     else:
                         print(f"🔍 SELENIUM DEBUG: Buton hala kullanılamaz durumda")
                         cart_button = None
-                        
-                except Exception as e:
-                    print(f"🔍 SELENIUM DEBUG: Buton bulma hatası: {str(e)}")
+                else:
+                    print(f"🔍 SELENIUM DEBUG: Hiçbir selector çalışmadı")
                     cart_button = None
 
                 # Buton bulunamazsa döngüyü devam ettir
