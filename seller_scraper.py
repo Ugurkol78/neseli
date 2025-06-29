@@ -52,46 +52,65 @@ seller_scraping_status = {
 
 seller_scraping_lock = threading.Lock()
 
-def setup_chrome_driver() -> webdriver.Chrome:
+def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
     """
     Chrome WebDriver'ı headless modda kuruluma hazırlar
     Production ve Local için uyumlu
     """
-    print(f"🔍 SELLER DEBUG: Chrome driver kuruluyor...")
     
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
-    
-    print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode)")
-    
-    try:
-        # ÖNCE Production path'i dene (VPS için)
-        service = Service('/usr/bin/chromedriver')
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (Production path)")
-        return driver
-    except Exception as prod_error:
-        print(f"⚠️ SELLER DEBUG: Production path başarısız: {str(prod_error)}")
-        
-        # Local development için WebDriverManager dene
+    for attempt in range(max_retries):
         try:
-            print(f"🔍 SELLER DEBUG: WebDriverManager deneniyor (Local)...")
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-            print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (WebDriverManager)")
-            return driver
-        except Exception as local_error:
-            print(f"❌ SELLER DEBUG: WebDriverManager da başarısız: {str(local_error)}")
-            logging.error(f"SELLER DEBUG: Chrome driver hatası: Production: {str(prod_error)}, Local: {str(local_error)}")
-            raise local_error
+            print(f"🔍 SELLER DEBUG: Chrome driver kuruluyor (deneme {attempt + 1})...")
+            
+            # Mevcut chrome process'lerini temizle
+            if attempt > 0:
+                import subprocess
+                try:
+                    subprocess.run(['pkill', '-f', 'chrome'], check=False)
+                    subprocess.run(['pkill', '-f', 'chromedriver'], check=False)
+                    time.sleep(3)  # Seller için biraz daha uzun bekle
+                except:
+                    pass
+            
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
+            chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
+            
+            print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode)")
+            
+            try:
+                # ÖNCE Production path'i dene (VPS için)
+                service = Service('/usr/bin/chromedriver')
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (Production path - deneme {attempt + 1})")
+                return driver
+            except Exception as prod_error:
+                print(f"⚠️ SELLER DEBUG: Production path başarısız (deneme {attempt + 1}): {str(prod_error)}")
+                
+                # Local development için WebDriverManager dene
+                try:
+                    print(f"🔍 SELLER DEBUG: WebDriverManager deneniyor (Local - deneme {attempt + 1})...")
+                    service = Service(ChromeDriverManager().install())
+                    driver = webdriver.Chrome(service=service, options=chrome_options)
+                    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                    print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (WebDriverManager - deneme {attempt + 1})")
+                    return driver
+                except Exception as local_error:
+                    print(f"❌ SELLER DEBUG: WebDriverManager da başarısız (deneme {attempt + 1}): {str(local_error)}")
+                    raise local_error
+                    
+        except Exception as e:
+            print(f"❌ SELLER DEBUG: Chrome driver kurulum hatası (deneme {attempt + 1}): {str(e)}")
+            if attempt == max_retries - 1:
+                logging.error(f"SELLER DEBUG: Chrome driver hatası: {str(e)}")
+                raise
+            time.sleep(5)  # Yeniden denemeden önce bekle
 
 # Geçici: Requests ile fallback scraper
 def scrape_with_requests_fallback(url: str) -> Optional[Dict[str, any]]:
