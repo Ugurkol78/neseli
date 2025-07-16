@@ -55,7 +55,7 @@ seller_scraping_lock = threading.Lock()
 def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
     """
     Chrome WebDriver'ı headless modda kuruluma hazırlar
-    Production ve Local için uyumlu
+    Production ve Local için uyumlu - Chrome kurulum sorunları çözüldü
     """
     
     for attempt in range(max_retries):
@@ -68,11 +68,32 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
                 try:
                     subprocess.run(['pkill', '-f', 'chrome'], check=False)
                     subprocess.run(['pkill', '-f', 'chromedriver'], check=False)
-                    time.sleep(3)  # Seller için biraz daha uzun bekle
+                    time.sleep(3)
                 except:
                     pass
             
+            # Chrome binary yollarını kontrol et
+            chrome_paths = [
+                '/usr/bin/google-chrome',
+                '/usr/bin/google-chrome-stable',
+                '/usr/bin/chromium-browser',
+                '/usr/bin/chromium'
+            ]
+            
+            chrome_binary = None
+            for path in chrome_paths:
+                if os.path.exists(path):
+                    chrome_binary = path
+                    print(f"✅ SELLER DEBUG: Chrome binary bulundu: {chrome_binary}")
+                    break
+            
+            if not chrome_binary:
+                print("❌ SELLER DEBUG: Chrome binary bulunamadı! Chrome yüklü değil.")
+                raise Exception("Chrome binary bulunamadı")
+            
             chrome_options = Options()
+            
+            # Headless ve güvenlik ayarları
             chrome_options.add_argument('--headless')
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
@@ -80,20 +101,54 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
             chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
-            # Chrome için gerekli environment ve binary
+            
+            # Performans ve kararlılık ayarları
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+            chrome_options.add_argument('--window-size=1920,1080')
+            chrome_options.add_argument('--disable-logging')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--remote-debugging-port=9222')
+            chrome_options.add_argument('--disable-background-timer-throttling')
+            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+            chrome_options.add_argument('--disable-renderer-backgrounding')
+            
+            # Chrome binary path'i ayarla
+            chrome_options.binary_location = chrome_binary
+            
+            # Environment ayarları
             import os
             os.environ['DISPLAY'] = ':99'
-            chrome_options.binary_location = '/usr/bin/google-chrome'
             
-            print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode)")
+            print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode) - Binary: {chrome_binary}")
+            
+            # ChromeDriver yollarını kontrol et
+            chromedriver_paths = [
+                '/usr/bin/chromedriver',
+                '/usr/local/bin/chromedriver',
+                '/opt/chromedriver/chromedriver'
+            ]
+            
+            chromedriver_binary = None
+            for path in chromedriver_paths:
+                if os.path.exists(path):
+                    chromedriver_binary = path
+                    print(f"✅ SELLER DEBUG: ChromeDriver binary bulundu: {chromedriver_binary}")
+                    break
             
             try:
-                # ÖNCE Production path'i dene (VPS için)
-                service = Service('/usr/bin/chromedriver')
-                driver = webdriver.Chrome(service=service, options=chrome_options)
-                driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-                print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (Production path - deneme {attempt + 1})")
-                return driver
+                if chromedriver_binary:
+                    # Production path ile dene
+                    service = Service(chromedriver_binary)
+                    driver = webdriver.Chrome(service=service, options=chrome_options)
+                    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                    print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (Production path - deneme {attempt + 1})")
+                    return driver
+                else:
+                    raise Exception("ChromeDriver binary bulunamadı")
+                    
             except Exception as prod_error:
                 print(f"⚠️ SELLER DEBUG: Production path başarısız (deneme {attempt + 1}): {str(prod_error)}")
                 
@@ -115,6 +170,109 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
                 logging.error(f"SELLER DEBUG: Chrome driver hatası: {str(e)}")
                 raise
             time.sleep(5)  # Yeniden denemeden önce bekle
+
+# Chrome kurulumu kontrol etme fonksiyonu
+def check_chrome_installation():
+    """Chrome'un sisteme kurulu olup olmadığını kontrol eder"""
+    try:
+        import subprocess
+        import os
+        
+        # Chrome binary yollarını kontrol et
+        chrome_paths = [
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium'
+        ]
+        
+        chrome_binary = None
+        for path in chrome_paths:
+            if os.path.exists(path):
+                chrome_binary = path
+                break
+        
+        if not chrome_binary:
+            return False, "Chrome binary bulunamadı"
+        
+        # Chrome versiyonunu kontrol et
+        try:
+            result = subprocess.run([chrome_binary, '--version'], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                version = result.stdout.strip()
+                print(f"✅ Chrome kurulu: {version}")
+                return True, version
+            else:
+                return False, f"Chrome version komutu başarısız: {result.stderr}"
+        except subprocess.TimeoutExpired:
+            return False, "Chrome version komutu timeout oldu"
+        except Exception as e:
+            return False, f"Chrome version kontrol hatası: {str(e)}"
+            
+    except Exception as e:
+        return False, f"Chrome kurulum kontrol hatası: {str(e)}"
+
+# ChromeDriver kurulumu kontrol etme fonksiyonu  
+def check_chromedriver_installation():
+    """ChromeDriver'ın sisteme kurulu olup olmadığını kontrol eder"""
+    try:
+        import subprocess
+        import os
+        
+        # ChromeDriver binary yollarını kontrol et
+        chromedriver_paths = [
+            '/usr/bin/chromedriver',
+            '/usr/local/bin/chromedriver',
+            '/opt/chromedriver/chromedriver'
+        ]
+        
+        chromedriver_binary = None
+        for path in chromedriver_paths:
+            if os.path.exists(path):
+                chromedriver_binary = path
+                break
+        
+        if not chromedriver_binary:
+            return False, "ChromeDriver binary bulunamadı"
+        
+        # ChromeDriver versiyonunu kontrol et
+        try:
+            result = subprocess.run([chromedriver_binary, '--version'], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                version = result.stdout.strip()
+                print(f"✅ ChromeDriver kurulu: {version}")
+                return True, version
+            else:
+                return False, f"ChromeDriver version komutu başarısız: {result.stderr}"
+        except subprocess.TimeoutExpired:
+            return False, "ChromeDriver version komutu timeout oldu"
+        except Exception as e:
+            return False, f"ChromeDriver version kontrol hatası: {str(e)}"
+            
+    except Exception as e:
+        return False, f"ChromeDriver kurulum kontrol hatası: {str(e)}"
+
+# Sistem durumunu kontrol etme fonksiyonu
+def check_system_status():
+    """Chrome ve ChromeDriver sisteminin durumunu kontrol eder"""
+    print("🔍 SELLER DEBUG: Sistem durumu kontrol ediliyor...")
+    
+    # Chrome kontrolü
+    chrome_ok, chrome_msg = check_chrome_installation()
+    print(f"Chrome durumu: {'✅' if chrome_ok else '❌'} {chrome_msg}")
+    
+    # ChromeDriver kontrolü
+    chromedriver_ok, chromedriver_msg = check_chromedriver_installation()
+    print(f"ChromeDriver durumu: {'✅' if chromedriver_ok else '❌'} {chromedriver_msg}")
+    
+    if chrome_ok and chromedriver_ok:
+        print("✅ SELLER DEBUG: Sistem hazır!")
+        return True
+    else:
+        print("❌ SELLER DEBUG: Sistem hazır değil!")
+        return False
 
 # Geçici: Requests ile fallback scraper
 def scrape_with_requests_fallback(url: str) -> Optional[Dict[str, any]]:
