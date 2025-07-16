@@ -56,24 +56,24 @@ seller_scraping_lock = threading.Lock()
 def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
     """
     Chrome WebDriver'ı headless modda kuruluma hazırlar
-    Ubuntu Server için optimize edilmiş - JavaScript enabled
+    DevToolsActivePort sorunu için özel ayarlar
     """
     
     for attempt in range(max_retries):
         try:
             print(f"🔍 SELLER DEBUG: Chrome driver kuruluyor (deneme {attempt + 1})...")
             
-            # Mevcut chrome process'lerini temizle
+            # Mevcut chrome ve chromedriver process'lerini temizle
             if attempt > 0:
                 try:
                     import subprocess
                     subprocess.run(['pkill', '-f', 'chrome'], check=False)
                     subprocess.run(['pkill', '-f', 'chromedriver'], check=False)
-                    time.sleep(3)
+                    subprocess.run(['pkill', '-f', 'google-chrome'], check=False)
+                    time.sleep(5)  # Daha uzun bekle
                 except:
                     pass
             
-            # Chrome binary test (başarılı olduğunu biliyoruz)
             chrome_binary = '/usr/bin/google-chrome'
             print(f"✅ SELLER DEBUG: Chrome binary: {chrome_binary}")
             
@@ -85,15 +85,39 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
             
-            # WINDOW VE DISPLAY
+            # DEVTOOLS SORUNU İÇİN ÖZEL AYARLAR
+            chrome_options.add_argument('--remote-debugging-port=9222')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-background-timer-throttling')
+            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+            chrome_options.add_argument('--disable-renderer-backgrounding')
+            chrome_options.add_argument('--disable-features=TranslateUI,BlinkGenPropertyTrees')
+            chrome_options.add_argument('--disable-ipc-flooding-protection')
+            
+            # MEMORY VE PROCESS AYARLARI
+            chrome_options.add_argument('--memory-pressure-off')
+            chrome_options.add_argument('--max_old_space_size=4096')
+            chrome_options.add_argument('--disable-background-networking')
+            chrome_options.add_argument('--disable-default-apps')
+            chrome_options.add_argument('--disable-sync')
+            chrome_options.add_argument('--disable-translate')
+            chrome_options.add_argument('--hide-scrollbars')
+            chrome_options.add_argument('--metrics-recording-only')
+            chrome_options.add_argument('--mute-audio')
+            chrome_options.add_argument('--no-first-run')
+            chrome_options.add_argument('--safebrowsing-disable-auto-update')
+            chrome_options.add_argument('--disable-crash-reporter')
+            chrome_options.add_argument('--disable-in-process-stack-traces')
+            
+            # WINDOW VE DISPLAY - SABIT DEĞERLER
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--start-maximized')
             
             # PERFORMANS AYARLARI
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--disable-plugins')
-            chrome_options.add_argument('--disable-images')  # Performans için
-            # chrome_options.add_argument('--disable-javascript')  # KALDIRILDI - JS gerekli
+            chrome_options.add_argument('--disable-images')
+            chrome_options.add_argument('--disable-javascript')  # Eğer JS gerekmiyorsa
             
             # NETWORK VE SECURITY
             chrome_options.add_argument('--disable-web-security')
@@ -105,16 +129,12 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             # USER AGENT
             chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
             
-            # LOGGING VE STABILITY
+            # LOGGING - TAMAMEN KAPAT
             chrome_options.add_argument('--disable-logging')
             chrome_options.add_argument('--disable-gpu-logging')
             chrome_options.add_argument('--log-level=3')
             chrome_options.add_argument('--silent')
-            
-            # BACKGROUND PROCESSES
-            chrome_options.add_argument('--disable-background-networking')
-            chrome_options.add_argument('--disable-default-apps')
-            chrome_options.add_argument('--disable-sync')
+            chrome_options.add_argument('--quiet')
             
             # Chrome binary path'i ayarla
             chrome_options.binary_location = chrome_binary
@@ -124,14 +144,17 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
                 import os
                 import tempfile
                 
-                # Virtual display
+                # DISPLAY ayarı
                 os.environ['DISPLAY'] = ':99'
                 
-                # Temporary directory oluştur
-                temp_dir = tempfile.mkdtemp()
+                # Temporary directory oluştur - HER DENEMEDE YENİ
+                temp_dir = tempfile.mkdtemp(prefix='chrome_', suffix=f'_{attempt}')
                 chrome_options.add_argument(f'--user-data-dir={temp_dir}')
                 chrome_options.add_argument(f'--data-path={temp_dir}')
                 chrome_options.add_argument(f'--disk-cache-dir={temp_dir}')
+                
+                # Temp directory permissions
+                os.chmod(temp_dir, 0o755)
                 
                 print(f"🔍 SELLER DEBUG: Temp directory: {temp_dir}")
                 
@@ -141,54 +164,59 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             
             print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode)")
             
-            # ChromeDriver test (başarılı olduğunu biliyoruz)
             chromedriver_binary = '/usr/bin/chromedriver'
             print(f"✅ SELLER DEBUG: ChromeDriver binary: {chromedriver_binary}")
             
             try:
-                # Production path ile dene
+                # Service için özel ayarlar
                 service = Service(chromedriver_binary)
+                service.creation_flags = 0
+                
+                # WebDriver için özel ayarlar
+                chrome_options.add_argument('--disable-dev-shm-usage')  # Tekrar ekle
+                chrome_options.add_argument('--disable-software-rasterizer')
+                chrome_options.add_argument('--disable-background-timer-throttling')
                 
                 print(f"🔍 SELLER DEBUG: WebDriver başlatılıyor...")
+                
+                # Driver'ı başlat
                 driver = webdriver.Chrome(service=service, options=chrome_options)
                 
                 # WebDriver ayarları
-                driver.set_page_load_timeout(30)
-                driver.implicitly_wait(10)
+                driver.set_page_load_timeout(60)  # Daha uzun timeout
+                driver.implicitly_wait(20)
+                
+                print(f"🔍 SELLER DEBUG: WebDriver başlatıldı, test ediliyor...")
                 
                 # Bot tespit önleme
-                driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                try:
+                    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                    print(f"✅ SELLER DEBUG: Bot tespit önleme ayarlandı")
+                except Exception as js_error:
+                    print(f"⚠️ SELLER DEBUG: Bot tespit önleme hatası: {str(js_error)}")
                 
-                # Test: Basit bir sayfa yükle
-                print(f"🔍 SELLER DEBUG: Chrome test ediliyor...")
-                driver.get("https://www.google.com")
-                title = driver.title
-                print(f"✅ SELLER DEBUG: Test başarılı - Title: {title}")
+                # Basit test
+                try:
+                    driver.get("https://www.google.com")
+                    title = driver.title
+                    print(f"✅ SELLER DEBUG: Test başarılı - Title: {title}")
+                except Exception as test_error:
+                    print(f"⚠️ SELLER DEBUG: Test hatası: {str(test_error)}")
+                    # Test başarısız olsa bile driver'ı döndür
                 
                 print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (deneme {attempt + 1})")
                 return driver
                 
             except Exception as prod_error:
                 print(f"⚠️ SELLER DEBUG: Production path başarısız (deneme {attempt + 1}): {str(prod_error)}")
-                
-                # Local development için WebDriverManager dene
-                try:
-                    print(f"🔍 SELLER DEBUG: WebDriverManager deneniyor (Local - deneme {attempt + 1})...")
-                    service = Service(ChromeDriverManager().install())
-                    driver = webdriver.Chrome(service=service, options=chrome_options)
-                    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-                    print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (WebDriverManager - deneme {attempt + 1})")
-                    return driver
-                except Exception as local_error:
-                    print(f"❌ SELLER DEBUG: WebDriverManager da başarısız (deneme {attempt + 1}): {str(local_error)}")
-                    raise local_error
+                raise prod_error
                     
         except Exception as e:
             print(f"❌ SELLER DEBUG: Chrome driver kurulum hatası (deneme {attempt + 1}): {str(e)}")
             if attempt == max_retries - 1:
                 logging.error(f"SELLER DEBUG: Chrome driver hatası: {str(e)}")
                 raise
-            time.sleep(5)  # Yeniden denemeden önce bekle
+            time.sleep(10)  # Daha uzun bekle
 
 # Chrome kurulumu kontrol etme fonksiyonu
 def check_chrome_installation():
