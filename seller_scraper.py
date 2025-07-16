@@ -80,6 +80,10 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
             chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
+            # Chrome için gerekli environment ve binary
+            import os
+            os.environ['DISPLAY'] = ':99'
+            chrome_options.binary_location = '/usr/bin/google-chrome'
             
             print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode)")
             
