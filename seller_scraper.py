@@ -65,8 +65,8 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             
             # Mevcut chrome process'lerini temizle
             if attempt > 0:
-                import subprocess
                 try:
+                    import subprocess
                     subprocess.run(['pkill', '-f', 'chrome'], check=False)
                     subprocess.run(['pkill', '-f', 'chromedriver'], check=False)
                     time.sleep(3)
@@ -83,10 +83,14 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             
             chrome_binary = None
             for path in chrome_paths:
-                if os.path.exists(path):
+                try:
+                    with open(path, 'r'):
+                        pass
                     chrome_binary = path
                     print(f"✅ SELLER DEBUG: Chrome binary bulundu: {chrome_binary}")
                     break
+                except:
+                    continue
             
             if not chrome_binary:
                 print("❌ SELLER DEBUG: Chrome binary bulunamadı! Chrome yüklü değil.")
@@ -110,7 +114,6 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             chrome_options.add_argument('--disable-features=VizDisplayCompositor')
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--disable-logging')
-            chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--remote-debugging-port=9222')
             chrome_options.add_argument('--disable-background-timer-throttling')
             chrome_options.add_argument('--disable-backgrounding-occluded-windows')
@@ -120,8 +123,11 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             chrome_options.binary_location = chrome_binary
             
             # Environment ayarları
-            import os
-            os.environ['DISPLAY'] = ':99'
+            try:
+                import os
+                os.environ['DISPLAY'] = ':99'
+            except:
+                pass
             
             print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode) - Binary: {chrome_binary}")
             
@@ -134,10 +140,14 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             
             chromedriver_binary = None
             for path in chromedriver_paths:
-                if os.path.exists(path):
+                try:
+                    with open(path, 'r'):
+                        pass
                     chromedriver_binary = path
                     print(f"✅ SELLER DEBUG: ChromeDriver binary bulundu: {chromedriver_binary}")
                     break
+                except:
+                    continue
             
             try:
                 if chromedriver_binary:
