@@ -56,7 +56,7 @@ seller_scraping_lock = threading.Lock()
 def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
     """
     Chrome WebDriver'ı headless modda kuruluma hazırlar
-    Production ve Local için uyumlu - Chrome kurulum sorunları çözüldü
+    Ubuntu Server için optimize edilmiş - JavaScript enabled
     """
     
     for attempt in range(max_retries):
@@ -73,51 +73,48 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
                 except:
                     pass
             
-            # Chrome binary yollarını kontrol et
-            chrome_paths = [
-                '/usr/bin/google-chrome',
-                '/usr/bin/google-chrome-stable',
-                '/usr/bin/chromium-browser',
-                '/usr/bin/chromium'
-            ]
-            
-            chrome_binary = None
-            for path in chrome_paths:
-                try:
-                    with open(path, 'r'):
-                        pass
-                    chrome_binary = path
-                    print(f"✅ SELLER DEBUG: Chrome binary bulundu: {chrome_binary}")
-                    break
-                except:
-                    continue
-            
-            if not chrome_binary:
-                print("❌ SELLER DEBUG: Chrome binary bulunamadı! Chrome yüklü değil.")
-                raise Exception("Chrome binary bulunamadı")
+            # Chrome binary test (başarılı olduğunu biliyoruz)
+            chrome_binary = '/usr/bin/google-chrome'
+            print(f"✅ SELLER DEBUG: Chrome binary: {chrome_binary}")
             
             chrome_options = Options()
             
-            # Headless ve güvenlik ayarları
+            # TEMEL HEADLESS AYARLAR
             chrome_options.add_argument('--headless')
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            
+            # WINDOW VE DISPLAY
+            chrome_options.add_argument('--window-size=1920,1080')
+            chrome_options.add_argument('--start-maximized')
+            
+            # PERFORMANS AYARLARI
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-plugins')
+            chrome_options.add_argument('--disable-images')  # Performans için
+            # chrome_options.add_argument('--disable-javascript')  # KALDIRILDI - JS gerekli
+            
+            # NETWORK VE SECURITY
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
+            
+            # USER AGENT
             chrome_options.add_argument(f'--user-agent={random.choice(USER_AGENTS)}')
             
-            # Performans ve kararlılık ayarları
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-web-security')
-            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-            chrome_options.add_argument('--window-size=1920,1080')
+            # LOGGING VE STABILITY
             chrome_options.add_argument('--disable-logging')
-            chrome_options.add_argument('--remote-debugging-port=9222')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
+            chrome_options.add_argument('--disable-gpu-logging')
+            chrome_options.add_argument('--log-level=3')
+            chrome_options.add_argument('--silent')
+            
+            # BACKGROUND PROCESSES
+            chrome_options.add_argument('--disable-background-networking')
+            chrome_options.add_argument('--disable-default-apps')
+            chrome_options.add_argument('--disable-sync')
             
             # Chrome binary path'i ayarla
             chrome_options.binary_location = chrome_binary
@@ -125,41 +122,52 @@ def setup_chrome_driver(max_retries=3) -> webdriver.Chrome:
             # Environment ayarları
             try:
                 import os
+                import tempfile
+                
+                # Virtual display
                 os.environ['DISPLAY'] = ':99'
-            except:
+                
+                # Temporary directory oluştur
+                temp_dir = tempfile.mkdtemp()
+                chrome_options.add_argument(f'--user-data-dir={temp_dir}')
+                chrome_options.add_argument(f'--data-path={temp_dir}')
+                chrome_options.add_argument(f'--disk-cache-dir={temp_dir}')
+                
+                print(f"🔍 SELLER DEBUG: Temp directory: {temp_dir}")
+                
+            except Exception as env_error:
+                print(f"⚠️ SELLER DEBUG: Environment ayarlama hatası: {str(env_error)}")
                 pass
             
-            print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode) - Binary: {chrome_binary}")
+            print(f"🔍 SELLER DEBUG: Chrome options ayarlandı (headless mode)")
             
-            # ChromeDriver yollarını kontrol et
-            chromedriver_paths = [
-                '/usr/bin/chromedriver',
-                '/usr/local/bin/chromedriver',
-                '/opt/chromedriver/chromedriver'
-            ]
-            
-            chromedriver_binary = None
-            for path in chromedriver_paths:
-                try:
-                    with open(path, 'r'):
-                        pass
-                    chromedriver_binary = path
-                    print(f"✅ SELLER DEBUG: ChromeDriver binary bulundu: {chromedriver_binary}")
-                    break
-                except:
-                    continue
+            # ChromeDriver test (başarılı olduğunu biliyoruz)
+            chromedriver_binary = '/usr/bin/chromedriver'
+            print(f"✅ SELLER DEBUG: ChromeDriver binary: {chromedriver_binary}")
             
             try:
-                if chromedriver_binary:
-                    # Production path ile dene
-                    service = Service(chromedriver_binary)
-                    driver = webdriver.Chrome(service=service, options=chrome_options)
-                    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-                    print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (Production path - deneme {attempt + 1})")
-                    return driver
-                else:
-                    raise Exception("ChromeDriver binary bulunamadı")
-                    
+                # Production path ile dene
+                service = Service(chromedriver_binary)
+                
+                print(f"🔍 SELLER DEBUG: WebDriver başlatılıyor...")
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                
+                # WebDriver ayarları
+                driver.set_page_load_timeout(30)
+                driver.implicitly_wait(10)
+                
+                # Bot tespit önleme
+                driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+                
+                # Test: Basit bir sayfa yükle
+                print(f"🔍 SELLER DEBUG: Chrome test ediliyor...")
+                driver.get("https://www.google.com")
+                title = driver.title
+                print(f"✅ SELLER DEBUG: Test başarılı - Title: {title}")
+                
+                print(f"✅ SELLER DEBUG: Chrome driver başarıyla kuruldu (deneme {attempt + 1})")
+                return driver
+                
             except Exception as prod_error:
                 print(f"⚠️ SELLER DEBUG: Production path başarısız (deneme {attempt + 1}): {str(prod_error)}")
                 
