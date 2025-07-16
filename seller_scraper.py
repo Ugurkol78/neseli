@@ -10,6 +10,7 @@ import time
 import random
 import logging
 import threading
+import os  # <- Bu satırı ekleyin
 from typing import Dict, Optional, List
 import re
 from selenium import webdriver
