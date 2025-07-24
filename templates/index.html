@@ -290,31 +290,31 @@
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
             border-radius: 12px;
-            overflow: visible; /* Bu satırı değiştirin: auto yerine visible */
+            overflow: visible;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.5);
-            overflow-x: auto; /* Sadece yatay kaydırma kalacak */
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1400px; /* Minimum genişlik */
+            min-width: 1400px;
         }
         
         th, td {
-            padding: 8px 10px; /* Daha kompakt */
+            padding: 8px 10px;
             text-align: center;
             vertical-align: middle;
             border-bottom: 1px solid #e2e8f0;
-            white-space: nowrap; /* Satır kaydırmasını önle */
+            white-space: nowrap;
         }
         
         th {
             background: #f8fafc;
             color: #2d3748;
             font-weight: 600;
-            font-size: 11px; /* Daha küçük font */
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             position: relative;
@@ -388,10 +388,10 @@
             background: white !important;
             color: #2d3748 !important;
             border: 1.5px solid #e2e8f0 !important;
-            font-size: 11px !important; /* Daha küçük */
+            font-size: 11px !important;
             text-align: center !important;
-            padding: 4px 8px !important; /* Daha kompakt */
-            height: 26px !important; /* Daha küçük */
+            padding: 4px 8px !important;
+            height: 26px !important;
             box-sizing: border-box !important;
         }
         
@@ -408,9 +408,9 @@
             color: #2d3748 !important;
             border: 1.5px solid #e2e8f0 !important;
             text-transform: uppercase !important;
-            padding: 4px 8px !important; /* Daha kompakt */
-            font-size: 11px !important; /* Daha küçük */
-            height: 26px !important; /* Daha küçük */
+            padding: 4px 8px !important;
+            font-size: 11px !important;
+            height: 26px !important;
             box-sizing: border-box !important;
             width: 100% !important;
         }
@@ -432,9 +432,9 @@
         thead button {
             background: #e53e3e !important;
             color: white !important;
-            padding: 4px 8px !important; /* Daha kompakt */
-            font-size: 10px !important; /* Daha küçük */
-            height: 26px !important; /* Daha küçük */
+            padding: 4px 8px !important;
+            font-size: 10px !important;
+            height: 26px !important;
             box-sizing: border-box !important;
         }
         
@@ -445,11 +445,12 @@
         }
         
         img.product-img {
-            height: 60px; /* Daha küçük */
+            height: 60px;
             width: auto;
             border-radius: 6px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s ease;
+            cursor: pointer; /* YENİ: Tıklanabilir göstergesi */
         }
         
         img.product-img:hover {
@@ -457,22 +458,22 @@
         }
         
         input[type=number] {
-            width: 60px; /* Daha küçük */
-            padding: 4px 6px; /* Daha kompakt */
+            width: 60px;
+            padding: 4px 6px;
             border: 1.5px solid #e2e8f0;
             border-radius: 6px;
-            font-size: 11px; /* Daha küçük */
+            font-size: 11px;
             transition: all 0.2s ease;
             background: white;
             color: #2d3748;
-            height: 28px; /* Daha küçük */
+            height: 28px;
             box-sizing: border-box;
         }
 
         /* Fiyat input alanları için özel stil */
         .ty-new-price-input,
         .hb-new-price-input {
-            width: 70px !important; /* Fiyat için biraz daha geniş */
+            width: 70px !important;
             font-weight: 500;
         }
 
@@ -493,16 +494,16 @@
         }
         
         input[type=text] {
-            padding: 4px 6px; /* Daha kompakt */
+            padding: 4px 6px;
             border: 1.5px solid #e2e8f0;
             border-radius: 6px;
-            font-size: 11px; /* Daha küçük */
+            font-size: 11px;
             width: 100%;
             box-sizing: border-box;
             transition: all 0.2s ease;
             background: white;
             color: #2d3748;
-            height: 28px; /* Daha küçük */
+            height: 28px;
         }
         
         input[type=number]:focus,
@@ -512,7 +513,6 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
-
         /* HB input alanları için özel focus stilleri */
         .hb-new-stock-input:focus,
         .hb-new-price-input:focus {
@@ -526,8 +526,8 @@
         }
         
         button.update-btn {
-            padding: 4px 8px; /* Daha kompakt */
-            font-size: 10px; /* Daha küçük */
+            padding: 4px 8px;
+            font-size: 10px;
             font-weight: 500;
             cursor: pointer;
             border: none;
@@ -535,7 +535,7 @@
             transition: all 0.2s ease;
             background: #48bb78;
             color: white;
-            height: 28px; /* Daha küçük */
+            height: 28px;
             box-sizing: border-box;
         }
         
@@ -552,8 +552,8 @@
         }
         
         #clearFiltersBtn {
-            padding: 4px 8px; /* Daha kompakt */
-            font-size: 10px; /* Daha küçük */
+            padding: 4px 8px;
+            font-size: 10px;
             font-weight: 500;
             cursor: pointer;
             border: none;
@@ -561,7 +561,7 @@
             transition: all 0.2s ease;
             background: #e53e3e;
             color: white;
-            height: 26px; /* Daha küçük */
+            height: 26px;
             box-sizing: border-box;
         }
         
@@ -573,25 +573,25 @@
         /* Filtre satırı için stil */
         thead tr.filter-row th {
             font-weight: normal;
-            font-size: 11px; /* Daha küçük */
+            font-size: 11px;
             text-transform: none;
             letter-spacing: normal;
-            height: 40px; /* Daha küçük */
+            height: 40px;
         }
 
         /* Dropdown için stil */
         .dropdown {
             position: relative;
             display: inline-block;
-            width: 70px; /* Daha küçük */
+            width: 70px;
             text-align: left;
             user-select: none;
             z-index: 20000;
         }
         .dropdown-button {
             width: 100%;
-            padding: 4px 6px; /* Daha kompakt */
-            font-size: 11px; /* Daha küçük */
+            padding: 4px 6px;
+            font-size: 11px;
             cursor: pointer;
             border: 1.5px solid #e2e8f0;
             border-radius: 6px;
@@ -599,13 +599,11 @@
             color: #2d3748;
             box-sizing: border-box;
             transition: all 0.2s ease;
-            height: 26px; /* Daha küçük */
+            height: 26px;
         }
         .dropdown-button:hover {
             border-color: #667eea;
         }
-
-
 
         .dropdown-content {
             display: none;
@@ -620,7 +618,6 @@
             width: 120px;
             min-width: 120px;
         }
-
 
         .dropdown-content label {
             display: block;
@@ -650,11 +647,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px; /* Daha küçük */
+            gap: 6px;
         }
         .stock-indicator {
-            width: 10px; /* Daha küçük */
-            height: 10px; /* Daha küçük */
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -711,6 +708,189 @@
             }
         }
 
+        /* YENİ: Barkod tıklanabilir stil */
+        .clickable-barcode {
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .clickable-barcode:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* YENİ: Modal stilleri */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #a0aec0;
+            padding: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #e53e3e;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .current-link {
+            background: #f7fafc;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #4a5568;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .current-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .current-link a:hover {
+            text-decoration: underline;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c53030;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #cbd5e0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #a0aec0;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 6px;
@@ -751,6 +931,11 @@
             .container {
                 max-width: 100%;
                 padding: 10px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 16px;
             }
         }
     </style>
@@ -854,7 +1039,6 @@
     <div class="table-wrapper">
         <table id="productsTable">
             <thead>
-
                 <tr>
                     <th>Resim</th>
                     <th class="ty-section">TY Barkod</th>
@@ -871,15 +1055,8 @@
                     <th class="hb-section">HB Güncelle</th>
                 </tr>
 
-
                 <tr class="filter-row">
-
-                    <th>
-                   
-                    </th>
-
-
-
+                    <th></th>
                     <th class="ty-section">
                         <input type="text" id="barcodeFilter" placeholder="TY Barkod filtrele" />
                     </th>
@@ -896,15 +1073,11 @@
                             </div>
                         </div>
                     </th>
-                    <th class="ty-section">
-                        <!-- TY Fiyat filtresi kaldırıldı -->
-                    </th>
+                    <th class="ty-section"></th>
+                    <th class="ty-section"></th>
                     <th class="ty-section"></th>
                     <th class="ty-section">
-                        <!-- Yeni TY Fiyat filtresi - boş -->
-                    </th>
-                    <th class="ty-section">
-                            <button id="priceFilterBtn" style="background: #48bb78 !important; font-size: 11px !important; height: 32px !important; padding: 6px 10px !important; border-radius: 6px !important;">Fiyat Farklı</button>
+                        <button id="priceFilterBtn" style="background: #48bb78 !important; font-size: 11px !important; height: 32px !important; padding: 6px 10px !important; border-radius: 6px !important;">Fiyat Farklı</button>
                     </th>
                     <th class="hb-section">
                         <input type="text" id="hbBarcodeFilter" placeholder="HB Barkod filtrele" />
@@ -923,29 +1096,27 @@
                             </div>
                         </div>
                     </th>
-                    <th class="hb-section">
-                        <!-- HB Fiyat filtresi kaldırıldı -->
-                    </th>
                     <th class="hb-section"></th>
-                    <th class="hb-section">
-                        <!-- Yeni HB Fiyat filtresi - boş -->
-                    </th>
+                    <th class="hb-section"></th>
+                    <th class="hb-section"></th>
                     <th class="hb-section"></th>
                 </tr>
-
-
             </thead>
             <tbody>
                 {% for product in products %}
                 <tr>
                     <td>
                         {% if product.images and product.images|length > 0 %}
-                            <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-img" />
+                            <img src="{{ product.images[0].url }}" alt="Ürün Resmi" class="product-img" onclick="openProductLink('{{ product.barcode }}')" />
                         {% else %}
                             -
                         {% endif %}
                     </td>
-                    <td class="ty-section">{{ product.barcode }}</td>
+                    <td class="ty-section">
+                        <span class="clickable-barcode" data-barcode="{{ product.barcode }}" onclick="openLinkModal('{{ product.barcode }}')">
+                            {{ product.barcode }}
+                        </span>
+                    </td>
                     <td class="ty-section">
                         <div class="stock-container">
                             <span class="stock-indicator ty-stock-indicator" data-stock="{{ product.quantity }}"></span>
@@ -961,8 +1132,6 @@
                             {% endif %}
                         </span>
                     </td>
-
-
                     <td class="ty-section">
                         <input type="number" min="0" value="" class="ty-new-stock-input" placeholder="Stok" />
                     </td>
@@ -972,8 +1141,6 @@
                     <td class="ty-section">
                         <button type="button" class="update-btn ty-update-btn" disabled>TY Güncelle</button>
                     </td>
-
-
                     <td class="hb-section hb-barcode-cell">{{ product.hb_sku or '-' }}</td>
                     <td class="hb-section">
                         <div class="stock-container">
@@ -996,7 +1163,6 @@
                             {% endif %}
                         </span>
                     </td>
-
                     <td class="hb-section">
                         <input type="number" min="0" value="" class="hb-new-stock-input" placeholder="Stok" />
                     </td>
@@ -1006,7 +1172,6 @@
                     <td class="hb-section">
                         <button type="button" class="update-btn hb-update-btn" disabled>HB Güncelle</button>
                     </td>
-
                 </tr>
                 {% endfor %}
             </tbody>
@@ -1015,7 +1180,46 @@
     {% endif %}
 </div>
 
+<!-- YENİ: Ürün Link Modal Penceresi -->
+<div id="linkModal" class="modal-overlay" onclick="closeLinkModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">🔗 Ürün Linki Yönetimi</h3>
+            <button class="modal-close" onclick="closeLinkModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Barkod:</label>
+                <div style="background: #f7fafc; padding: 8px 12px; border-radius: 6px; font-weight: 600; color: #2d3748;">
+                    <span id="modalBarcode">-</span>
+                </div>
+            </div>
+            
+            <div class="form-group" id="currentLinkSection" style="display: none;">
+                <label class="form-label">Mevcut Link:</label>
+                <div class="current-link">
+                    <a id="currentLinkDisplay" href="#" target="_blank">-</a>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Trendyol Ürün Linki:</label>
+                <input type="url" id="productLinkInput" class="form-input" placeholder="https://www.trendyol.com/..." />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeLinkModal()">İptal</button>
+            <button class="btn btn-danger" id="deleteLinkBtn" onclick="deleteProductLink()" style="display: none;">Sil</button>
+            <button class="btn btn-primary" id="saveLinkBtn" onclick="saveProductLink()">Kaydet</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    // Global değişkenler
+    let productLinks = {};
+    let currentModalBarcode = '';
+
     // Alert gösterme fonksiyonu
     function showAlert(message, type = 'success') {
         // Önceki alert'leri temizle
@@ -1034,6 +1238,202 @@
             }
         }, 5000);
     }
+
+    // Ürün linklerini yükle
+    async function loadProductLinks() {
+        try {
+            const response = await fetch('/get_product_links');
+            const data = await response.json();
+            
+            if (response.ok) {
+                productLinks = data.links || {};
+                console.log('Ürün linkleri yüklendi:', Object.keys(productLinks).length, 'adet');
+            } else {
+                console.error('Ürün linkleri yüklenemedi:', data.error);
+            }
+        } catch (error) {
+            console.error('Ürün linkleri yükleme hatası:', error);
+        }
+    }
+
+    // Modal açma fonksiyonu
+    function openLinkModal(barcode) {
+        currentModalBarcode = barcode;
+        
+        // Modal elemanları
+        const modal = document.getElementById('linkModal');
+        const modalBarcode = document.getElementById('modalBarcode');
+        const currentLinkSection = document.getElementById('currentLinkSection');
+        const currentLinkDisplay = document.getElementById('currentLinkDisplay');
+        const productLinkInput = document.getElementById('productLinkInput');
+        const deleteLinkBtn = document.getElementById('deleteLinkBtn');
+        
+        // Barkodu göster
+        modalBarcode.textContent = barcode;
+        
+        // Mevcut linki kontrol et ve göster
+        const currentLink = productLinks[barcode];
+        if (currentLink) {
+            currentLinkSection.style.display = 'block';
+            currentLinkDisplay.href = currentLink;
+            currentLinkDisplay.textContent = currentLink;
+            productLinkInput.value = currentLink;
+            deleteLinkBtn.style.display = 'inline-block';
+        } else {
+            currentLinkSection.style.display = 'none';
+            productLinkInput.value = '';
+            deleteLinkBtn.style.display = 'none';
+        }
+        
+        // Modal'ı göster
+        modal.classList.add('show');
+        
+        // Input'a focus ver
+        setTimeout(() => {
+            productLinkInput.focus();
+        }, 300);
+    }
+
+    // Modal kapatma fonksiyonu
+    function closeLinkModal(event) {
+        // Eğer modal content'e tıklandıysa kapatma
+        if (event && event.target.closest('.modal-content')) {
+            return;
+        }
+        
+        const modal = document.getElementById('linkModal');
+        modal.classList.remove('show');
+        
+        // Değişkenleri temizle
+        currentModalBarcode = '';
+    }
+
+    // Ürün linki kaydetme fonksiyonu
+    async function saveProductLink() {
+        const barcode = currentModalBarcode;
+        const link = document.getElementById('productLinkInput').value.trim();
+        
+        if (!barcode) {
+            showAlert('Barkod bilgisi eksik!', 'error');
+            return;
+        }
+        
+        // Link validasyonu
+        if (link && !link.startsWith('http://') && !link.startsWith('https://')) {
+            showAlert('Geçerli bir URL giriniz (http:// veya https:// ile başlamalı)', 'error');
+            return;
+        }
+        
+        const saveLinkBtn = document.getElementById('saveLinkBtn');
+        const originalText = saveLinkBtn.textContent;
+        
+        try {
+            saveLinkBtn.disabled = true;
+            saveLinkBtn.textContent = 'Kaydediliyor...';
+            
+            const response = await fetch('/save_product_link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    barcode: barcode,
+                    link: link
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(data.message, 'success');
+                
+                // Local cache'i güncelle
+                if (link) {
+                    productLinks[barcode] = link;
+                } else {
+                    delete productLinks[barcode];
+                }
+                
+                closeLinkModal();
+            } else {
+                showAlert(data.error || 'Link kaydedilemedi', 'error');
+            }
+            
+        } catch (error) {
+            showAlert('Ağ hatası: ' + error.message, 'error');
+        } finally {
+            saveLinkBtn.disabled = false;
+            saveLinkBtn.textContent = originalText;
+        }
+    }
+
+    // Ürün linki silme fonksiyonu
+    async function deleteProductLink() {
+        const barcode = currentModalBarcode;
+        
+        if (!barcode) {
+            showAlert('Barkod bilgisi eksik!', 'error');
+            return;
+        }
+        
+        if (!confirm(`${barcode} barkodlu ürünün linkini silmek istediğinizden emin misiniz?`)) {
+            return;
+        }
+        
+        const deleteLinkBtn = document.getElementById('deleteLinkBtn');
+        const originalText = deleteLinkBtn.textContent;
+        
+        try {
+            deleteLinkBtn.disabled = true;
+            deleteLinkBtn.textContent = 'Siliniyor...';
+            
+            const response = await fetch('/delete_product_link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    barcode: barcode
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert(data.message, 'success');
+                
+                // Local cache'den sil
+                delete productLinks[barcode];
+                
+                closeLinkModal();
+            } else {
+                showAlert(data.error || 'Link silinemedi', 'error');
+            }
+            
+        } catch (error) {
+            showAlert('Ağ hatası: ' + error.message, 'error');
+        } finally {
+            deleteLinkBtn.disabled = false;
+            deleteLinkBtn.textContent = originalText;
+        }
+    }
+
+    // Ürün resmine tıklanınca linki aç
+    function openProductLink(barcode) {
+        const link = productLinks[barcode];
+        
+        if (link) {
+            window.open(link, '_blank');
+        }
+        // Link yoksa hiçbir şey yapma
+    }
+
+    // ESC tuşu ile modal kapatma
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeLinkModal();
+        }
+    });
 
     // Stok toplamlarını güncelle
     function updateStockTotals() {
@@ -1224,6 +1624,9 @@
         const priceFilterBtn = document.getElementById('priceFilterBtn');
         if (priceFilterBtn) priceFilterBtn.addEventListener('click', togglePriceFilter);
 
+        // YENİ: Ürün linklerini yükle
+        loadProductLinks();
+
     });
 
     // Filtre ve toplam güncelleme fonksiyonu
@@ -1240,7 +1643,6 @@
         updateFilterCount();
     }
 
-
         // TY Input kontrol fonksiyonu
 
     function checkTyInputs(row) {
@@ -1254,7 +1656,6 @@
         // Stok VEYA fiyat değişmişse buton aktif
         button.disabled = !(hasStock || hasPrice);
     }
-
 
     // HB Input kontrol fonksiyonu
     function checkHbInputs(row) {
@@ -1333,12 +1734,11 @@
         });
     });
 
-
     // Trendyol güncelle butonuna tıklanınca API çağrısı yap
     document.querySelectorAll('.ty-update-btn').forEach(function(button) {
         button.addEventListener('click', function() {
             const row = button.closest('tr');
-            const barcode = row.querySelectorAll('td')[1].innerText.trim();
+            const barcode = row.querySelectorAll('td')[1].querySelector('.clickable-barcode').innerText.trim();
             const newStockInput = row.querySelector('.ty-new-stock-input');
             const newPriceInput = row.querySelector('.ty-new-price-input');
             
@@ -1430,8 +1830,6 @@
             });
         });
     });
-
-
 
     // Hepsiburada güncelle butonuna tıklanınca API çağrısı yap
     document.querySelectorAll('.hb-update-btn').forEach(function(button) {
@@ -1555,25 +1953,19 @@
             });
         });
 
-
-
     // Filtreleme işlemleri - sadece ürünler varsa çalışsın
     const productsTable = document.getElementById('productsTable');
     if (productsTable) {
         const barcodeFilter = document.getElementById('barcodeFilter');
         const hbBarcodeFilter = document.getElementById('hbBarcodeFilter');
-        const tyPriceFilter = document.getElementById('tyPriceFilter');
-        const hbPriceFilter = document.getElementById('hbPriceFilter');
         const stockDropdownBtn = document.getElementById('stockDropdownBtn');
         const stockDropdownContent = document.getElementById('stockDropdownContent');
         const stockFilters = stockDropdownContent.querySelectorAll('.stock-filter');
         const hbStockDropdownBtn = document.getElementById('hbStockDropdownBtn');
         const hbStockDropdownContent = document.getElementById('hbStockDropdownContent');
         const hbStockFilters = hbStockDropdownContent.querySelectorAll('.hb-stock-filter');
-        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
         const clearAllFiltersBtn = document.getElementById('clearAllFilters');
         const tableBody = document.querySelector('#productsTable tbody');
-
 
         // Fiyat farklılığı filtresi - filterTable() fonksiyonundan ÖNCE
         let priceFilterActive = false;
@@ -1608,8 +2000,8 @@
             const filterHbStocks = selectedHbStocks.length > 0 ? selectedHbStocks : null;
 
             for (const row of tableBody.rows) {
-                const tyBarcode = row.cells[1].innerText.toUpperCase();
-                const hbBarcode = row.cells[6].innerText.toUpperCase();
+                const tyBarcode = row.cells[1].querySelector('.clickable-barcode').innerText.toUpperCase();
+                const hbBarcode = row.cells[7].innerText.toUpperCase();
                 const tyStockText = row.querySelector('.ty-stock-number').innerText.trim();
                 const hbStockText = row.querySelector('.hb-stock-number').innerText.trim();
                 
@@ -1621,8 +2013,6 @@
                 // Barkod filtreleme: Başlangıçta arama (prefix)
                 const tyBarcodeMatch = tyBarcode.startsWith(barcodeVal);
                 const hbBarcodeMatch = hbBarcode.startsWith(hbBarcodeVal);
-
-
 
                 // TY Stok filtreleme:
                 let tyStockMatch = false;
@@ -1668,7 +2058,6 @@
                         }
                     }
                 }
-
 
                 // Fiyat farklılığı kontrolü
                 let priceMatch = true;
@@ -1718,7 +2107,6 @@
             filterTable();
         }
 
-
         // TY Dropdown toggle
         stockDropdownBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1766,9 +2154,6 @@
                 document.body.appendChild(hbStockDropdownContent);
             }
         });
-
-
-
 
         // Dropdown dışında tıklanırsa kapat
         document.addEventListener('click', (event) => {

@@ -92,6 +92,7 @@ if MODULES_AVAILABLE:
 MATCHES_FILE = 'match.json'
 USERS_FILE = 'users.json'
 PRODUCTS_CACHE_FILE = 'products_cache.json'
+PRODUCT_LINKS_FILE = 'product_links.json'
 
 # Excel yönetimi için sabitler
 MAX_ROWS_PER_FILE = 500000
@@ -633,6 +634,28 @@ def load_matches():
         with open(MATCHES_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
+
+# Yardımcı fonksiyonlar bölümüne eklenecek (load_matches fonksiyonundan sonra)
+def load_product_links():
+    """Ürün linklerini JSON dosyasından yükle"""
+    if os.path.exists(PRODUCT_LINKS_FILE):
+        try:
+            with open(PRODUCT_LINKS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            logging.error(f"Ürün linkleri yükleme hatası: {e}")
+            return {}
+    return {}
+
+def save_product_links(links_data):
+    """Ürün linklerini JSON dosyasına kaydet"""
+    try:
+        with open(PRODUCT_LINKS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(links_data, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        logging.error(f"Ürün linkleri kaydetme hatası: {e}")
+        return False
 
 def save_matches_to_file(data):
     with open(MATCHES_FILE, 'w', encoding='utf-8') as f:
@@ -1681,6 +1704,101 @@ def debug_cache():
         
     except Exception as e:
         return f"❌ Debug hatası: {str(e)}"
+
+
+# Flask route'ları bölümüne eklenecek (diğer route'ların sonuna)
+@app.route('/get_product_links')
+@login_required
+def get_product_links():
+    """Tüm ürün linklerini döndür"""
+    try:
+        links = load_product_links()
+        return jsonify({'links': links})
+    except Exception as e:
+        logging.error(f"Ürün linkleri getirme hatası: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/save_product_link', methods=['POST'])
+@login_required
+def save_product_link():
+    """Ürün linki kaydet veya güncelle"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'barcode' not in data or 'link' not in data:
+            return jsonify({'error': 'Barkod ve link gerekli'}), 400
+        
+        barcode = data['barcode'].strip()
+        link = data['link'].strip()
+        
+        if not barcode:
+            return jsonify({'error': 'Barkod boş olamaz'}), 400
+        
+        # Link validasyonu (boş olabilir - silme için)
+        if link and not (link.startswith('http://') or link.startswith('https://')):
+            return jsonify({'error': 'Geçerli bir URL giriniz (http:// veya https:// ile başlamalı)'}), 400
+        
+        # Mevcut linkleri yükle
+        links = load_product_links()
+        
+        if link:
+            # Link ekle veya güncelle
+            links[barcode] = link
+            message = f'✅ {barcode} için link kaydedildi'
+        else:
+            # Link sil (boş link gönderilirse)
+            if barcode in links:
+                del links[barcode]
+                message = f'🗑️ {barcode} için link silindi'
+            else:
+                return jsonify({'error': 'Silinecek link bulunamadı'}), 404
+        
+        # Dosyaya kaydet
+        if save_product_links(links):
+            logging.info(f"Ürün linki işlemi: {message} - Kullanıcı: {session.get('username', 'Bilinmiyor')}")
+            return jsonify({'message': message})
+        else:
+            return jsonify({'error': 'Link kaydedilemedi'}), 500
+            
+    except Exception as e:
+        logging.error(f"Ürün linki kaydetme hatası: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/delete_product_link', methods=['POST'])
+@login_required
+def delete_product_link():
+    """Ürün linkini sil"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'barcode' not in data:
+            return jsonify({'error': 'Barkod gerekli'}), 400
+        
+        barcode = data['barcode'].strip()
+        
+        if not barcode:
+            return jsonify({'error': 'Barkod boş olamaz'}), 400
+        
+        # Mevcut linkleri yükle
+        links = load_product_links()
+        
+        if barcode not in links:
+            return jsonify({'error': 'Silinecek link bulunamadı'}), 404
+        
+        # Linki sil
+        del links[barcode]
+        
+        # Dosyaya kaydet
+        if save_product_links(links):
+            message = f'🗑️ {barcode} için link silindi'
+            logging.info(f"Ürün linki silindi: {message} - Kullanıcı: {session.get('username', 'Bilinmiyor')}")
+            return jsonify({'message': message})
+        else:
+            return jsonify({'error': 'Link silinemedi'}), 500
+            
+    except Exception as e:
+        logging.error(f"Ürün linki silme hatası: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 
