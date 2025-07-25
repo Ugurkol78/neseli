@@ -14,9 +14,7 @@ import shutil
 import logging
 import pytz
 import traceback
-# app.py dosyasının en üstündeki import'lara eklenecek
-from competitor_scheduler import init_scheduler, cleanup_scheduler
-import atexit
+
 
 from cost_tracking import log_cost_data_change
 
@@ -48,46 +46,12 @@ except ImportError as e:
         return {}
 
 
-# Import bölümüne eklenecek (diğer import'lardan sonra)
-try:
-    from competitor_routes import competitor_bp
-    from product_routes import product_bp
-    from seller_routes import seller_bp  # YENİ: Seller blueprint import
-    MODULES_AVAILABLE = True
-except ImportError as e:
-    logging.warning(f"Modül import hatası: {e}")
-    MODULES_AVAILABLE = False
-
-
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "your-secret-key-here")
-
-# Blueprint registration bölümüne eklenecek (app oluşturulduktan sonra)
-if MODULES_AVAILABLE:
-    try:
-        # Competitor blueprint'i kaydet
-        app.register_blueprint(competitor_bp)
-        logging.info("Competitor blueprint başarıyla kaydedildi")
-    except Exception as e:
-        logging.error(f"Competitor blueprint kayıt hatası: {e}")
-    
-    try:
-        # YENİ: Product blueprint'i kaydet
-        app.register_blueprint(product_bp)
-        logging.info("Product blueprint başarıyla kaydedildi")
-    except Exception as e:
-        logging.error(f"Product blueprint kayıt hatası: {e}")
-
-    try:
-        # YENİ: Seller blueprint'i kaydet
-        app.register_blueprint(seller_bp)
-        logging.info("Seller blueprint başarıyla kaydedildi")
-    except Exception as e:
-        logging.error(f"Seller blueprint kayıt hatası: {e}")
 
 MATCHES_FILE = 'match.json'
 USERS_FILE = 'users.json'
@@ -1801,57 +1765,16 @@ def delete_product_link():
         return jsonify({'error': str(e)}), 500
 
 
-
-# Scheduler'ı başlat
-init_scheduler()
-
-# Uygulama kapatılırken scheduler'ı temizle
-atexit.register(cleanup_scheduler)
-
-
-# Scheduler'ları başlatma (if __name__ == "__main__": bloğundan önce)
-def init_all_schedulers():
-    """Tüm scheduler'ları başlat"""
-    if MODULES_AVAILABLE:
-        try:
-            # Competitor scheduler
-            from competitor_scheduler import init_scheduler as init_competitor_scheduler
-            init_competitor_scheduler()
-            logging.info("Competitor scheduler başlatıldı")
-        except Exception as e:
-            logging.error(f"Competitor scheduler hatası: {e}")
-        
-        try:
-            # YENİ: Product scheduler
-            from product_scheduler import init_product_scheduler
-            init_product_scheduler()
-            logging.info("Product scheduler başlatıldı")
-        except Exception as e:
-            logging.error(f"Product scheduler hatası: {e}")
-
-        try:
-            from seller_scheduler import init_seller_scheduler
-            init_seller_scheduler()
-            print("✅ Seller scheduler başlatıldı")
-        except ImportError as e:
-            print(f"⚠️ Seller scheduler başlatılamadı: {str(e)}")
-
-
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "--reset-admin":
         emergency_reset_admin_password()
     else:
-        # YENİ: Scheduler'ları başlat
-        init_all_schedulers()
         
         port = int(os.getenv("PORT", 5002))
         debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
         
         logging.info(f"Trendyol-HB Stok Yönetimi başlatılıyor...")
-        logging.info(f"🎯 Rakip Takip: http://localhost:{port}/competitors")
-        logging.info(f"📊 Ürün İzleme: http://localhost:{port}/products")  # YENİ
-        logging.info(f"🏪 Satıcı İzleme: http://localhost:{port}/sellers")  # YENİ EKLENEN
         logging.info(f"Tarayıcınızda şu adresi açın: http://localhost:{port}")
         
         app.run(debug=debug_mode, host='0.0.0.0', port=port)

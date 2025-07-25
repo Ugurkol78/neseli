@@ -333,9 +333,6 @@
     <a href="{{ url_for('index') }}">Stok Güncelleme</a>
     <a href="{{ url_for('match') }}">Eşleştirme</a>
     <a href="{{ url_for('costs') }}">Kar Takip</a>
-    <a href="{{ url_for('competitor.competitors') }}">🎯 Rakip Takip</a>
-    <a href="{{ url_for('product.products') }}">📊 Ürün İzleme</a>
-    <a href="{{ url_for('seller.sellers') }}">🏪 Satıcı İzleme</a>
     {% if session.role == 'admin' %}
     <a href="{{ url_for('users') }}">Kullanıcı Yönetimi</a>
     {% endif %}
